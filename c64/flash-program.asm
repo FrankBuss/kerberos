@@ -148,7 +148,7 @@ program_loop:	// erase sector: two 4k sectors for each 8k bank
 !:		lda #$80
 		sta $df00			// turn off Ultimax mode and disable module
 		ldy #0
-		//inc $d020
+		inc $d020
 		lda (program_src),y
 		jsr flashProgramByte
 		
@@ -213,8 +213,8 @@ flash_end:	sei
 		// show screen
 		lda #$9b
 		sta $d011
-		//lda #0
-		//sta $d020
+		lda #0
+		sta $d020
 		rts
 
 print_hex:	ldx #$80
