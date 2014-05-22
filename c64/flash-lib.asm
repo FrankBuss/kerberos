@@ -22,8 +22,6 @@ flashReadId:
 		jsr flash_id_entry
 		
 		// read ID
-		lda #$c0
-		sta $df00
 		lda $8000
 		pha
 		lda $8001
@@ -47,7 +45,7 @@ flash_id_exit:	lda #$f0
 flash_id_entry:	lda #$90
 		jmp flash_cmd
 
-		// write accu to flash address in X/Y (high/low), a13-a18 = 0
+		// write accu to flash address in X/Y (high/low), a17-a20 = 0
 flash_write:	pha
 		sty sta_addr+1
 		txa
@@ -56,20 +54,22 @@ flash_write:	pha
 		lsr
 		lsr
 		lsr
-		ora #$c0
-		sta $df00
+		sta $df3f
 		txa
 		and #$1f
 		clc
 		adc #$80
 		sta sta_addr+2
+		lda #2
+		sta $df3e
 		pla
 sta_addr:	sta $8000  // dummy address, self modifying code
+		lda #1
+		sta $df3e
 		rts
 
 		// convert address in program_dst+2/+1/+0 to flashBank/flashHigh/flashLow
-		// e.g. address $0000 = $8000, $2000 = $8000 + bank=$c1
-		// flashBank is or'ed with $c0, to enable ultimax mode with $df00
+		// e.g. address $0000 = $8000, $2000 = $8000 + bank=$01
 flashConvertAdr:
 		// calculate bank (one bank size: 8kb)
 		lda program_dst
@@ -85,8 +85,6 @@ flashConvertAdr:
 		dex
 		bne !-
 		lda tmp1
-		and #$3f
-		ora #$c0
 		sta flashBank
 		
 		// calculate absolute address of bank
@@ -126,14 +124,8 @@ flashConvertAdr:
 		// returns the number of write errors in x. if x=$ff then programming was unsuccesful.
 flashProgramByte:
 		sta tmp1
-		lda #$aa
-		jsr flash_cmd
-		lda #$55
-		jsr flash_cmd
-		lda #$a0
-		jsr flash_cmd
 		lda flashBank
-		sta $df00
+		sta $df3f
 		lda flashHigh
 		sta staLoc+2
 		sta ldaLoc+2
@@ -141,10 +133,20 @@ flashProgramByte:
 		sta staLoc+1
 		sta ldaLoc+1
 		ldx #0
-programStart:	lda tmp1
+programStart:	lda #2
+		sta $df3e
+		lda #$aa
+		sta $8aaa
+		lda #$55
+		sta $8555
+		lda #$a0
+		sta $8aaa
+		lda tmp1
 staLoc:		sta $8000  // dummy address, self modifying code
-		// min 30 us wait required, wait a bit longer
-		ldy #40
+		lda #1
+		sta $df3e
+		// max 10 us for byte programming, wait a bit longer
+		ldy #15
 !:		dey
 		bne !-
 		// check if written
@@ -160,7 +162,9 @@ ldaLoc:		lda $8000  // dummy address, self modifying code
 		// and returns in in accu
 flashReadByte:
 		lda flashBank
-		sta $df00
+		sta $df3f
+		lda #1
+		sta $df3e
 		lda flashHigh
 		sta ldaLoc2+2
 		lda flashLow
@@ -185,42 +189,46 @@ flashSectorErase:
 		lda #$80
 		jsr flash_cmd
 
-		// $5555 = $aa
+		// $aaa = $aa
 		lda #$aa
-		ldx #$55
-		ldy #$55
+		ldx #$0a
+		ldy #$aa
 		jsr flash_write
 
-		// $2aaa = $55
+		// $555 = $55
 		lda #$55
-		ldx #$2a
-		ldy #$aa
+		ldx #$05
+		ldy #$55
 		jsr flash_write
 		
 		lda flashBank
-		sta $df00
-		lda #$30
+		sta $df3f
+		lda #2
+		sta $df3e
+		lda #$50
 staLoc2:	sta $8000
+		lda #1
+		sta $df3e
 		jmp wait_300_ms
 
 		// write flash command in accu
-flash_cmd:	// $5555 = $aa
+flash_cmd:	// $aaa = $aa
 		pha
 		lda #$aa
-		ldx #$55
-		ldy #$55
-		jsr flash_write
-
-		// $2aaa = $55
-		lda #$55
-		ldx #$2a
+		ldx #$0a
 		ldy #$aa
 		jsr flash_write
-		
-		// $5555 = accu
-		pla
-		ldx #$55
+
+		// $555 = $55
+		lda #$55
+		ldx #$05
 		ldy #$55
+		jsr flash_write
+		
+		// $aaa = accu
+		pla
+		ldx #$0a
+		ldy #$aa
 		jmp flash_write
 
 wait_300_ms:	ldy #0

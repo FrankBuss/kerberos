@@ -22,9 +22,9 @@
 // PRG data (stating at 0x100 for each slot)
 
 // number of 8k blocks per slot
-.var slotBlockCount = 4
+.var slotBlockCount = 8
 
-.var bankswitchRegister = $df00
+.var bankswitchRegister = $df3f
 
 // 192 bytes datasette buffer, for routines which need to run from RAM
 .var datasetteBuffer = $033C
@@ -85,6 +85,7 @@
 		.word start
 		.byte $c3, $c2, $cd, $38, $30  // cbm80
 
+.pc = $80e8
 start:		stx $d016		// Turn on VIC for PAL / NTSC check
 		
 		// copy init functions to RAM
@@ -235,18 +236,7 @@ readFilename:	jsr readByte
 		jsr showTransferStarted
 		
 		// read program
-readProgram:	jsr readByte
-		ldy #0
-		sta (prg),y
-		inc prg
-		bne !+
-		inc prg+1
-!:		lda prg+1
-		cmp prgEnd+1
-		bne readProgram
-		lda prg
-		cmp prgEnd
-		bne readProgram
+readProgram:	jsr readProgramImpl
 		
 		// read checksum
 		jsr readByte
@@ -318,8 +308,8 @@ initRoutines:
 init:		sei
 
 		// turn module ROM off
-		lda #$80
-		sta bankswitchRegister
+		lda #$0b
+		sta $df3e
 
 		// KERNAL reset routine
 		jsr $fda3		// IOINIT - Init CIA chips
@@ -337,9 +327,9 @@ init:		sei
 		ldx #$fb
 		txs			// Reduce stack pointer for BASIC
 
-		// turn module ROM off
-		lda #0
-		sta bankswitchRegister
+		// turn module ROM on
+		lda #$09
+		sta $df3e
 
 		// show screen
 		jsr showStartscreen
@@ -431,8 +421,8 @@ startProgram:
 		bne !-
 
 		// turn module off
-		lda #$80
-		sta bankswitchRegister
+		lda #$0b
+		sta $df3e
 		lda prgStart
 		beq testHigh
 		cmp #$01
@@ -455,8 +445,8 @@ testHigh:	lda prgStart+1
 !:		jmp (prgStart)
 		
 basicReset:	// turn module off
-		lda #$80
-		sta bankswitchRegister
+		lda #$0b
+		sta $df3e
 
 		// reset
 		jmp $fce2
@@ -503,10 +493,33 @@ copyRom3:	dec prgLength
 		lda prgLength + 1
 		cmp #$ff
 		bne copyRom1
+		// module on
+		lda #$09
+		sta $df3e
 		lda #0
 		sta bankswitchRegister
 		jsr showTransferEnd
 		jmp startProgram
+
+readProgramImpl: jsr readByte
+		sei
+		ldy #$31
+		sty 1
+		ldy #0
+		sta (prg),y
+		ldy #$37
+		sty 1
+		cli
+		inc prg
+		bne !+
+		inc prg+1
+!:		lda prg+1
+		cmp prgEnd+1
+		bne readProgramImpl
+		lda prg
+		cmp prgEnd
+		bne readProgramImpl
+		rts
 
 zeropageBackup:
 

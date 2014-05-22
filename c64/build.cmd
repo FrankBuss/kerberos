@@ -7,3 +7,4 @@ java -jar "C:\Program Files (x86)\kickassembler\KickAss.jar" flash-program.asm
 rem copy /y /b flash-test.prg + menu.bin flash-test2.prg
 rem copy /y /b flash-test2.prg flash-test.prg
 copy /y /b flash-program.prg ..\qt\flash-program.prg
+copy /y /b flash-program.prg ..\qt\windows-export\flash-program.prg

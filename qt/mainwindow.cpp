@@ -295,7 +295,7 @@ void MainWindow::onUploadFile()
         flashFile.close();
 
         // append flash target address
-        int target = slot * 0x8000;
+        int target = slot * 0x10000;
         outData.append(target & 0xff);
         outData.append((target >> 8) & 0xff);
         outData.append((target >> 16) & 0xff);
@@ -309,8 +309,8 @@ void MainWindow::onUploadFile()
         outData.append(data);
         prgData = outData;
 
-        if (prgData.size() > 32768) {
-            QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 32768 byte"));
+        if (prgData.size() > 63486) {
+            QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 63486 byte"));
             return;
         }
     }

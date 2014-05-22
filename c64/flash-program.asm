@@ -1,7 +1,7 @@
 // program to program the flash
 // at the end of this program, the flash target address is stored (three bytes) and then the program size (two bytes), all little endian
 // then the flash content follows
-// compile command line: java -jar "C:\Program Files (x86)\kickassembler\KickAss.jar" flash-test.asm
+// compile command line: java -jar "C:\Program Files (x86)\kickassembler\KickAss.jar" flash-program.asm
 // Kick Assembler: http://www.theweb.dk/KickAssembler/Main.php
 
 .pc = $0900
@@ -51,11 +51,11 @@ start:
 
 		// check flash ID
 		jsr flashReadId
-		lda #$80
-		sta $df00			// turn off Ultimax mode and disable module
+		lda #3
+		sta $df3e			// turn off Ultimax mode and disable module
 		cpx #$bf
 		bne flashDetectionError
-		cpy #$b7
+		cpy #$c8
 		beq flashOk
 flashDetectionError:		
 		// show error message
@@ -85,8 +85,8 @@ out_test:	txa
 		pha
 		jsr flashReadByte
 		tay
-		lda #$80
-		sta $df00			// turn off Ultimax mode and disable module
+		lda #3
+		sta $df3e			// turn off Ultimax mode and disable module
 		pla
 		pha
 		tax
@@ -105,8 +105,8 @@ out_test:	txa
 		inx
 		cpx #40
 		bne out_test
-		lda #0
-		sta $df00
+		lda #3
+		sta $df3e			// turn off Ultimax mode and disable module
 		lda #$9b
 		sta $d011
  !:		jmp !-
@@ -120,6 +120,7 @@ out_test:	txa
 //		jmp !-
 
 		// program flash
+		sei
 		
 		// source
 		lda #<[end+5]
@@ -145,11 +146,15 @@ program_loop:	// erase sector: two 4k sectors for each 8k bank
 		jsr flashSectorErase
 
 		// program next byte
-!:		lda #$80
-		sta $df00			// turn off Ultimax mode and disable module
+!:		lda #3
+		sta $df3e			// turn off Ultimax mode and disable module
 		ldy #0
 		inc $d020
+		lda #$31
+		sta 1
 		lda (program_src),y
+		ldy #$37
+		sty 1
 		jsr flashProgramByte
 		
 		// if too many write errors, abort
@@ -207,8 +212,8 @@ fatalError:	jsr flash_end
 
 		// turn off Ultimax mode and disable module
 flash_end:	sei
-		lda #$80
-		sta $df00
+		lda #3
+		sta $df3e			// turn off Ultimax mode and disable module
 
 		// show screen
 		lda #$9b
@@ -217,9 +222,7 @@ flash_end:	sei
 		sta $d020
 		rts
 
-print_hex:	ldx #$80
-		stx $df00
-		pha
+print_hex:	pha
 		lsr
 		lsr
 		lsr
@@ -238,9 +241,7 @@ print_digit:	tax
 		jmp basic_write_byte
 		
 		// prints a null terminated string in accu/x (accu=low byte of the address)
-printString:	ldy #$80
-		sty $df00
-		sta tmp1
+printString:	sta tmp1
 		stx tmp2
 		ldy #0
 !:		lda (tmp1),y
@@ -257,7 +258,7 @@ detectingFlashMessage:
 		.text "DETECTING FLASH: " .byte 0
 
 flashDetectedMessage:
-		.text "SST39SF040 (512 KB)" .byte $0d, 0
+		.text "SST39VF1681 (2 MB)" .byte $0d, 0
 
 noFlashDetectedMessage:
 		.text "NO FLASH DETECTED" .byte $0d, 0
