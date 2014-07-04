@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=EasySplit
+Comment=Compress and split files. 
+TryExec=easysplit
+Exec=easysplit %F
+Icon=/usr/local/share/easysplit/res/easysplit.png
+Categories=Utility;Compression;

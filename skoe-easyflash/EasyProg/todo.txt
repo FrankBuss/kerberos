@@ -1,0 +1,3 @@
+- Slot-Auswahl und KERNAL-Slot-Auswahl abbrechbar machen
+- Time elapsed fuer binaries
+

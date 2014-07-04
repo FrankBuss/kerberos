@@ -1,0 +1,8 @@
+EESchema-DOCLIB  Version 2.0  Date: Sa 08 Okt 2011 22:31:42 CEST
+#
+$CMP MCP1700-TO
+D Linear Regulator (adjustable)
+K POWER REGUL
+$ENDCMP
+#
+#End Doc Library

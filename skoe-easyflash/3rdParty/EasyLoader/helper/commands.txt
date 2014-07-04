@@ -1,0 +1,78 @@
+
+==   ALeX's Commands   ==
+
+Command Syntax - the syntax in this documentation is this:
+	:command <argname:type(s)> ; [<argname:type(s)>] ; ... {...}
+	command = name of the command
+	arguments enclosed in square brackets "[...]" are optional
+	the "argname" sould be selfdescribing (at least I'll try to do so)
+	the type is one or more of the following types:
+		M: memory, all types of memory addressing is allowed in general
+			(e.g. $10; $1010; #$30; $1010,x; ($10),y; ...) but some of them
+			are not possible for all commands or combinations.
+		R: a register (A, X, Y)
+		A,X,Y: the A,X,Y register
+		RR: two registers which represents a 16bit number (e.g. XY)
+		J: either JMP or JSR (or BRANCH, default)
+		%: any other option, see command desription for details
+	the register(s) and/or arguments in the curly braces will be destroyd.
+	"{hop}" means that the register described by the parameter <hop> are modified.
+	"hop" defaults to A.
+	please remember that the <hop> is usually used to ld? and st? some data,
+	if you want to do, for example, move from/to "$1000,x" a hop of X is not possible!
+	
+	ALL numbers are treated as unsigned!
+
+Overwiew - a quick line on all commands
+	// 8bit commands
+	:clr <dst:MR> [ ; <hop:R>]  {hop} // sets the dst to zero
+	:mov <src:MR> [ ; <hop:R>] ; <dst:MR>  {hop} // moves a byte
+	:inc <dst:MR>  {} // increments memory or a register (reg A: clc + adc #1)
+	:dec <dst:MR>  {} // decrements memory or a register
+	:adc <src1:MA> ; <src2:M> [ ; <dst:MA>]  {A} // addition with carry, if dst omitted then the result will be stored in arg1
+	:add <src1:MA> ; <src2:M> [ ; <dst:MA>]  {A} // addition (clc + :adc)
+	:sbc <src1:MA> ; <src2:M> [ ; <dst:MA>]  {A} // subtraction with carry, if dst omitted then the result will be stored in arg1
+	:sub <src1:MA> ; <src2:M> [ ; <dst:MA>]  {A} // subtraction (sec + :sbc)
+	:mul8_16 <src1:M> ; <src1:M> ; <dst:MM> ; <hop:XY>  {src1, hop} // multuplication of to 8bit numbers, result is 16bit
+	:mul10 <src:MA> ; <dst:MA> ; <buffer:M%>  {A} // multiply by 10, buffer may be a 8bit memory or "SMC" which uses self modifying code
+	:if [<not:%> ; ] <arg1:MR> ; <cmpr:%> ; <arg2:MR> [ ; <skip:%> ] [ ; <mode:J> ] ; <pc:M> [ ; <hop:R> ]  {hop} // see below
+
+	// 16bit commands
+	:clr16 <dst:MRR> [ ; <hop:R>]  {hop} // sets the dst to zero
+	:mov16 <src:MRR> [ ; <hop:R>] ; <dst:MRR>  {hop} // moves a word
+	:inc16 <dst:MRR>  {} // increments memory or two registers
+	:dec16 <dst:MRR> [ ; <hop:R>]  {hop} // decrements memory or two registers (two registers don't need a hop)
+	:rol16 <src:M> [ ; <dst:M>]  {A if dst} // 16bit shift left with carry, if dst omitted then the result will be stored in src
+	:ror16 <src:M> [ ; <dst:M>]  {A if dst} // 16bit shift right with carry, if dst omitted then the result will be stored in src
+	:asl16 <src:M> [ ; <dst:M>]  {A if dst} // 16bit shift left, if dst omitted then the result will be stored in src
+	:lsr16 <src:M> [ ; <dst:M>]  {A if dst} // 16bit shift right, if dst omitted then the result will be stored in src
+	:adc16 <src1:MA> ; <src2:M> [ ; <dst:M>]  {A} // addition with carry, if dst omitted then the result will be stored in src1 (dst must be set, if src1 is A)
+	:add16 <src1:MA> ; <src2:M> [ ; <dst:M>]  {A} // addition (clc + :adc16)
+	:adc16_8 <src1:MA> ; <src2:M> [ ; <dst:M>]  {A} // addition with carry, src2 is 8bit, if dst omitted then the result will be stored in src1 (dst must be set, if src1 is A)
+	:add16_8 <src1:MA> ; <src2:M> [ ; <dst:M>]  {A} // addition (clc + :adc16_8)
+	:sbc16 <src1:M> ; <src2:M> ; <dst:M>  {A} // substraction with carry
+	:sub16 <src1:M> ; <src2:M> ; <dst:M>  {A} // substraction (sec + :sub16)
+	:div16 <src1:M> ; <src2:M> ; <quo:M> ; <rem:M> ; <hop:XY>  {src1, hop} // division 16bit
+	:if16 [<not:%> ; ] <arg1:MRR> ; <cmpr:%> ; <arg2:MRR> [ ; <skip:%> ] [ ; <mode:J> ] ; <pc:M> [ ; <hop:R> ]   {hop} // see below
+
+Long description - a longer description as in the overwiew
+	:if + :if16
+		compares the numbers <arg1> and <arg2> with the comparator <cmpr>, which is "EQ", "NE", "LT", "LE", "GE" or "GT".
+		on success it branch to <pc>.
+		<not> may be "NOT" or unset, negates if set.
+		<skip> may be "SKIP", "ELSE", "ENDIF" or unset, if set the :if will branch to <pc> on failure,
+			so you can do a if-then-else-endif (":if .... ; ELSE else  + .... + jmp endif + else: + ... + endif:")
+		<mode> may be "JMP", "JSR", "BRANCH" or unset, if set and not "BRANCH" then the it will "jmp" or "jsr" to <pc>.
+		<hop> will be used to load <arg1> if neither <arg1> nor <arg2> is/are register(s) (it's not allowed that <arg1> and <arg2> are registers).
+
+	:others
+		TODO
+
+
+Other things - more?
+	all constants, functions and pseudocommands starting with a
+	underscore "_" are for internal use.
+	
+	
+	
+ALeX - alex@kazik.de

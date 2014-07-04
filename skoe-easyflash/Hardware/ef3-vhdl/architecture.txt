@@ -1,0 +1,228 @@
+
+This file contains documentation about the structure and functionality of
+the EF3 VHDL implementation.
+
+===============================================================================
+exp_bus_ctrl
+===============================================================================
+
+This entity contains low-level mechanisms to provide various control signals.
+
+Its inputs are the main clock (25 MHz), the unsynchronized Phi2 and the
+unsynchronized n_wr signal.
+
+The process synchronize_stuff creates a synchronized version of Phi2
+(phi2_s) and a copy of phi2_s which is delayed by one clk cycle (prev_phi2).
+
+The heart of this entity is the process clk_time_shift which controls a
+shift register "cycle_time". Each time when phi2_s is different from prev_phi2,
+bit 0 of the shift register is set and the rest cleared. Then the register is
+shifted left at each cycle of the 25 MHz clock. As a result the position of 
+the active bit shows the time in each Phi1 and Phi2 cycle.
+
+The last position of the shift register depends from the frequency of Phi2
+(PAL/NTSC) and the phase shift between the clock domains clk and Phi2. The
+actual limit is not important, as it is not used anywhere.
+
+This is not a counter but a shift register, because it turned out that the
+resulting one-hot encoding fits better into the target CPLD.
+
+Note that there is a delay between the original Phi2 edges and the start of
+cycle_time(0) due to the synchronization delay of 0..40 ns when phi2_s
+is created and additional 40 ns because of prev_phi2. This means that
+the cycle_time shift register is reset about 40 to 80 ns after each edge of 
+Phi2 (propagation delays neglected).
+
+rd, wr
+------
+
+The two signals rd and wr are created combinatorially from Phi2 and R/W
+taken from the expansion port. On the C128 the R/W line can be low at the
+expansion port in Phi1 cycles, during VIC-II read accesses. Because of this
+the R/W line is combined with Phi2 to create the real read (rd) and write (wr)
+signals.
+
+These signals are used to create addresses, chip selects etc. asynchronously.
+
+rp, wp
+------
+
+These signals are created similar as rd and wr, but they are also combined
+with cycle_time.
+
+The read pulse rp is active for 1 clk cycle (40 ns) at cycle_time(6) when a
+read access occurs, so the data to be read still has enough time to be on the
+bus before the setup time window of the CPU starts. rp is used e.g. to start a
+glitch-free read signal for the USB part, which removes one byte from its FIFO
+per read access, therefore glitches in read accesses would be fatal.
+
+The write pulse wp is low for one clk cycle during a write cycle, when all 
+busses are considered to be stable. wp_end is active for one clk cycle 80 ns
+after wp. These signals can be used to create an 80 ns synchronous write signal
+for memory and USB chips. For internal registers wp can be used directly.
+
+cycle_time
+----------
+
+Shift register which contains the time offset inside a Phi1/Phi2 half cycle.
+Each bit corresponds to a 40 ns time range. Refer to the timing diagram below
+for details.
+
+cycle_start
+-----------
+
+cycle_start is '1' for one clk-cycle right at the beginning of a half-cycle of
+Phi2. It can be used to reset states from the previous half-cycle and to
+prepare the next one.
+
+
+This figure shows the timing of all signals described above:
+
+              _   _   _   _   _   _   _   _   _   _   _   _   _   _   _   _
+ clk:        / \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_
+                _______________________________________________
+ phi2:       __/                                               \_____________
+             .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
+                 +0..40 ns
+                  _______________________________________________
+ phi2_s:     ____/                                               \___________
+             .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
+                 .   +40..80 ns                                  .
+                 .    _______________________________________________
+ prev_phi2:  ________/                                               \_______
+                 .                                               .
+             .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
+ cycle_time(n):  -   0   1   2   3   4   5   6   7   8   9  10   -   0   1
+             .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
+ t_min              40  80  120 160 200 240 280 320 360 400 440 480 ns
+ t_max              80  120 160 200 240 280 320 360 400 440 480 520 ns
+             .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
+                 .   .                        ___    .   .
+ wp, rp:     ________________________________/   \___________________________
+                 .   .                                ___ 
+ wp_end:     ________________________________________/   \___________________
+                  ___                                             ___
+ cycle_start:____/   \___________________________________________/   \___
+
+
+===============================================================================
+reset_generator
+===============================================================================
+
+This module synchronizes and creates various reset signals.
+
+Its inputs are the main clock (25 MHz), cycle_start, the synchronized phi2,
+a start_reset signal for resets generated by the CPLD and n_reset_in for resets
+which come from the Expansion Port.
+
+When start_reset is high on a rising edge of clk, a reset is started.
+
+n_reset
+-------
+
+This signal is active whenever any reset is active, it may be a generated one 
+after start_reset or one that comes from the Expansion Port.
+
+n_generated_reset
+-----------------
+
+This is a reset which is active for 7 Phi2 cycles after start_reset has
+triggered it. It is generated in reset_generator and is used e.g. to reset
+the C64 to activate a changed cartridge mode.
+
+The internal signal ignore_reset is set when a generated reset is started
+and remains active until the reset line of the Expansion Port gets high again.
+This is used to distinguish resets caused by n_generated_reset and resets
+which come from the Expansion Port.
+
+n_sys_reset
+-----------
+
+This is a synchronized version of the reset signal which comes from the C64.
+It is derived from n_reset_in. To avoid to detect a reset caused by 
+n_generated_reset as n_sys_reset, it is filtered with the signal ignore_reset. 
+
+
+===============================================================================
+ef3
+===============================================================================
+
+This is the top level module.
+
+External Interface
+==================
+
+The entity ef3 has an interface to almost all Expansion Port signals. 
+Additionally there are following signals:
+
+clk
+---
+
+Our master clock, running at 25 MHz. This high frequency was chosen to be able
+to measure times which are much smaller than the 1 MHz Phi2 from the Expansion
+Port. Note that this is another clock domain then the signals which come from 
+the Expansion Port, so signals must be either synchronized or samples at times
+there they are known to be stable.
+
+button_a, button_b, button_c
+----------------------------
+
+These are the three push-buttons on the EF3. They are debounced externally.
+
+n_led
+-----
+
+The EF3 LED.
+
+mem_addr, mem_data
+------------------
+
+These are the internal address bus and the internal address bus of the EF3.
+The address bus is 23 bits wide to be able to address 8 MiByte of flash memory.
+The lower 15 bits of this address bus are connected to 32 kiByte of SRAM.
+The internal data bus is connected to flash, SRAM und to the FT245RL USB
+device.
+
+n_mem_wr, n_mem_oe, n_flash_cs, n_ram_cs
+----------------------------------------
+
+These are the control lines for Flash and SRAM. They share the write line 
+n_mem_wr and the output enable n_mem_oe and have separated chip select signals.
+
+n_usb_txe, n_usb_rxf
+--------------------
+
+These two lines are connected to the status lines of the FT245RL.
+
+usb_wr, n_usb_rd
+----------------
+
+These two lines are connected to the control lines of the FT245RL.
+
+Internal architecture and sub-modules
+=====================================
+
+The ef3 top level module contains one exp_bus_ctrl and one reset_generator.
+There is one component of type freezer which is shared among all freezer
+cartridges.
+
+Additionally it contains the components cart_easyflash, cart_io2ram,
+cart_kernal, cart_arcart_ss5 which implement the supported cartridge types.
+
+There are many internal signals used to connect the different units. Only some
+of them are documented here.
+
+enable_ef, enable_kernal, enable_ar, enable_ss5
+-----------------------------------------------
+
+One of these signals is set according to the current mode of the EF3.
+After a rest from the Expansion Port only enable_ef is set.
+
+enable_usb, enable_io2ram
+-------------------------
+
+These two signals enable the USB module and 256 bytes of RAM in I/O2 space.
+They both are active in two modes: EasyFlash (enable_ef) and KERNAL 
+(enable_kernal). (Don't wonder why I kept both of them: To keep it readable.
+They are optimized away anyway.)
+

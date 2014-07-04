@@ -1,0 +1,14 @@
+
+This directory contains files to create a minimal 8k CRT image.
+
+You'll need the acme assembler and the vice emulator installed.
+
+If you have GNU make, just run it. Otherwise you may want to execute the 
+commands from Makefile manually.
+
+Vice comes with a tool called cartconv which is able to convert binary files
+to crt images and vice versa.
+
+To test the cartridge, run "x64 -cartcrt minimal.crt" or attach it using
+"File => Attach a cartridge image => Smart attach CRT Image...".
+You can also write it to your EasyFlash.

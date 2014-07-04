@@ -1,0 +1,16 @@
+﻿
+The EasyFlash's xbank cartridge format is a multibanking cartridge format which
+can be placed at any bank in the flash, though all the banks must be continous.
+It's similar to the EasyFlash cartridge format.
+
+The magic cartrige id is 33 ($21).
+
+The Game and ExRom configuration in the crt header will be used to determine
+which mode should be apply at the startup.
+
+The main difference is that it can be placed on any bank, unlike EasyFlash or
+e.g. a Ocean Type 1 cartridges.
+
+The method is really simple: the starting bank will be stored in $df00/$df01,
+and the program has to care itself for the addition of the relative bank and
+the offset before writing it into the banking register.

@@ -1,0 +1,52 @@
+#
+# this file is a list of all files which should be included in the cartridge
+# copy it near your programs and change ~/EasyLoader.rc to point to this file
+#
+
+#
+# configuration (optional, defaults as listed)
+#
+
+# remove the extenseion (last four chars) from every file
+# cfg:strip_extension=0
+
+# sort the dir in the EasyFS (otherwise it will be sorted by the EasyLoader)
+# cfg:sort_dir=1
+
+# show free banks
+# cfg:show_free=1
+
+# show memory map + options
+# cfg:show_memmap=0
+# cfg:memmap_colwidth=40
+
+#
+# file area
+#
+# all empty lines ans those starting whith a # are irgnored
+# an line starting whith a dot "." is hidden in the listing
+# all paths are relative to this file
+# basic usage: "mode:file.prg" (whithout quotes)
+# extended: "mode:file.prg=newname"
+#
+# mode can be:
+# "p" or "prg" for programs (including p00 files)
+# "8" or "8k" for regular 8k crt's
+# "16" or "16k" for regular 16k crt's
+# "m8" or "m8k" for ultimax 8k crt's
+# "m16" or "m16k" for ultimax 16k crt's
+# "xbank" for "X-Bank" crt's in automatic mode (picks first)
+# "xbank-<mode>" for "X-Bank" crt's in <mode> mode (16, 16k, 8, 8k, m16, m16k, m8, m8k)
+
+prg:game.prg
+16k:example.crt
+
+#
+# ocean mode
+#
+# using the ocean mode one ocean type1 module can be incuded
+# use: "ocean:file.crt" or "ocean:file.crt=name"
+# whithin the regular mode this lineis just ignored
+#
+
+ocean:shadow.crt=Shadow o t Beast

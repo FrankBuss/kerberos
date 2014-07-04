@@ -1,0 +1,11 @@
+
+um einen boot-screen (nur ein mal pro einfachlten, nicht nach einem reset)
+anzuzeigen, muss ein cartridge (incl. xbank) mit dem namem "!el_boot-once"
+(ohne anfuehrungszeichen) auf dem easyflash abgelegt werden.
+
+das programm im crt muss am ende einen soft-reset ausfuehren:
+  easyflashbank = 0
+  easuflashmodus = 0
+  jmp ($fffc)
+
+es kann jeglicher speicher, ausser dem easyflash ram $dffc-$dfff genutzt werden.

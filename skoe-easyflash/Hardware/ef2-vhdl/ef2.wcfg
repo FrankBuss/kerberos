@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="ef2_isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="ef2_tb" />
+            <top_module name="std_logic_1164" />
+            <top_module name="std_logic_arith" />
+            <top_module name="std_logic_unsigned" />
+            <top_module name="vcomponents" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <wvobject fp_name="/ef2_tb/n_dotclk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">n_dotclk</obj_property>
+      <obj_property name="ObjectShortName">n_dotclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/ef2_tb/phi2" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">phi2</obj_property>
+      <obj_property name="ObjectShortName">phi2</obj_property>
+   </wvobject>
+   <wvobject fp_name="/ef2_tb/uut/bus_next_state" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">bus_next_state</obj_property>
+      <obj_property name="ObjectShortName">bus_next_state</obj_property>
+   </wvobject>
+   <wvobject fp_name="/ef2_tb/uut/bus_current_state" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">bus_current_state</obj_property>
+      <obj_property name="ObjectShortName">bus_current_state</obj_property>
+   </wvobject>
+   <wvobject fp_name="/ef2_tb/uut/dotclk_cnt" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">dotclk_cnt[2:0]</obj_property>
+      <obj_property name="ObjectShortName">dotclk_cnt[2:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="group7" type="group">
+      <obj_property name="label">Expansion Port</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/ef2_tb/uut/bus_out_enable" type="other" db_ref_id="1">
+         <obj_property name="ElementShortName">bus_out_enable</obj_property>
+         <obj_property name="ObjectShortName">bus_out_enable</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/n_reset" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">n_reset</obj_property>
+         <obj_property name="ObjectShortName">n_reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/addr" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">addr[15:0]</obj_property>
+         <obj_property name="ObjectShortName">addr[15:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/data" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">data[7:0]</obj_property>
+         <obj_property name="ObjectShortName">data[7:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/n_wr" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">n_wr</obj_property>
+         <obj_property name="ObjectShortName">n_wr</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/n_io1" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">n_io1</obj_property>
+         <obj_property name="ObjectShortName">n_io1</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/n_io2" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">n_io2</obj_property>
+         <obj_property name="ObjectShortName">n_io2</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group37" type="group">
+      <obj_property name="label">Memory Bus</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/ef2_tb/uut/mem_data" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">mem_data[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mem_data[7:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/mem_addr" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">mem_addr[20:0]</obj_property>
+         <obj_property name="ObjectShortName">mem_addr[20:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/n_mem_wr" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">n_mem_wr</obj_property>
+         <obj_property name="ObjectShortName">n_mem_wr</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/n_mem_oe" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">n_mem_oe</obj_property>
+         <obj_property name="ObjectShortName">n_mem_oe</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/n_flash_cs" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">n_flash_cs</obj_property>
+         <obj_property name="ObjectShortName">n_flash_cs</obj_property>
+      </wvobject>
+      <wvobject fp_name="/ef2_tb/uut/n_ram_cs" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">n_ram_cs</obj_property>
+         <obj_property name="ObjectShortName">n_ram_cs</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>

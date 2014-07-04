@@ -1,0 +1,10 @@
+vhdl work src/ef3.vhdl
+vhdl work src/exp_bus_ctrl.vhdl
+vhdl work src/reset_generator.vhdl
+vhdl work src/freezer.vhdl
+vhdl work src/cart_easyflash.vhdl
+vhdl work src/cart_io2ram.vhdl
+vhdl work src/cart_kernal.vhdl
+vhdl work src/cart_ar.vhdl
+vhdl work src/cart_ss5.vhdl
+vhdl work src/cart_usb.vhdl

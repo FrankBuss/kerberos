@@ -1,0 +1,39 @@
+
+EasySplit is a program to compress and split files. It is mainly intended to
+be used with CRT files (cartridge images), but it may also be useful for
+other purposes. Exomizer is used for compression.
+
+File Format
+===========
+
+An EasySplit file contains data which is compressed in the same way as
+"exoraw -m 4096 -c" does it (exomizer 2 beta), i.e. max offset is 4k,
+no literal sequences are used. The compressed data is split into several
+files. Each of them has its own header.
+
+When the original file has a CBM-like start address, this is contained in
+the encrypted data transparently.
+This is the header for an EasySplit file:
+
+typedef struct EasySplitHeader_s
+{
+    /* PETSCII EASYSPLT (hex 65 61 73 79 73 70 6c 74) */
+    char    magic[8];
+
+    /* uncompressed file size (little endian) */
+    uint8_t len[4];
+
+    /*
+     * CRC-CCITT (start value 0xFFFF) of original file, little endian.
+     * When unpacking, you should at least check if all parts contain the
+     * same value to make sure not to mix parts of different files.
+     */
+    uint8_t crc16[2];
+
+    /* Number of this part (0 = "*.01", 1 = "*.02"...) */
+    uint8_t part;
+
+    /* Total number of parts */
+    uint8_t total;
+}
+EasySplitHeader;

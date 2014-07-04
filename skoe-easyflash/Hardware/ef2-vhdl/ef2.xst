@@ -1,0 +1,11 @@
+set -tmpdir synth/xst/tmp
+set -xsthdpdir synth/xst
+run
+-ifn ef2.prj
+-ifmt vhdl
+-ofn synth/ef2.ngc
+-ofmt NGC
+-p xc9500xl
+-top ef2
+-opt_mode Speed
+-opt_level 1

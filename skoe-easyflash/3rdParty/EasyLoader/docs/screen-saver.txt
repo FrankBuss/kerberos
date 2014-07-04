@@ -1,0 +1,24 @@
+
+um einen screen-saver im easyloader zu haben, muss man ein crt (incl. xbank)
+mit dem namen "!el_screen-saver" auf dem easyflash ablegen.
+
+wenn der bildschirmschoner aktiv wird, dann:
+ easyloader-bank: screensaver
+ easyloader-modus: 16k
+gestartet wird der screensaver mit:
+ jsr $8000 (normalerweise)
+ jsr $a000 (wenn crt=8k ultimax)
+
+am ende des screensavers muss ein
+ rts
+ausgefuehrt werden.
+
+der bildschirm liegt bei $0400
+
+benutzt werden darf folgender speicher:
+ $e0-$ff
+ $c000-$ffff (aber nicht das easyflash ram)
+
+vic + co koennen umgebogen werden, aber am ende muss alles wieder sein wie
+vorher, was auch den easyflash-modus (16k) bertrifft. (die easyflash-bank kann 
+belibig sein)

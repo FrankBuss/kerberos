@@ -1,0 +1,18 @@
+
+This directory contains files to create a simple but real EasyFlash CRT image.
+
+It contains the standard start-up code which scans the keyboard for "Run/Stop",
+"C=" and "Q". If one of these keys is pressed, 
+
+You'll need the acme assembler and the vice emulator installed.
+
+To create the CRT image, the tool bin2efcrt is used. This is invoked with a 
+relative path inside EasySDK. Simply make this tool first and then come back
+to this example.
+
+If you have GNU make, just run it. Otherwise you may want to execute the 
+commands from Makefile manually.
+
+To test the cartridge, run "x64 -cartcrt banking-test.crt" or attach it using
+"File => Attach a cartridge image => Smart attach CRT Image...".
+You can also write it to your EasyFlash.

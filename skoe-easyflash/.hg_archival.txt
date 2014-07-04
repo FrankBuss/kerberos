@@ -1,0 +1,5 @@
+repo: 931371b72f505909861186d41ecbf0f698befc1a
+node: fb0211ca1f867d42d1ef211df92b0f03025bec7b
+branch: default
+latesttag: EASYTRANSFER-1.2.0
+latesttagdistance: 12

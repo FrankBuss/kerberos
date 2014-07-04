@@ -1,0 +1,546 @@
+# EESchema Netlist Version 1.1 created  Tue 05 Jan 2010 23:15:55 CET
+(
+ ( /4A9711C2 SM0805 C1 1u
+  ( 1 +5V )
+  ( 2 GND )
+ )
+ ( /4A9711DD SM0805 C2 1u
+  ( 1 +3.3V )
+  ( 2 GND )
+ )
+ ( /4A8888AC SM0805 C3 100n
+  ( 1 GND )
+  ( 2 +3.3V )
+ )
+ ( /4A8888C4 SM0805 C4 100n
+  ( 1 GND )
+  ( 2 +3.3V )
+ )
+ ( /4A8B1B31 SM0805 C5 100n
+  ( 1 GND )
+  ( 2 +3.3V )
+ )
+ ( /4A8B1B32 SM0805 C6 100n
+  ( 1 GND )
+  ( 2 +3.3V )
+ )
+ ( /4AEAAE18 SM0805 C7 100n
+  ( 1 GND )
+  ( 2 +3.3V )
+ )
+ ( /4AC7D9E4 SM0805 C8 100n
+  ( 1 GND )
+  ( 2 +3.3V )
+ )
+ ( /4AC7DA22 SM0805 C9 100n
+  ( 1 GND )
+  ( 2 +3.3V )
+ )
+ ( /4AC7DA2B SM0805 C10 100n
+  ( 1 GND )
+  ( 2 +3.3V )
+ )
+ ( /4AE19E5E SM0805 C11 1u
+  ( 1 N-000108 )
+  ( 2 GND )
+ )
+ ( /4AE19FA2 SM0805 C12 1u
+  ( 1 N-000106 )
+  ( 2 GND )
+ )
+ ( /4AE19FBD SM0805 C13 1u
+  ( 1 N-000104 )
+  ( 2 GND )
+ )
+ ( /4AE19FC2 SM0805 C14 1u
+  ( 1 N-000102 )
+  ( 2 GND )
+ )
+ ( /4AF1D9F8 LED-1206 D1 LED,_2_mA,_1.8_V
+  ( 1 N-000113 )
+  ( 2 N-000011 )
+ )
+ ( /4A85D459 expansion-port J1 EXPANSION_PORT
+  ( 1 GND )
+  ( 2 +5V )
+  ( 3 +5V )
+  ( 4 N-000091 )
+  ( 5 N-000087 )
+  ( 6 /DOTCLOCK )
+  ( 7 N-000097 )
+  ( 8 N-000070 )
+  ( 9 N-000098 )
+  ( 10 N-000010 )
+  ( 11 N-000100 )
+  ( 12 N-000079 )
+  ( 13 N-000096 )
+  ( 14 N-000061 )
+  ( 15 N-000062 )
+  ( 16 N-000063 )
+  ( 17 N-000064 )
+  ( 18 N-000065 )
+  ( 19 N-000066 )
+  ( 20 N-000114 )
+  ( 21 N-000060 )
+  ( 22 GND )
+  ( A GND )
+  ( B N-000071 )
+  ( C N-000072 )
+  ( D N-000073 )
+  ( E N-000059 )
+  ( F /A15 )
+  ( H /A14 )
+  ( J /A13 )
+  ( K /A12 )
+  ( L /A11 )
+  ( M /A10 )
+  ( N /A9 )
+  ( P /A8 )
+  ( R /A7 )
+  ( S /A6 )
+  ( T /A5 )
+  ( U /A4 )
+  ( V /A3 )
+  ( W /A2 )
+  ( X /A1 )
+  ( Y /A0 )
+  ( Z GND )
+ )
+ ( /4A906805 6X1_50MIL P1 JTAG
+  ( 1 +3.3V )
+  ( 2 GND )
+  ( 3 N-000094 )
+  ( 4 N-000078 )
+  ( 5 N-000095 )
+  ( 6 N-000101 )
+ )
+ ( /4AF1FDF0 SMD-TESTPOINT P2 P
+  ( 1 N-000081 )
+ )
+ ( /4AF1FE17 SMD-TESTPOINT P3 P
+  ( 1 N-000083 )
+ )
+ ( /4AF1FE51 SMD-TESTPOINT P4 P
+  ( 1 N-000075 )
+ )
+ ( /4AF1FE21 SMD-TESTPOINT P5 P
+  ( 1 N-000092 )
+ )
+ ( /4AF87392 SMD-TESTPOINT P6 P
+  ( 1 N-000072 )
+ )
+ ( /4AF1DA06 SM0805 R1 750
+  ( 1 +3.3V )
+  ( 2 N-000113 )
+ )
+ ( /4AE19E42 SM0805 R2 1k
+  ( 1 /BUTTON_A )
+  ( 2 N-000108 )
+ )
+ ( /4AE19E37 SM0805 R3 33k
+  ( 1 +3.3V )
+  ( 2 /BUTTON_A )
+ )
+ ( /4AE19FA1 SM0805 R4 1k
+  ( 1 /BUTTON_B )
+  ( 2 N-000106 )
+ )
+ ( /4AE19FA0 SM0805 R5 33k
+  ( 1 +3.3V )
+  ( 2 /BUTTON_B )
+ )
+ ( /4AE19FBC SM0805 R6 1k
+  ( 1 /BUTTON_C )
+  ( 2 N-000104 )
+ )
+ ( /4AE19FBB SM0805 R7 33k
+  ( 1 +3.3V )
+  ( 2 /BUTTON_C )
+ )
+ ( /4AE19FC1 SM0805 R8 1k
+  ( 1 /BUTTON_D )
+  ( 2 N-000102 )
+ )
+ ( /4AE19FC0 SM0805 R9 33k
+  ( 1 +3.3V )
+  ( 2 /BUTTON_D )
+ )
+ ( /4A887EA6 RARRAY-8PIN-3.2x1.6 R20 4x47
+  ( 1 N-000061 )
+  ( 2 /D7 )
+  ( 3 N-000062 )
+  ( 4 /D6 )
+  ( 5 N-000063 )
+  ( 6 /D5 )
+  ( 7 N-000064 )
+  ( 8 /D4 )
+ )
+ ( /4A887E3D RARRAY-8PIN-3.2x1.6 R21 4x47
+  ( 1 N-000065 )
+  ( 2 /D3 )
+  ( 3 N-000066 )
+  ( 4 /D2 )
+  ( 5 N-000114 )
+  ( 6 /D1 )
+  ( 7 N-000060 )
+  ( 8 /D0 )
+ )
+ ( /4AE19D03 PTS645VH83 SW10 A
+  ( 1 GND )
+  ( 2 /BUTTON_A )
+ )
+ ( /4AE19F9F PTS645VH83 SW11 B
+  ( 1 GND )
+  ( 2 /BUTTON_B )
+ )
+ ( /4AE19FBA PTS645VH83 SW12 C
+  ( 1 GND )
+  ( 2 /BUTTON_C )
+ )
+ ( /4AE19FBF PTS645VH83 SW13 D
+  ( 1 GND )
+  ( 2 /BUTTON_D )
+ )
+ ( /4AC6646C TQFP100-OK U1 XC95144XL-TQ100
+  ( 1 N-000098 )
+  ( 2 /A15 )
+  ( 3 /A14 )
+  ( 4 /A13 )
+  ( 5 +3.3V )
+  ( 6 /A12 )
+  ( 7 /A11 )
+  ( 8 /A10 )
+  ( 9 /A9 )
+  ( 10 N-000010 )
+  ( 11 N-000100 )
+  ( 12 N-000079 )
+  ( 13 N-000096 )
+  ( 14 /A8 )
+  ( 15 /A7 )
+  ( 16 /A6 )
+  ( 17 /A5 )
+  ( 18 /D7 )
+  ( 19 /D6 )
+  ( 20 /D5 )
+  ( 21 GND )
+  ( 22 N-000059 )
+  ( 23 N-000099 )
+  ( 24 /D4 )
+  ( 25 /A4 )
+  ( 26 +3.3V )
+  ( 27 /D3 )
+  ( 28 /D2 )
+  ( 29 /D1 )
+  ( 30 /D0 )
+  ( 31 GND )
+  ( 32 /A3 )
+  ( 33 /A2 )
+  ( 34 /A1 )
+  ( 35 /A0 )
+  ( 36 N-000013 )
+  ( 37 N-000077 )
+  ( 38 +3.3V )
+  ( 39 N-000091 )
+  ( 40 N-000014 )
+  ( 41 N-000012 )
+  ( 42 N-000081 )
+  ( 43 N-000083 )
+  ( 44 GND )
+  ( 45 N-000094 )
+  ( 46 N-000075 )
+  ( 47 N-000078 )
+  ( 48 N-000095 )
+  ( 49 N-000092 )
+  ( 50 N-000011 )
+  ( 51 +3.3V )
+  ( 52 /MD0 )
+  ( 53 N-000111 )
+  ( 54 N-000086 )
+  ( 55 /MA1 )
+  ( 56 /MD1 )
+  ( 57 +3.3V )
+  ( 58 /MD2 )
+  ( 59 /MD3 )
+  ( 60 /MD4 )
+  ( 61 /MD5 )
+  ( 62 GND )
+  ( 63 /MD6 )
+  ( 64 /MD7 )
+  ( 65 /MA0 )
+  ( 66 /MA17 )
+  ( 67 /MA16 )
+  ( 68 /MA15 )
+  ( 69 GND )
+  ( 70 /MA14 )
+  ( 71 /MA13 )
+  ( 72 /MA12 )
+  ( 73 /MA11 )
+  ( 74 /MA10 )
+  ( 75 GND )
+  ( 76 /MA9 )
+  ( 77 /MA20 )
+  ( 78 /MWE )
+  ( 79 /MRESET )
+  ( 80 /MA19 )
+  ( 81 /MA18 )
+  ( 82 /MA8 )
+  ( 83 N-000101 )
+  ( 84 GND )
+  ( 85 /MA7 )
+  ( 86 /MA6 )
+  ( 87 /MA5 )
+  ( 88 +3.3V )
+  ( 89 /MA4 )
+  ( 90 /MA2 )
+  ( 91 /MA3 )
+  ( 92 /RAME )
+  ( 93 N-000071 )
+  ( 94 N-000087 )
+  ( 95 N-000073 )
+  ( 96 N-000097 )
+  ( 97 N-000070 )
+  ( 98 +3.3V )
+  ( 99 N-000072 )
+  ( 100 GND )
+ )
+ ( /4A8DAB88 TSOP1_48 U2 M29W160ET
+  ( 1 /MA16 )
+  ( 2 /MA15 )
+  ( 3 /MA14 )
+  ( 4 /MA13 )
+  ( 5 /MA12 )
+  ( 6 /MA11 )
+  ( 7 /MA10 )
+  ( 8 /MA9 )
+  ( 9 /MA20 )
+  ( 11 /MWE )
+  ( 12 /MRESET )
+  ( 15 ? )
+  ( 16 /MA19 )
+  ( 17 /MA18 )
+  ( 18 /MA8 )
+  ( 19 /MA7 )
+  ( 20 /MA6 )
+  ( 21 /MA5 )
+  ( 22 /MA4 )
+  ( 23 /MA3 )
+  ( 24 /MA2 )
+  ( 25 /MA1 )
+  ( 26 N-000086 )
+  ( 27 GND )
+  ( 28 N-000111 )
+  ( 29 /MD0 )
+  ( 30 ? )
+  ( 31 /MD1 )
+  ( 32 ? )
+  ( 33 /MD2 )
+  ( 34 ? )
+  ( 35 /MD3 )
+  ( 36 ? )
+  ( 37 +3.3V )
+  ( 38 /MD4 )
+  ( 39 ? )
+  ( 40 /MD5 )
+  ( 41 ? )
+  ( 42 /MD6 )
+  ( 43 ? )
+  ( 44 /MD7 )
+  ( 45 /MA0 )
+  ( 46 GND )
+  ( 47 GND )
+  ( 48 /MA17 )
+ )
+ ( /4AC7D88C TSOP2_44 U3 CY7C1049DV33_TSOP44II
+  ( 3 /MA3 )
+  ( 4 /MA2 )
+  ( 5 /MA4 )
+  ( 6 /MA5 )
+  ( 7 /MA6 )
+  ( 8 /RAME )
+  ( 9 /MD4 )
+  ( 10 /MD5 )
+  ( 11 +3.3V )
+  ( 12 GND )
+  ( 13 /MD6 )
+  ( 14 /MD7 )
+  ( 15 /MWE )
+  ( 16 /MA9 )
+  ( 17 /MA10 )
+  ( 18 /MA11 )
+  ( 19 /MA12 )
+  ( 20 /MA13 )
+  ( 26 /MA17 )
+  ( 27 /MA0 )
+  ( 28 /MA16 )
+  ( 29 /MA15 )
+  ( 30 /MA14 )
+  ( 31 /MD3 )
+  ( 32 /MD2 )
+  ( 33 +3.3V )
+  ( 34 GND )
+  ( 35 /MD1 )
+  ( 36 /MD0 )
+  ( 37 N-000111 )
+  ( 38 /MA1 )
+  ( 39 /MA18 )
+  ( 40 /MA8 )
+  ( 41 /MA7 )
+ )
+ ( /4AF1D258 SOT23-5 U4 LX8213-33
+  ( 1 +5V )
+  ( 2 GND )
+  ( 3 +5V )
+  ( 4 +3.3V )
+ )
+ ( /4AEAAC1E SSOP14 U5 74LVC14
+  ( 1 /BUTTON_A )
+  ( 2 N-000012 )
+  ( 3 /BUTTON_B )
+  ( 4 N-000014 )
+  ( 5 /BUTTON_C )
+  ( 6 N-000077 )
+  ( 7 GND )
+  ( 8 N-000013 )
+  ( 9 /BUTTON_D )
+  ( 12 N-000099 )
+  ( 13 /DOTCLOCK )
+  ( 14 +3.3V )
+ )
+)
+*
+{ Allowed footprints by component:
+$component C1
+ SM*
+ C?
+ C1-1
+$endlist
+$component C2
+ SM*
+ C?
+ C1-1
+$endlist
+$component C3
+ SM*
+ C?
+ C1-1
+$endlist
+$component C4
+ SM*
+ C?
+ C1-1
+$endlist
+$component C5
+ SM*
+ C?
+ C1-1
+$endlist
+$component C6
+ SM*
+ C?
+ C1-1
+$endlist
+$component C7
+ SM*
+ C?
+ C1-1
+$endlist
+$component C8
+ SM*
+ C?
+ C1-1
+$endlist
+$component C9
+ SM*
+ C?
+ C1-1
+$endlist
+$component C10
+ SM*
+ C?
+ C1-1
+$endlist
+$component C11
+ SM*
+ C?
+ C1-1
+$endlist
+$component C12
+ SM*
+ C?
+ C1-1
+$endlist
+$component C13
+ SM*
+ C?
+ C1-1
+$endlist
+$component C14
+ SM*
+ C?
+ C1-1
+$endlist
+$component D1
+ LED-3MM
+ LED-5MM
+ LED-10MM
+ LED-0603
+ LED-0805
+ LED-1206
+ LEDV
+$endlist
+$component J1
+ expansion-port
+$endlist
+$component R1
+ R?
+ SM0603
+ SM0805
+$endlist
+$component R2
+ R?
+ SM0603
+ SM0805
+$endlist
+$component R3
+ R?
+ SM0603
+ SM0805
+$endlist
+$component R4
+ R?
+ SM0603
+ SM0805
+$endlist
+$component R5
+ R?
+ SM0603
+ SM0805
+$endlist
+$component R6
+ R?
+ SM0603
+ SM0805
+$endlist
+$component R7
+ R?
+ SM0603
+ SM0805
+$endlist
+$component R8
+ R?
+ SM0603
+ SM0805
+$endlist
+$component R9
+ R?
+ SM0603
+ SM0805
+$endlist
+$component U3
+ TSOP*44
+$endlist
+$component U4
+ SOT23-5
+$endlist
+$endfootprintlist
+}

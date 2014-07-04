@@ -1,0 +1,19 @@
+#
+# copy this file to ~/.EasyLoader.rc
+#
+# cuncomment and change all lines which are not correct
+#
+
+#PHP5 = /path/to/php
+#JAVA = /path/to/java
+#KICKASS = /path/to/KickAss.jar
+#VICE = /path/to/x64
+#LOGUSER = the user which should be showed in the about dialog in EasyLoader, defaults to $USER
+
+#
+# uncomment one line and point it to a Package.rc (see tools/example.Package.rc)
+#
+
+#PACKAGE = /path/to/Tools.rc
+#PACKAGE = /path/to/Tools.rc
+#PACKAGE = /path/to/Tools.rc

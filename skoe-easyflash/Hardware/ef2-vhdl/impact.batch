@@ -1,0 +1,6 @@
+setMode -bs
+addDevice -p 1 -file ef2.jed
+setCable -port xsvf -file ef2.xsvf
+program -e -v -p 1
+closeCable
+quit

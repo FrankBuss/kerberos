@@ -1,0 +1,98 @@
+
+
+NET "n_exrom"       LOC = "P1";
+NET "addr<15>"      LOC = "P2";
+NET "addr<14>"      LOC = "P3";
+NET "addr<13>"      LOC = "P4";
+
+NET "addr<12>"      LOC = "P6";
+NET "addr<11>"      LOC = "P7";
+NET "addr<10>"      LOC = "P8";
+NET "addr<9>"       LOC = "P9";
+NET "n_io2"         LOC = "P10";
+NET "n_roml"        LOC = "P11";
+NET "ba"            LOC = "P12";
+NET "n_dma"         LOC = "P13";
+NET "addr<8>"       LOC = "P14";
+NET "addr<7>"       LOC = "P15";
+NET "addr<6>"       LOC = "P16";
+NET "addr<5>"       LOC = "P17";
+NET "data<7>"       LOC = "P18";
+NET "data<6>"       LOC = "P19";
+NET "data<5>"       LOC = "P20";	
+
+NET "phi2"          LOC = "P22";
+NET "n_dotclk"      LOC = "P23" | BUFG = CLK;
+NET "data<4>"       LOC = "P24";
+NET "addr<4>"       LOC = "P25";
+
+NET "data<3>"       LOC = "P27";
+NET "data<2>"       LOC = "P28";
+NET "data<1>"       LOC = "P29";
+NET "data<0>"       LOC = "P30";
+
+NET "addr<3>"       LOC = "P32";
+NET "addr<2>"       LOC = "P33";
+NET "addr<1>"       LOC = "P34";
+NET "addr<0>"       LOC = "P35";
+NET "button_d"      LOC = "P36";
+NET "button_c"      LOC = "P37";
+
+NET "n_irq"         LOC = "P39";
+NET "button_b"      LOC = "P40";
+NET "button_a"      LOC = "P41";
+NET "pad2"          LOC = "P42";
+NET "pad3"          LOC = "P43";
+
+NET "clk_out"       LOC = "P46";
+NET "clk_in"        LOC = "P49";
+NET "n_led"         LOC = "P50";
+
+NET "mem_data<0>"   LOC = "P52";
+NET "n_mem_oe"      LOC = "P53";
+NET "n_flash_cs"    LOC = "P54";
+NET "mem_addr<1>"   LOC = "P55";
+NET "mem_data<1>"   LOC = "P56";
+
+NET "mem_data<2>"   LOC = "P58";
+NET "mem_data<3>"   LOC = "P59";
+NET "mem_data<4>"   LOC = "P60";
+NET "mem_data<5>"   LOC = "P61";
+
+NET "mem_data<6>"   LOC = "P63";
+NET "mem_data<7>"   LOC = "P64";
+NET "mem_addr<0>"   LOC = "P65";
+NET "mem_addr<17>"  LOC = "P66";
+NET "mem_addr<16>"  LOC = "P67";
+NET "mem_addr<15>"  LOC = "P68";
+
+NET "mem_addr<14>"  LOC = "P70";
+NET "mem_addr<13>"  LOC = "P71";
+NET "mem_addr<12>"  LOC = "P72";
+NET "mem_addr<11>"  LOC = "P73";
+NET "mem_addr<10>"  LOC = "P74";
+
+NET "mem_addr<9>"   LOC = "P76";
+NET "mem_addr<20>"  LOC = "P77";
+NET "n_mem_wr"      LOC = "P78";
+NET "n_mem_reset"   LOC = "P79";
+NET "mem_addr<19>"  LOC = "P80";
+NET "mem_addr<18>"  LOC = "P81";
+NET "mem_addr<8>"   LOC = "P82";
+
+NET "mem_addr<7>"   LOC = "P85";
+NET "mem_addr<6>"   LOC = "P86";
+NET "mem_addr<5>"   LOC = "P87";
+
+NET "mem_addr<4>"   LOC = "P89";
+NET "mem_addr<2>"   LOC = "P90";
+NET "mem_addr<3>"   LOC = "P91";
+NET "n_ram_cs"      LOC = "P92";
+NET "n_romh"        LOC = "P93";
+NET "n_wr"          LOC = "P94";
+NET "n_nmi"         LOC = "P95";
+NET "n_io1"         LOC = "P96";
+NET "n_game"        LOC = "P97";
+
+NET "n_reset_io"    LOC = "P99";
+

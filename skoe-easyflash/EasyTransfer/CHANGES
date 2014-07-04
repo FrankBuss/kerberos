@@ -1,0 +1,13 @@
+
+Version 1.3.0 - 29.09.2013
+- Send Raw added
+- USB test added
+
+Version 1.2.0 - 06.02.2013
+- Fixed verify error which occurred on some drives, because the head
+  settle time was too short
+- The C64 code for disk write is now contained in the PC tools
+
+Version 1.1.0 - 26.01.2013
+- Initial version
+

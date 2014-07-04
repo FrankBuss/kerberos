@@ -1,0 +1,6 @@
+setMode -bs
+addDevice -p 1 -file ef3.jed
+setCable -port svf -file ef3.svf
+program -e -v -p 1
+closeCable
+quit

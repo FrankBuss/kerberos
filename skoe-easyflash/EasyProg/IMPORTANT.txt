@@ -1,0 +1,9 @@
+
+Beginning with version 1.5.0, EasyProg has a fast loader implemented
+for 1541, 1571 in 1541 mode, 1581 and sd2iec/uIEC.
+
+The fast loader for sd2iec/uIEC works only with sd2iec/uIEC
+firmware 0.10.2 or higher.
+
+If the fast loader does not work with your drive, you can disable
+it with "Options" => "Fast loader enabled: No".

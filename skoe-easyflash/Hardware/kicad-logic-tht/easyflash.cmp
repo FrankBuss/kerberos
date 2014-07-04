@@ -1,0 +1,178 @@
+Cmp-Mod V01 Created by CVpcb (20080825c) date = 9/8/2009-21:37:01
+
+BeginCmp
+TimeStamp = /4A257DFF;
+Reference = C1;
+ValeurCmp = 100n;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /49FC870C;
+Reference = C2;
+ValeurCmp = 100n;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /49FC8714;
+Reference = C3;
+ValeurCmp = 100n;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /49FC8717;
+Reference = C4;
+ValeurCmp = 100n;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A257DE3;
+Reference = C5;
+ValeurCmp = 100n;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A4BC41A;
+Reference = C6;
+ValeurCmp = 100n;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A4BC464;
+Reference = C7;
+ValeurCmp = 100n;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A4E241E;
+Reference = C8;
+ValeurCmp = 100n;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A2EA77D;
+Reference = D1;
+ValeurCmp = LED_2mA_type;
+IdModule  = LEDV;
+EndCmp
+
+BeginCmp
+TimeStamp = /49FB6860;
+Reference = J1;
+ValeurCmp = EXPANSION_PORT;
+IdModule  = expansion-port;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A2EA694;
+Reference = JP1;
+ValeurCmp = BOOT;
+IdModule  = PIN_ARRAY_2X1;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A4E22ED;
+Reference = R1;
+ValeurCmp = 10k;
+IdModule  = R3;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A2EA771;
+Reference = R2;
+ValeurCmp = 1k5;
+IdModule  = R3;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A2579DA;
+Reference = R3;
+ValeurCmp = 10k;
+IdModule  = R3;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A4BBD3F;
+Reference = R4;
+ValeurCmp = 4_x_100;
+IdModule  = SIL-8;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A4BBFE2;
+Reference = R5;
+ValeurCmp = 4_x_100;
+IdModule  = SIL-8;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A4BC576;
+Reference = SW1;
+ValeurCmp = RESET;
+IdModule  = PIN_ARRAY_2X1;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A7E0156;
+Reference = U1;
+ValeurCmp = 74HCT00;
+IdModule  = 14DIP-ELL300;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A490D76;
+Reference = U2;
+ValeurCmp = 74HCT02;
+IdModule  = 14DIP-ELL300;
+EndCmp
+
+BeginCmp
+TimeStamp = /49FDE452;
+Reference = U3;
+ValeurCmp = Am29F040;
+IdModule  = PLCC32MS;
+EndCmp
+
+BeginCmp
+TimeStamp = /49FDE408;
+Reference = U4;
+ValeurCmp = Am29F040;
+IdModule  = PLCC32MS;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A2EA14C;
+Reference = U5;
+ValeurCmp = 74HCT175;
+IdModule  = 16DIP-ELL300;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A25760B;
+Reference = U6;
+ValeurCmp = 74HCT174;
+IdModule  = 16DIP-ELL300;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A3D442F;
+Reference = U7;
+ValeurCmp = 74HCT74;
+IdModule  = 14DIP-ELL300;
+EndCmp
+
+BeginCmp
+TimeStamp = /4A4E13DB;
+Reference = U8;
+ValeurCmp = SRAM-6264;
+IdModule  = 28DIP-ELL600;
+EndCmp
+
+EndListe

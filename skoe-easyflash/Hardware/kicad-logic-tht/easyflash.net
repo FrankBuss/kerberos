@@ -1,0 +1,695 @@
+# EESchema Netlist Version 1.1 created  16/8/2009-19:52:42
+(
+ ( /4A7E0156 $noname  U1 74HCT00 {Lib=74HCT00}
+  (    1 /PHI2 )
+  (    2 /PULLUP )
+  (    3 N-000031 )
+  (    4 /WEIO1 )
+  (    5 //A1 )
+  (    6 //DE00 )
+  (    7 GND )
+  (    8 //DE02 )
+  (    9 /WEIO1 )
+  (   10 /A1 )
+  (   11 //A1 )
+  (   12 /A1 )
+  (   13 /PULLUP )
+  (   14 VCC )
+ )
+ ( /4A4E241E $noname  C8 100n {Lib=C}
+  (    1 VCC )
+  (    2 GND )
+ )
+ ( /4A4BC464 $noname  C7 100n {Lib=C}
+  (    1 VCC )
+  (    2 GND )
+ )
+ ( /4A4E22ED $noname  R1 10k {Lib=R}
+  (    1 VCC )
+  (    2 /PULLUP )
+ )
+ ( /4A4E13DB $noname  U8 SRAM-6264 {Lib=SRAM-6264}
+  (    2 GND )
+  (    3 /A7 )
+  (    4 /A6 )
+  (    5 /A5 )
+  (    6 /A4 )
+  (    7 /A3 )
+  (    8 /A2 )
+  (    9 /A1 )
+  (   10 /A0 )
+  (   11 /D0 )
+  (   12 /D1 )
+  (   13 /D2 )
+  (   14 GND )
+  (   15 /D3 )
+  (   16 /D4 )
+  (   17 /D5 )
+  (   18 /D6 )
+  (   19 /D7 )
+  (   20 //IO2 )
+  (   21 GND )
+  (   22 //OE )
+  (   23 GND )
+  (   24 GND )
+  (   25 GND )
+  (   26 /PULLUP )
+  (   27 //WE )
+  (   28 VCC )
+ )
+ ( /4A4BC576 $noname  SW1 RESET {Lib=SW_PUSH}
+  (    1 GND )
+  (    2 //RESET )
+ )
+ ( /4A4BC41A $noname  C6 100n {Lib=C}
+  (    1 VCC )
+  (    2 GND )
+ )
+ ( /4A257DE3 $noname  C5 100n {Lib=C}
+  (    1 VCC )
+  (    2 GND )
+ )
+ ( /49FC8717 $noname  C4 100n {Lib=C}
+  (    1 VCC )
+  (    2 GND )
+ )
+ ( /4A4BBFE2 $noname  R5 4_x_100 {Lib=RNET4-8}
+  (    1 N-000034 )
+  (    2 /D3 )
+  (    3 N-000026 )
+  (    4 /D2 )
+  (    5 N-000035 )
+  (    6 /D1 )
+  (    7 N-000025 )
+  (    8 /D0 )
+ )
+ ( /4A4BBD3F $noname  R4 4_x_100 {Lib=RNET4-8}
+  (    1 N-000032 )
+  (    2 /D7 )
+  (    3 N-000028 )
+  (    4 /D6 )
+  (    5 N-000033 )
+  (    6 /D5 )
+  (    7 N-000027 )
+  (    8 /D4 )
+ )
+ ( /4A490D76 $noname  U2 74HCT02 {Lib=74HCT02}
+  (    1 //GAME )
+  (    2 N-000049 )
+  (    3 N-000022 )
+  (    4 N-000049 )
+  (    5 N-000003 )
+  (    6 N-000021 )
+  (    7 GND )
+  (    8 //WE )
+  (    9 //IO1 )
+  (   10 /WEIO1 )
+  (   11 N-000031 )
+  (   12 //WR )
+  (   13 //OE )
+  (   14 VCC )
+ )
+ ( /4A3D442F $noname  U7 74HCT74 {Lib=74LS74}
+  (    1 //OE )
+  (    2 N-000030 )
+  (    3 /DCLK )
+  (    4 /PULLUP )
+  (    5 ? )
+  (    6 //WE )
+  (    7 GND )
+  (    8 ? )
+  (    9 N-000030 )
+  (   10 /PULLUP )
+  (   11 /DCLK )
+  (   12 //WE )
+  (   13 /PHI2 )
+  (   14 VCC )
+ )
+ ( /4A2EA77D $noname  D1 LED_2mA_type {Lib=LED}
+  (    1 N-000020 )
+  (    2 N-000029 )
+ )
+ ( /4A2EA771 $noname  R2 1k5 {Lib=R}
+  (    1 VCC )
+  (    2 N-000020 )
+ )
+ ( /4A2EA694 $noname  JP1 BOOT {Lib=JUMPER}
+  (    1 GND )
+  (    2 N-000003 )
+ )
+ ( /4A2EA14C $noname  U5 74HCT175 {Lib=74LS175}
+  (    1 //RESET )
+  (    2 N-000022 )
+  (    3 ? )
+  (    4 /D0 )
+  (    5 /D1 )
+  (    6 //EXROM )
+  (    7 ? )
+  (    8 GND )
+  (    9 //DE02 )
+  (   10 N-000021 )
+  (   11 ? )
+  (   12 /D2 )
+  (   13 /D7 )
+  (   14 N-000029 )
+  (   15 ? )
+  (   16 VCC )
+ )
+ ( /4A257DFF $noname  C1 100n {Lib=C}
+  (    1 VCC )
+  (    2 GND )
+ )
+ ( /4A2579DA $noname  R3 10k {Lib=R}
+  (    1 VCC )
+  (    2 N-000003 )
+ )
+ ( /4A25760B $noname  U6 74HCT174 {Lib=74LS174}
+  (    1 //RESET )
+  (    2 /BA13 )
+  (    3 /D0 )
+  (    4 /D1 )
+  (    5 /BA14 )
+  (    6 /D2 )
+  (    7 /BA15 )
+  (    8 GND )
+  (    9 //DE00 )
+  (   10 /BA16 )
+  (   11 /D3 )
+  (   12 /BA17 )
+  (   13 /D4 )
+  (   14 /D5 )
+  (   15 /BA18 )
+  (   16 VCC )
+ )
+ ( /49FDE452 $noname  U3 Am29F040 {Lib=29F040}
+  (    1 /BA18 )
+  (    2 /BA16 )
+  (    3 /BA15 )
+  (    4 /A12 )
+  (    5 /A7 )
+  (    6 /A6 )
+  (    7 /A5 )
+  (    8 /A4 )
+  (    9 /A3 )
+  (   10 /A2 )
+  (   11 /A1 )
+  (   12 /A0 )
+  (   13 /D0 )
+  (   14 /D1 )
+  (   15 /D2 )
+  (   16 GND )
+  (   17 /D3 )
+  (   18 /D4 )
+  (   19 /D5 )
+  (   20 /D6 )
+  (   21 /D7 )
+  (   22 N-000019 )
+  (   23 /A10 )
+  (   24 //OE )
+  (   25 /A11 )
+  (   26 /A9 )
+  (   27 /A8 )
+  (   28 /BA13 )
+  (   29 /BA14 )
+  (   30 /BA17 )
+  (   31 //WE )
+  (   32 VCC )
+ )
+ ( /49FDE408 $noname  U4 Am29F040 {Lib=29F040}
+  (    1 /BA18 )
+  (    2 /BA16 )
+  (    3 /BA15 )
+  (    4 /A12 )
+  (    5 /A7 )
+  (    6 /A6 )
+  (    7 /A5 )
+  (    8 /A4 )
+  (    9 /A3 )
+  (   10 /A2 )
+  (   11 /A1 )
+  (   12 /A0 )
+  (   13 /D0 )
+  (   14 /D1 )
+  (   15 /D2 )
+  (   16 GND )
+  (   17 /D3 )
+  (   18 /D4 )
+  (   19 /D5 )
+  (   20 /D6 )
+  (   21 /D7 )
+  (   22 //ROML )
+  (   23 /A10 )
+  (   24 //OE )
+  (   25 /A11 )
+  (   26 /A9 )
+  (   27 /A8 )
+  (   28 /BA13 )
+  (   29 /BA14 )
+  (   30 /BA17 )
+  (   31 //WE )
+  (   32 VCC )
+ )
+ ( /49FC8714 $noname  C3 100n {Lib=C}
+  (    1 VCC )
+  (    2 GND )
+ )
+ ( /49FC870C $noname  C2 100n {Lib=C}
+  (    1 VCC )
+  (    2 GND )
+ )
+ ( /49FB6860 $noname  J1 EXPANSION_PORT {Lib=EXPANSION_PORT}
+  (    Z GND )
+  (    Y /A0 )
+  (    X /A1 )
+  (    W /A2 )
+  (    V /A3 )
+  (    U /A4 )
+  (    T /A5 )
+  (    S /A6 )
+  (    R /A7 )
+  (    P /A8 )
+  (    N /A9 )
+  (    M /A10 )
+  (    L /A11 )
+  (    K /A12 )
+  (    J ? )
+  (    H ? )
+  (    F ? )
+  (    E /PHI2 )
+  (    D ? )
+  (    C //RESET )
+  (    B N-000019 )
+  (    A GND )
+  (    1 GND )
+  (    2 VCC )
+  (    3 VCC )
+  (    4 ? )
+  (    5 //WR )
+  (    6 /DCLK )
+  (    7 //IO1 )
+  (    8 //GAME )
+  (    9 //EXROM )
+  (   10 //IO2 )
+  (   11 //ROML )
+  (   12 ? )
+  (   13 ? )
+  (   14 N-000032 )
+  (   15 N-000028 )
+  (   16 N-000033 )
+  (   17 N-000027 )
+  (   18 N-000034 )
+  (   19 N-000026 )
+  (   20 N-000035 )
+  (   21 N-000025 )
+  (   22 GND )
+ )
+)
+*
+{ Allowed footprints by component:
+$component U1
+ 14DIP300*
+ SO14*
+$endlist
+$component C8
+ SM*
+ C?
+ C1-1
+$endlist
+$component C7
+ SM*
+ C?
+ C1-1
+$endlist
+$component R1
+ R?
+ SM0603
+ SM0805
+$endlist
+$component C6
+ SM*
+ C?
+ C1-1
+$endlist
+$component C5
+ SM*
+ C?
+ C1-1
+$endlist
+$component C4
+ SM*
+ C?
+ C1-1
+$endlist
+$component U2
+ SO14*
+ 14DIP*
+$endlist
+$component R2
+ R?
+ SM0603
+ SM0805
+$endlist
+$component C1
+ SM*
+ C?
+ C1-1
+$endlist
+$component R3
+ R?
+ SM0603
+ SM0805
+$endlist
+$component C3
+ SM*
+ C?
+ C1-1
+$endlist
+$component C2
+ SM*
+ C?
+ C1-1
+$endlist
+$component J1
+ expansion-port
+$endlist
+$endfootprintlist
+}
+{ Pin List by Nets
+/Net 1 "A1"
+ U1 12
+ U1 10
+ U8 9
+ U3 11
+ U4 11
+ J1 X
+/Net 2 "/A1"
+ U1 11
+ U1 5
+Net 3 ""
+ U2 5
+ JP1 2
+ R3 2
+/Net 4 "D6"
+ U8 18
+ R4 4
+ U3 20
+ U4 20
+/Net 5 "D7"
+ U8 19
+ R4 2
+ U5 13
+ U3 21
+ U4 21
+/Net 6 "D4"
+ U8 16
+ R4 8
+ U6 13
+ U3 18
+ U4 18
+/Net 7 "D5"
+ U8 17
+ R4 6
+ U6 14
+ U3 19
+ U4 19
+/Net 8 "D2"
+ U8 13
+ R5 4
+ U5 12
+ U6 6
+ U3 15
+ U4 15
+/Net 9 "D3"
+ U8 15
+ R5 2
+ U6 11
+ U3 17
+ U4 17
+/Net 10 "D0"
+ U8 11
+ R5 8
+ U5 4
+ U6 3
+ U3 13
+ U4 13
+/Net 11 "D1"
+ U8 12
+ R5 6
+ U5 5
+ U6 4
+ U3 14
+ U4 14
+/Net 12 "A6"
+ U8 4
+ U3 6
+ U4 6
+ J1 S
+/Net 13 "A7"
+ U8 3
+ U3 5
+ U4 5
+ J1 R
+/Net 14 "A2"
+ U8 8
+ U3 10
+ U4 10
+ J1 W
+/Net 15 "A3"
+ U8 7
+ U3 9
+ U4 9
+ J1 V
+/Net 16 "A4"
+ U8 6
+ U3 8
+ U4 8
+ J1 U
+/Net 17 "A5"
+ U8 5
+ U3 7
+ U4 7
+ J1 T
+/Net 18 "A0"
+ U8 10
+ U3 12
+ U4 12
+ J1 Y
+Net 19 ""
+ U3 22
+ J1 B
+Net 20 ""
+ D1 1
+ R2 2
+Net 21 ""
+ U2 6
+ U5 10
+Net 22 ""
+ U2 3
+ U5 2
+/Net 23 "/GAME"
+ U2 1
+ J1 8
+/Net 24 "/ROML"
+ U4 22
+ J1 11
+Net 25 ""
+ R5 7
+ J1 21
+Net 26 ""
+ R5 3
+ J1 19
+Net 27 ""
+ R4 7
+ J1 17
+Net 28 ""
+ R4 3
+ J1 15
+Net 29 ""
+ D1 2
+ U5 14
+Net 30 ""
+ U7 9
+ U7 2
+Net 31 ""
+ U1 3
+ U2 11
+Net 32 ""
+ R4 1
+ J1 14
+Net 33 ""
+ R4 5
+ J1 16
+Net 34 ""
+ R5 1
+ J1 18
+Net 35 ""
+ R5 5
+ J1 20
+/Net 36 "/WR"
+ U2 12
+ J1 5
+/Net 37 "DCLK"
+ U7 11
+ U7 3
+ J1 6
+/Net 38 "A8"
+ U3 27
+ U4 27
+ J1 P
+/Net 39 "A9"
+ U3 26
+ U4 26
+ J1 N
+/Net 40 "A10"
+ U3 23
+ U4 23
+ J1 M
+/Net 41 "A11"
+ U3 25
+ U4 25
+ J1 L
+/Net 42 "A12"
+ U3 4
+ U4 4
+ J1 K
+/Net 43 "BA13"
+ U6 2
+ U3 28
+ U4 28
+/Net 44 "BA14"
+ U6 5
+ U3 29
+ U4 29
+/Net 45 "BA15"
+ U6 7
+ U3 3
+ U4 3
+/Net 46 "BA16"
+ U6 10
+ U3 2
+ U4 2
+/Net 47 "BA17"
+ U6 12
+ U3 30
+ U4 30
+/Net 48 "BA18"
+ U6 15
+ U3 1
+ U4 1
+Net 49 ""
+ U2 2
+ U2 4
+/Net 50 "/IO2"
+ U8 20
+ J1 10
+/Net 51 "/EXROM"
+ U5 6
+ J1 9
+/Net 52 "/IO1"
+ U2 9
+ J1 7
+/Net 53 "/DE02"
+ U1 8
+ U5 9
+Net 54 "GND"
+ U1 7
+ U1 7
+ U1 7
+ U1 7
+ C8 2
+ C7 2
+ U8 2
+ U8 23
+ U8 21
+ U8 24
+ U8 25
+ U8 14
+ SW1 1
+ C6 2
+ C5 2
+ C4 2
+ U2 7
+ U2 7
+ U7 7
+ U7 7
+ JP1 1
+ U2 7
+ U2 7
+ U5 8
+ C1 2
+ U6 8
+ U3 16
+ U4 16
+ C3 2
+ C2 2
+ J1 22
+ J1 1
+ J1 Z
+ J1 A
+Net 55 "VCC"
+ U1 14
+ U1 14
+ U1 14
+ U1 14
+ C8 1
+ C7 1
+ R1 1
+ U8 28
+ C6 1
+ C5 1
+ C4 1
+ U2 14
+ U2 14
+ U7 14
+ U7 14
+ R2 1
+ U2 14
+ U2 14
+ U5 16
+ C1 1
+ R3 1
+ U6 16
+ U3 32
+ U4 32
+ C3 1
+ C2 1
+ J1 3
+ J1 2
+/Net 56 "WEIO1"
+ U1 9
+ U1 4
+ U2 10
+/Net 58 "/DE00"
+ U1 6
+ U6 9
+/Net 59 "/OE"
+ U8 22
+ U7 1
+ U2 13
+ U3 24
+ U4 24
+/Net 60 "/WE"
+ U8 27
+ U7 12
+ U7 6
+ U2 8
+ U3 31
+ U4 31
+/Net 61 "/RESET"
+ SW1 2
+ U5 1
+ U6 1
+ J1 C
+/Net 62 "PHI2"
+ U1 1
+ U7 13
+ J1 E
+/Net 64 "PULLUP"
+ U1 13
+ U1 2
+ R1 2
+ U8 26
+ U7 10
+ U7 4
+}
+#End

@@ -1,0 +1,8 @@
+
+
+To see the output done by these functions on vice stdout, use this
+command line:
+
+x64sc -prtxtdev1 /dev/tty -pruser <your-program>
+
+Note that "-prtextdevice" must be given before "-pruser".

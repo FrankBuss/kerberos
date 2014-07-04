@@ -1,0 +1,53 @@
+
+Quick Regression Test for EasyFlash 3 CPLD Core
+===============================================
+
+Results:
+N/A     test not applicable for this machine
+.       not tested
+OK      test passed
+FAIL    test failed
+
+Edit the 1st three columns according to the devices tested, also note if it is
+PAL or NTSC and the board revision, if known.
+
+C64 PAL C64 PAL PAL
+250407  250469  C128
+===============================================================================
+.       OK      OK      Start PoP from EF, start level 1
+                        (2 MHz mode on C128)
+
+.       OK      OK      Kill cartridge (<K>) and test One-Der,
+                        loaded from disk (CSDB ID 11692)
+
+.       OK      N/A     Start the Exos V3 KERNAL and test One-Der,
+                        loaded from disk (CSDB ID 11692)
+
+.       OK      OK      Start Retro Replay (<R>), press <F7> and test
+                        Uridium Plus, loaded from disk
+                        (CSDB ID 39170, 2 MHz mode on C128)
+
+.       .       .       Freeze Uridium Plus in level 1 ("Special" button) and
+                        restart it (F3), do this several times
+                        Note: On C128 about 3 of 4 freezes must work, some may
+                        fail because of the 2 MHz mode
+
+.       .       OK      Start Super Snapshot 5 (<S>), press <F7> and test
+                        Uridium Plus, loaded from disk
+                        (CSDB ID 39170, 2 MHz mode on C128)
+
+.       .       .       Freeze Uridium Plus in level 1 ("Special" button) and
+                        restart it (<7>), do this several times
+                        Note: On C128 about 3 of 4 freezes must work, some may
+                        fail because of the 2 MHz mode
+
+.       .       OK      Start Retro Replay (<R>), press <F3> or <F7> and start
+                        Acid Ramtest (CDSB ID 93727)
+                        It should score exactly 39 points
+
+.       OK      OK      Flash a CRT file over USB
+
+.       OK      N/A     Enter the EF3 menu, run a program over USB
+
+.       .       .       Run the Torture Test in EasyProg, let it run for at
+                        least one test loop

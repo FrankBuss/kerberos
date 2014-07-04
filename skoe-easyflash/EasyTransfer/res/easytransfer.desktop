@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=EasyTransfer
+Comment=Compress and split files. 
+TryExec=easytransfer
+Exec=easytransfer %F
+Icon=/usr/local/share/easytransfer/res/easytransfer.png
+Categories=Utility;

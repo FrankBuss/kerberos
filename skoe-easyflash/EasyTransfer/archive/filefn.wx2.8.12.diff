@@ -1,0 +1,23 @@
+Index: filefn.h
+===================================================================
+--- filefn.h	(Revision 69439)
++++ filefn.h	(Arbeitskopie)
+@@ -210,7 +210,8 @@
+     // to avoid using them as they're not present in earlier versions and
+     // always using the native functions spelling is easier than testing for
+     // the versions
+-    #if defined(__BORLANDC__) || defined(__DMC__) || defined(__WATCOMC__) || defined(__MINGW64__)
++    #if defined(__BORLANDC__) || defined(__DMC__) || defined(__WATCOMC__) || \
++	    defined(__MINGW64_VERSION_MAJOR)
+         #define wxPOSIX_IDENT(func)    ::func
+     #else // by default assume MSVC-compatible names
+         #define wxPOSIX_IDENT(func)    _ ## func
+@@ -245,7 +246,7 @@
+     #endif
+ 
+     #ifdef wxHAS_HUGE_FILES
+-        #ifndef __MINGW64__
++        #ifndef __MINGW64_VERSION_MAJOR
+             #define   wxSeek       wxPOSIX_IDENT(lseeki64)
+             #define   wxLseek      wxPOSIX_IDENT(lseeki64)
+             #define   wxTell       wxPOSIX_IDENT(telli64)

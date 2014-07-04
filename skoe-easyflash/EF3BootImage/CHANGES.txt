@@ -1,0 +1,16 @@
+
+Version 1.2.0 - 06.02.2013
+- Menu can be controlled with joystick in port 2
+- Disk write is no longer part of the menu, it comes along with EasyTransfer
+
+Version 1.1.0 - 26.01.2013
+- Menu: <Shift> leads to additional menu entries
+- <Shift>+V to display version numbers
+- D64 writer and PRG starter over USB added
+- Contains EasyProg 1.7.0 (Can flash CRT files over USB)
+- Warning if wrong jumper setting is detected
+
+Version 1.0.4 - 07.01.2012
+- Contains EasyProg 1.6.3
+- Menu entries are also greyed out if the slot contains a torture test pattern
+
