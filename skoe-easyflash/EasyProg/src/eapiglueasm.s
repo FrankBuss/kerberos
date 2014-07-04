@@ -473,17 +473,7 @@ _aEAPIDrivers:
 
 EAPICode1:
 @CodeStart:
-.incbin "obj/eapi-am29f040-14", 2
-.res $0300 - (* - @CodeStart), $ff
-
-EAPICode2:
-@CodeStart:
-.incbin "obj/eapi-m29w160t-03", 2
-.res $0300 - (* - @CodeStart), $ff
-
-EAPICode3:
-@CodeStart:
-.incbin "obj/eapi-mx29640b-12", 2
+.incbin "obj/eapi-sst39vf1681", 2
 .res $0300 - (* - @CodeStart), $ff
 
 EAPICodeEnd:

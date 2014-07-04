@@ -51,6 +51,8 @@
 
 #undef SHOW_HEAP_FREE
 
+#define KERBEROS_CONTROL    *((uint8_t*) 0xde3e)
+
 /******************************************************************************/
 static void showAbout(void);
 static void toggleFastLoader(void);
@@ -634,6 +636,9 @@ int main(void)
 {
     char key;
     const char* pStrUSBCmd;
+
+    // enable EasyFlash mode, disable MIDI, enable RAM, set EXROM=1 and GAME=1, address bit 20 = 1
+    KERBEROS_CONTROL = 0x67;
 
     timerInitTOD();
     screenInit();
