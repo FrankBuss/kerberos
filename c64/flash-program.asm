@@ -52,7 +52,7 @@ start:
 		// check flash ID
 		jsr flashReadId
 		lda #3
-		sta $df3e			// turn off Ultimax mode and disable module
+		sta $de3e			// turn off Ultimax mode and disable module
 		cpx #$bf
 		bne flashDetectionError
 		cpy #$c8
@@ -70,6 +70,7 @@ flashOk:	// show ok message
 		lda #<flashDetectedMessage
 		ldx #>flashDetectedMessage
 		jsr printString
+//		jsr flashErase
 
 /*
 		// debug output flash contents
@@ -86,7 +87,7 @@ out_test:	txa
 		jsr flashReadByte
 		tay
 		lda #3
-		sta $df3e			// turn off Ultimax mode and disable module
+		sta $de3e			// turn off Ultimax mode and disable module
 		pla
 		pha
 		tax
@@ -106,7 +107,7 @@ out_test:	txa
 		cpx #40
 		bne out_test
 		lda #3
-		sta $df3e			// turn off Ultimax mode and disable module
+		sta $de3e			// turn off Ultimax mode and disable module
 		lda #$9b
 		sta $d011
  !:		jmp !-
@@ -147,7 +148,7 @@ program_loop:	// erase sector: two 4k sectors for each 8k bank
 
 		// program next byte
 !:		lda #3
-		sta $df3e			// turn off Ultimax mode and disable module
+		sta $de3e			// turn off Ultimax mode and disable module
 		ldy #0
 		inc $d020
 		lda #$31
@@ -213,7 +214,7 @@ fatalError:	jsr flash_end
 		// turn off Ultimax mode and disable module
 flash_end:	sei
 		lda #3
-		sta $df3e			// turn off Ultimax mode and disable module
+		sta $de3e			// turn off Ultimax mode and disable module
 
 		// show screen
 		lda #$9b

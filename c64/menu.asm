@@ -24,7 +24,7 @@
 // number of 8k blocks per slot
 .var slotBlockCount = 8
 
-.var bankswitchRegister = $df3f
+.var bankswitchRegister = $de3f
 
 // 192 bytes datasette buffer, for routines which need to run from RAM
 .var datasetteBuffer = $033C
@@ -309,7 +309,7 @@ init:		sei
 
 		// turn module ROM off
 		lda #$0b
-		sta $df3e
+		sta $de3e
 
 		// KERNAL reset routine
 		jsr $fda3		// IOINIT - Init CIA chips
@@ -329,7 +329,7 @@ init:		sei
 
 		// turn module ROM on
 		lda #$09
-		sta $df3e
+		sta $de3e
 
 		// show screen
 		jsr showStartscreen
@@ -422,7 +422,7 @@ startProgram:
 
 		// turn module off
 		lda #$0b
-		sta $df3e
+		sta $de3e
 		lda prgStart
 		beq testHigh
 		cmp #$01
@@ -446,7 +446,7 @@ testHigh:	lda prgStart+1
 		
 basicReset:	// turn module off
 		lda #$0b
-		sta $df3e
+		sta $de3e
 
 		// reset
 		jmp $fce2
@@ -495,7 +495,7 @@ copyRom3:	dec prgLength
 		bne copyRom1
 		// module on
 		lda #$09
-		sta $df3e
+		sta $de3e
 		lda #0
 		sta bankswitchRegister
 		jsr showTransferEnd

@@ -54,18 +54,18 @@ flash_write:	pha
 		lsr
 		lsr
 		lsr
-		sta $df3f
+		sta $de3f
 		txa
 		and #$1f
 		clc
 		adc #$80
 		sta sta_addr+2
 		lda #2
-		sta $df3e
+		sta $de3e
 		pla
 sta_addr:	sta $8000  // dummy address, self modifying code
 		lda #1
-		sta $df3e
+		sta $de3e
 		rts
 
 		// convert address in program_dst+2/+1/+0 to flashBank/flashHigh/flashLow
@@ -125,7 +125,7 @@ flashConvertAdr:
 flashProgramByte:
 		sta tmp1
 		lda flashBank
-		sta $df3f
+		sta $de3f
 		lda flashHigh
 		sta staLoc+2
 		sta ldaLoc+2
@@ -134,7 +134,7 @@ flashProgramByte:
 		sta ldaLoc+1
 		ldx #0
 programStart:	lda #2
-		sta $df3e
+		sta $de3e
 		lda #$aa
 		sta $8aaa
 		lda #$55
@@ -144,7 +144,7 @@ programStart:	lda #2
 		lda tmp1
 staLoc:		sta $8000  // dummy address, self modifying code
 		lda #1
-		sta $df3e
+		sta $de3e
 		// max 10 us for byte programming, wait a bit longer
 		ldy #15
 !:		dey
@@ -162,9 +162,9 @@ ldaLoc:		lda $8000  // dummy address, self modifying code
 		// and returns in in accu
 flashReadByte:
 		lda flashBank
-		sta $df3f
+		sta $de3f
 		lda #1
-		sta $df3e
+		sta $de3e
 		lda flashHigh
 		sta ldaLoc2+2
 		lda flashLow
@@ -175,8 +175,25 @@ ldaLoc2:	lda $8000  // dummy address, self modifying code
 		// erase flash
 flashErase:	lda #$80
 		jsr flash_cmd
+
+		// $aaa = $aa
+		lda #$aa
+		ldx #$0a
+		ldy #$aa
+		jsr flash_write
+
+		// $555 = $55
+		lda #$55
+		ldx #$05
+		ldy #$55
+		jsr flash_write
+
+		// $aaa = $10
 		lda #$10
-		jsr flash_cmd
+		ldx #$0a
+		ldy #$aa
+		jsr flash_write
+
 		jmp wait_300_ms
 
 		// erase flash sector (4k, sector start address in flashBank/flashHigh/flashLow)
@@ -202,13 +219,13 @@ flashSectorErase:
 		jsr flash_write
 		
 		lda flashBank
-		sta $df3f
+		sta $de3f
 		lda #2
-		sta $df3e
+		sta $de3e
 		lda #$50
 staLoc2:	sta $8000
 		lda #1
-		sta $df3e
+		sta $de3e
 		jmp wait_300_ms
 
 		// write flash command in accu

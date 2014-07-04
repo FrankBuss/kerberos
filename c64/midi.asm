@@ -1,10 +1,9 @@
 		// public MIDI interface routines:
-		// midiDetect
 		// midiInit
 		// midiRead
 		// midiWrite
 
-		// interface type for midiDetect and midiInit:
+		// interface type for midiInit:
 		// 0: no MIDI interface was detected
 		// 1: Sequential Circuits Inc.
 		// 2: Passport & Syntech
@@ -17,11 +16,6 @@
 .var PRB  =  $dc01            // CIA#1 (Port Register B)
 .var DDRB =  $dc03            // CIA#1 (Data Direction Register B)
 		
-		// detec MIDI interface, return type in accu
-midiDetect:	// TODO
-		lda #0
-		rts
-
 		// init MIDI interface, type in accu from midiDetect
 midiInit:	sei
 
