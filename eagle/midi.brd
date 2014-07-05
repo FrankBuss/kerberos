@@ -2618,7 +2618,7 @@ design rules under a new name.</description>
 <attribute name="NAME" x="5.969" y="57.912" size="1.016" layer="25" font="vector" ratio="10"/>
 <attribute name="VALUE" x="11.684" y="49.149" size="1.016" layer="27" font="vector" ratio="10" rot="R90"/>
 </element>
-<element name="IC4" library="cartridge" package="ASE" value="48MHz" x="38.354" y="52.578" smashed="yes" rot="R270">
+<element name="IC4" library="cartridge" package="ASE" value="24MHz" x="38.354" y="52.578" smashed="yes" rot="R270">
 <attribute name="OC_NEWARK" value="unknown" x="38.354" y="52.578" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MPN" value="" x="38.354" y="52.578" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MF" value="" x="38.354" y="52.578" size="1.778" layer="27" rot="R270" display="off"/>

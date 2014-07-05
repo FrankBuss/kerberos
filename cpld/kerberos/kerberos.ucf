@@ -1,5 +1,5 @@
-NET "clk48" PERIOD = 20.0ns ;
-NET "clk48" LOC = "27" ;
+NET "clk24" PERIOD = 41.7ns ;
+NET "clk24" LOC = "27" ;
 NET "led1" LOC = "53" ;
 NET "led2" LOC = "52" ;
 

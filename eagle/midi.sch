@@ -9783,7 +9783,7 @@ Source: http://ww1.microchip.com/downloads/en/DeviceDoc/22049b.pdf</description>
 <part name="R11" library="rcl" deviceset="R-EU_" device="R1206" value="220"/>
 <part name="R9" library="rcl" deviceset="R-EU_" device="R1206" value="220"/>
 <part name="IC3" library="6n138" deviceset="6N138" device="SMD"/>
-<part name="IC4" library="cartridge" deviceset="ASE" device="" value="48MHz"/>
+<part name="IC4" library="cartridge" deviceset="ASE" device="" value="24MHz"/>
 <part name="P+2" library="supply1" deviceset="+5V" device=""/>
 <part name="C9" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
 <part name="P+3" library="supply1" deviceset="+5V" device=""/>

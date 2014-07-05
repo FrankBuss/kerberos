@@ -41,8 +41,8 @@ entity main is
 		led1: out std_logic;
 		led2: out std_logic;
 		
-		-- 48 MHz input clock
-		clk48: in std_logic;
+		-- 24 MHz input clock
+		clk24: in std_logic;
 		
 		-- RAM/flash
 		at: out std_logic_vector(20 downto 0);
@@ -114,24 +114,15 @@ signal io1_filtered: std_logic;
 signal io2_filtered: std_logic;
 signal s02_filtered: std_logic;
 
-signal clk: std_logic;
-
 begin
-
-    process(clk48)
-    begin
-        if rising_edge(clk48) then
-            clk <= not clk;
-        end if;
-    end process;
 
     ---------------------------------------------------------------------------
     -- Create a synchronized version of Phi2 (phi2_s) and a copy of phi2_s
     -- which is delayed by one clock cycle (prev_phi2).
     ---------------------------------------------------------------------------
-    synchronize_stuff: process(clk)
+    synchronize_stuff: process(clk24)
     begin
-        if rising_edge(clk) then
+        if rising_edge(clk24) then
             prev_phi2 <= phi2_s;
             phi2_s <= s02;
             reset_i <= reset;
@@ -179,11 +170,11 @@ begin
     end process synchronize_stuff;
 
     ---------------------------------------------------------------------------
-    -- Count clk cycles in both phases of phi2 with a shift register.
+    -- Count clk24 cycles in both phases of phi2 with a shift register.
     ---------------------------------------------------------------------------
-    clk_time_shift: process(clk, prev_phi2, phi2_s)
+    clk_time_shift: process(clk24, prev_phi2, phi2_s)
     begin
-        if rising_edge(clk) then
+        if rising_edge(clk24) then
             if prev_phi2 /= phi2_s then
                 cycle_time <= (others => '0');
                 cycle_time(0) <= '1';
@@ -249,13 +240,13 @@ begin
 
     end process;
     
-	process(clk, mc6850_rxData, mc6850_irq, rw, s02, a, reset)
+	process(clk24, mc6850_rxData, mc6850_irq, rw, s02, a, reset)
 	begin
 		-- 68B50 MIDI
 		midiThru <= mc6850_rxData;  -- mc6850_txData
 		mc6850_rs <= a(0);
 
-		if rising_edge(clk) then 
+		if rising_edge(clk24) then 
             if reset_i = '0' then
                 control <= "0001001";  -- game = 1, exrom = 0, enable MIDI
                 --control <= "001011";  -- game = 1, exrom = 1, enable MIDI
