@@ -48,10 +48,9 @@
 #include "sprites.h"
 #include "usbtest.h"
 #include "util.h"
+#include "../../c64/src/regs.h"
 
 #undef SHOW_HEAP_FREE
-
-#define KERBEROS_CONTROL    *((uint8_t*) 0xde3e)
 
 /******************************************************************************/
 static void showAbout(void);
@@ -637,8 +636,20 @@ int main(void)
     char key;
     const char* pStrUSBCmd;
 
-    // enable EasyFlash mode, disable MIDI, enable RAM, set EXROM=1 and GAME=1, address bit 20 = 1
-    KERBEROS_CONTROL = 0x67;
+    // disable MIDI
+    MIDI_CONFIG = 0;
+
+    // set EXROM=1 and GAME=1
+    CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+
+    // enable EasyFlash mode and enable RAM
+    CART_CONFIG = CART_CONFIG_EASYFLASH_ON | CART_CONFIG_RAM_ON;
+
+    // first RAM page
+    ADDRESS_EXTENSION = 0;
+
+    // address bit 20 = 1
+    ADDRESS_EXTENSION2 = ADDRESS_EXTENSION2_FLASH_A20;
 
     timerInitTOD();
     screenInit();

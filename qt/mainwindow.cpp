@@ -13,10 +13,22 @@
 using namespace std;
 
 const char* g_filename = "filename";
-const char* g_midiInterfaceName = "midiInterfaceName";
+const char* g_midiInInterfaceName = "midiInInterfaceName";
+const char* g_midiOutInterfaceName = "midiOutInterfaceName";
 
-RtMidiOutWinMM g_midi;
+RtMidiOutWinMM g_midiOut;
+RtMidiInWinMM g_midiIn;
 int g_lastByte;
+
+QEvent::Type g_midiMessageEventType = (QEvent::Type) QEvent::registerEventType();
+
+void midiCallback( double /*deltatime*/,
+                   vector< unsigned char > *message,
+                   void* userData )
+{
+    MainWindow* instance = static_cast<MainWindow*>(userData);
+    QApplication::postEvent(instance, new MidiMessageEvent(*message));
+}
 
 // data transfers encoded in note-off messages:
 // 0x8n, n:
@@ -27,10 +39,11 @@ int g_lastByte;
 //
 // start of data transfer, with two data bytes (0x8c)
 // first byte: type of transfer:
-// 0x01: PRG transfer from PC to C64:
+// 0x01 or 0x02: file transfer from PC to C64: 0x01: start as PRG, 0x02: write to flash
 //   filename string in ASCII, zero terminated
 //   2 bytes program length (LSB first, without the first two bytes of the PRG for the start address)
-//   PRG data (the first two bytes of a PRG are the start address, LSB first)
+//   4 bytes destination address (LSB first, flash addresses start at 0)
+//   data
 //   2 bytes CRC16 checksum (LSB first)
 // second byte: unused
 
@@ -41,7 +54,7 @@ static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
         message.push_back(0x80 | channelBits);
         message.push_back(note);
         message.push_back(velocity);
-        g_midi.sendMessage(&message);
+        g_midiOut.sendMessage(&message);
     } catch (RtError& err) {
         //qWarning() << QString::fromStdString(err.getMessage());
     }
@@ -93,6 +106,14 @@ static void midiSendWord(uint16_t word)
 {
     midiSendByte(word & 0xff);
     midiSendByte((word >> 8) & 0xff);
+}
+
+static void midiSendDWord(uint32_t word)
+{
+    midiSendByte(word & 0xff);
+    midiSendByte((word >> 8) & 0xff);
+    midiSendByte((word >> 16) & 0xff);
+    midiSendByte((word >> 24) & 0xff);
 }
 
 // CRC16, Modbus polynomial and initial value
@@ -153,29 +174,52 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(uploadFileButton, SIGNAL(clicked()), this, SLOT(onUploadFile()));
     QObject::connect(noteOnButton, SIGNAL(clicked()), this, SLOT(onNoteOn()));
     QObject::connect(noteOffButton, SIGNAL(clicked()), this, SLOT(onNoteOff()));
-    QObject::connect(midiInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiInterfaceName(QString)));
+    QObject::connect(midiInInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiInInterfaceName(QString)));
+    QObject::connect(midiOutInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiOutInterfaceName(QString)));
 
     fileEdit->setText(getFilename());
 
-    QString selectedName = getMidiInterfaceName();
-    int c = g_midi.getPortCount();
+    QString selectedName = getMidiInInterfaceName();
+    int c = g_midiIn.getPortCount();
     int selectedIndex = -1;
     if (c > 0) {
         for (int i = 0; i < c; i++) {
-            QString name = g_midi.getPortName(i).c_str();
-            midiInterfacesComboBox->addItem(name);
+            QString name = g_midiIn.getPortName(i).c_str();
+            midiInInterfacesComboBox->addItem(name);
             if (name == selectedName) selectedIndex = i;
         }
         if (selectedIndex >= 0) {
-            midiInterfacesComboBox->setCurrentIndex(selectedIndex);
-            g_midi.openPort(selectedIndex);
+            midiInInterfacesComboBox->setCurrentIndex(selectedIndex);
+            g_midiIn.openPort(selectedIndex);
         } else {
-            midiInterfacesComboBox->setCurrentIndex(0);
-            setMidiInterfaceName(g_midi.getPortName(0).c_str());
-            g_midi.openPort(0);
+            midiInInterfacesComboBox->setCurrentIndex(0);
+            setMidiInInterfaceName(g_midiIn.getPortName(0).c_str());
+            g_midiIn.openPort(0);
+        }
+        g_midiIn.setCallback(&midiCallback, this);
+    } else {
+        midiInInterfacesComboBox->addItem("No MIDI-in interfaces found!");
+    }
+
+    selectedName = getMidiOutInterfaceName();
+    c = g_midiOut.getPortCount();
+    selectedIndex = -1;
+    if (c > 0) {
+        for (int i = 0; i < c; i++) {
+            QString name = g_midiOut.getPortName(i).c_str();
+            midiOutInterfacesComboBox->addItem(name);
+            if (name == selectedName) selectedIndex = i;
+        }
+        if (selectedIndex >= 0) {
+            midiOutInterfacesComboBox->setCurrentIndex(selectedIndex);
+            g_midiOut.openPort(selectedIndex);
+        } else {
+            midiOutInterfacesComboBox->setCurrentIndex(0);
+            setMidiOutInterfaceName(g_midiOut.getPortName(0).c_str());
+            g_midiOut.openPort(0);
         }
     } else {
-        midiInterfacesComboBox->addItem("No MIDI interfaces found!");
+        midiOutInterfacesComboBox->addItem("No MIDI-out interfaces found!");
     }
 }
 
@@ -199,7 +243,7 @@ void MainWindow::onNoteOn()
         message.push_back(STATUS_NOTEON | chan);
         message.push_back(midiNote);
         message.push_back(vel);
-        g_midi.sendMessage(&message);
+        g_midiOut.sendMessage(&message);
         //Sleep(100); }
     } catch (RtError& err) {
         //qWarning() << QString::fromStdString(err.getMessage());
@@ -219,7 +263,7 @@ void MainWindow::onNoteOff()
         message.push_back(STATUS_NOTEOFF | chan);
         message.push_back(midiNote);
         message.push_back(vel);
-        g_midi.sendMessage(&message);
+        g_midiOut.sendMessage(&message);
     } catch (RtError& err) {
         //qWarning() << QString::fromStdString(err.getMessage());
     }
@@ -234,9 +278,40 @@ void MainWindow::onSelectFile()
     }
 }
 
+static void uploadFile(QString filename, uint8_t type, uint32_t startAddress, QByteArray data)
+{
+    // start file transfer
+    midiStartTransfer(type);
+
+    // send name
+    for (int i = 0; i < filename.size(); i++) {
+        midiSendByte(filename[i].toAscii());
+    }
+    midiSendByte(0);
+
+    // send size
+    midiSendWord(data.size());
+
+    // send start address
+    midiSendDWord(startAddress);
+
+    // send bytes
+    for (int i = 0; i < data.size(); i++) {
+        midiSendByte(data[i]);
+    }
+
+    // send checksum
+    uint16_t crc = crc16((uint8_t*) data.data(), data.size());
+    midiSendWord(crc);
+
+    // end file transfer
+    midiEndTransfer();
+}
+
 void MainWindow::onUploadFile()
 {
     // read file
+    uint32_t startAddress = 0;
     QString filename = fileEdit->text();
     QFile file(filename);
     QString name = QFileInfo(file).fileName();
@@ -244,100 +319,86 @@ void MainWindow::onUploadFile()
         QMessageBox::warning(NULL, tr("Filetransfer"), tr("file open error"));
         return;
     }
-    QByteArray prgData = file.readAll();
+    QByteArray data = file.readAll();
     file.close();
+    if (data.size() < 2) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too small, min 2 bytes"));
+    }
 
-    // if save to flash is checked, then prepend flash programmer
+    // if save to flash is checked, then prepend slot data and change address
     if (saveRadioButton->isChecked()) {
         int slot = slotSpinBox->value();
-        QByteArray data;
 
         // create slot header, if slot is not 0 = menu
         if (slot) {
+            if (!filename.toLower().endsWith(".prg")) {
+                QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for slot save"));
+                return;
+            }
+
+            QByteArray header;
+
             // magic byte
-            data.append(0x42);
+            header.append(0x42);
 
             // filename
             for (int i = 0; i < name.size(); i++) {
-                data.append(name[i].toAscii());
+                header.append(name[i].toAscii());
             }
 
             // fill filename with zeros
-            while (data.length() < 250) {
-                data.append(char(0));
+            while (header.length() < 250) {
+                header.append(char(0));
             }
 
-            // TODO: CRC16 checksum
-            data.append(char(0));
-            data.append(char(0));
+            // CRC16 checksum
+            uint16_t crc = crc16((uint8_t*) data.data(), data.size());
+            header.append(crc & 0xff);
+            header.append(crc >> 8);
 
             // PRG length
-            int l = prgData.length() - 2;
-            data.append(l & 0xff);
-            data.append((l >> 8) & 0xff);
+            int l = data.length() - 2;
+            header.append(l & 0xff);
+            header.append((l >> 8) & 0xff);
+
+            // start included in data
+
+            // calculate flash start address
+            startAddress = slot * 0x10000;
+
+            // prepend header
+            data.prepend(header);
+
+            if (data.size() > 63486) {
+                QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 63486 bytes"));
+                return;
+            }
+
         } else {
             if (!filename.toLower().endsWith(".bin")) {
                 QMessageBox::warning(NULL, tr("Filetransfer"), tr(".bin-file required for menu update"));
                 return;
             }
+
+            // menu update
+            startAddress = 0;
         }
-
-        // PRG start and PRG data
-        data.append(prgData);
-
-        // load flash program
-        QFile flashFile("flash-program.prg");
-        if (!flashFile.open(QIODevice::ReadOnly)) {
-            QMessageBox::warning(NULL, tr("Filetransfer"), tr("file open error"));
+        uploadFile(name, 2, startAddress, data);
+    } else {
+        if (!filename.toLower().endsWith(".prg")) {
+            QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for program run"));
             return;
         }
-        QByteArray outData = flashFile.readAll();
-        flashFile.close();
 
-        // append flash target address
-        int target = slot * 0x10000;
-        outData.append(target & 0xff);
-        outData.append((target >> 8) & 0xff);
-        outData.append((target >> 16) & 0xff);
+        // get start address
+        startAddress = data[0] | (data[1] << 8);
 
-        // append content size
-        int l = data.length();
-        outData.append(l & 0xff);
-        outData.append((l >> 8) & 0xff);
+        // remove from program data
+        data.remove(0, 2);
 
-        // append content
-        outData.append(data);
-        prgData = outData;
-
-        if (prgData.size() > 63486) {
-            QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 63486 byte"));
-            return;
-        }
+        // upload and start
+        uploadFile(name, 1, startAddress, data);
     }
-
-    // start file transfer
-    midiStartTransfer(1);
-
-    // send name
-    for (int i = 0; i < name.size(); i++) {
-        midiSendByte(name[i].toAscii());
-    }
-    midiSendByte(0);
-
-    // send size
-    midiSendWord(prgData.size() - 2);
-
-    // send bytes
-    for (int i = 0; i < prgData.size(); i++) {
-        midiSendByte(prgData[i]);
-    }
-
-    // send checksum
-    uint16_t crc = crc16((uint8_t*) prgData.data(), prgData.size());
-    midiSendWord(crc);
-
-    // end file transfer
-    midiEndTransfer();
 }
 
 QString MainWindow::getFilename()
@@ -352,22 +413,55 @@ void MainWindow::setFilename(QString filename)
     settings.setValue(g_filename, filename);
 }
 
-QString MainWindow::getMidiInterfaceName()
+QString MainWindow::getMidiOutInterfaceName()
 {
     QSettings settings;
-    return settings.value(g_midiInterfaceName, "").toString();
+    return settings.value(g_midiOutInterfaceName, "").toString();
 }
 
-void MainWindow::setMidiInterfaceName(QString name)
+QString MainWindow::getMidiInInterfaceName()
 {
     QSettings settings;
-    settings.setValue(g_midiInterfaceName, name);
+    return settings.value(g_midiInInterfaceName, "").toString();
 }
 
-void MainWindow::onSelectMidiInterfaceName(QString name)
+void MainWindow::setMidiOutInterfaceName(QString name)
 {
-    setMidiInterfaceName(name);
-    g_midi.closePort();
+    QSettings settings;
+    settings.setValue(g_midiOutInterfaceName, name);
+}
+
+void MainWindow::setMidiInInterfaceName(QString name)
+{
+    QSettings settings;
+    settings.setValue(g_midiInInterfaceName, name);
+}
+
+void MainWindow::onSelectMidiOutInterfaceName(QString name)
+{
+    setMidiOutInterfaceName(name);
+    g_midiOut.closePort();
     //qDebug("index: %i", midiInterfacesComboBox->currentIndex());
-    g_midi.openPort(midiInterfacesComboBox->currentIndex());
+    g_midiOut.openPort(midiOutInterfacesComboBox->currentIndex());
+}
+
+void MainWindow::onSelectMidiInInterfaceName(QString name)
+{
+    setMidiInInterfaceName(name);
+    g_midiIn.closePort();
+    //qDebug("index: %i", midiInterfacesComboBox->currentIndex());
+    g_midiIn.openPort(midiInInterfacesComboBox->currentIndex());
+    g_midiIn.setCallback(&midiCallback, this);
+}
+
+void MainWindow::customEvent(QEvent *event)
+{
+    if (event->type() == g_midiMessageEventType) {
+        MidiMessageEvent* midiEvent = static_cast<MidiMessageEvent*>(event);
+        vector< unsigned char > msg = midiEvent->getMessage();
+        for (size_t i = 0; i < msg.size(); i++) {
+            midiInDataTextEdit->append(QString("").sprintf("%02x", msg[i]));
+        }
+    }
+    event->accept();
 }

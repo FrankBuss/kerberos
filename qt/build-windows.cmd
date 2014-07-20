@@ -10,7 +10,6 @@ mingw32-make
 del /s /q windows-export\*.*
 mkdir windows-export
 copy release\midi.exe windows-export
-copy ..\c64\flash-program.prg windows-export
 copy C:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\mingwm10.dll windows-export
 copy C:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\QtCore4.dll windows-export
 copy C:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\QtGui4.dll windows-export

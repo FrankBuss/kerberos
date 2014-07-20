@@ -20,6 +20,7 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 
 !source "eapi_defs.s"
+!source "../../../c64/src/regs.inc"
 
 ; There's a pointer to our code base
 EAPI_ZP_INIT_CODE_BASE   = $4b
@@ -160,8 +161,8 @@ uwDest = * + 1
 ;
 ; =============================================================================
 selectLowFlash:
-            lda #$24
-            sta $de3e
+            lda #0
+            sta ADDRESS_EXTENSION2
             rts
 
 ; =============================================================================
@@ -177,8 +178,8 @@ selectLowFlash:
 ;
 ; =============================================================================
 selectHighFlash:
-            lda #$64
-            sta $de3e
+            lda #ADDRESS_EXTENSION2_FLASH_A20
+            sta ADDRESS_EXTENSION2
             rts
 
 ; =============================================================================
