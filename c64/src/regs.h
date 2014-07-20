@@ -38,6 +38,8 @@
 #define CART_CONFIG_EASYFLASH_ON 0x08
 #define CART_CONFIG_RAM_AS_ROM_OFF 0x00
 #define CART_CONFIG_RAM_AS_ROM_ON 0x10
+#define CART_CONFIG_BASIC_HACK_OFF 0x00
+#define CART_CONFIG_BASIC_HACK_ON 0x20
 
 // Address bits 15..8 for RAM and 20..13 for flash.
 #define ADDRESS_EXTENSION *((uint8_t*) 0xde3e)

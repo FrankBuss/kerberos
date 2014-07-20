@@ -397,65 +397,83 @@ void flashProgram()
 	anyKey();
 }
 
-void testKernal()
+uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
+{
+	uint8_t* adr = (uint8_t*) (bank << 8);
+	ramSetBank(bank);
+	memcpy(g_blockBuffer, g_ram, 256);
+	if (memcmp(adr, g_blockBuffer, 256)) {
+		// standard mode
+		CART_CONFIG = CART_CONFIG_RAM_ON;
+		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+
+		gotox(0);
+		printf("RAM error in bank 0x%02x\n", bank);
+		printf("test: %s\n", test);
+		enableInterrupts();
+		anyKey();
+		return 0;
+	}
+	return 1;
+}
+
+void testRamAsRom()
 {
 	uint16_t i;
-	uint8_t* adr;
 
 	disableInterrupts();
 	clrscr();
 	cputs("write random data in RAM...\r\n");
 	srand(1);
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < 256; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 6);
+		printf("%i%%", i * 100 >> 8);
 		ramSetBank(i);
 		rand256Block();
-		memcpy(g_ram, g_blockBuffer, 256);
 	}
 	
-	// enable special cartridge RAM as ROM mode
-	CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON;
-	
-	// enable cartridge ROM at $8000 and $a000, which is mapped to the cartridge RAM
-	CART_CONTROL = CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_LOW;
-	
-	ramSetBank(0);
-	
 	gotox(0);
-	cputs("LOROM verify...\r\n");
-	srand(1);
-	adr = (uint8_t*) 0x8000;
+	cputs("verify...\r\n");
 	for (i = 0; i < 32; i++) {
+		// standard mode
+		disableInterrupts();
+		CART_CONFIG = CART_CONFIG_RAM_ON;
+		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+
 		gotox(0);
 		printf("%i%%", i * 100 >> 5);
-		rand256Block();
-		if (memcmp(adr, g_blockBuffer, 256)) {
-			gotox(0);
-			printf("RAM error, bank: %i\n", i);
-			enableInterrupts();
-			anyKey();
-			return;
-		}
-		adr += 0x100;
+		disableInterrupts();
+
+		// enable special cartridge RAM as ROM mode
+		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON;
+	
+		// enable cartridge ROM at $8000 and $a000, which is mapped to the cartridge RAM
+		CART_CONTROL = CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_LOW;
+
+		// test normal cartridge areas
+		if (!testRomAsRamCompare(i + 0x80, "0x8000, cartridge mode")) return;
+		if (!testRomAsRamCompare(i + 0xa0, "0xa000, cartridge mode")) return;
+
+		// standard mode
+		CART_CONFIG = CART_CONFIG_RAM_ON;
+		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+
+		// enable special cartridge RAM as ROM mode and BASIC hack
+		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_BASIC_HACK_ON;
+	
+		// test BASIC
+		if (!testRomAsRamCompare(i + 0xa0, "0xa000, BASIC hack")) return;
+
+		// enable special cartridge RAM as ROM mode and KERNAL hack
+		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
+	
+		// test KERNAL
+		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
 	}
 
-	gotox(0);
-	cputs("HIROM verify...\r\n");
-	for (i = 0; i < 32; i++) {
-		gotox(0);
-		printf("%i%%", i * 100 >> 5);
-		rand256Block();
-		gotox(0);
-		if (memcmp(adr, g_blockBuffer, 256)) {
-			gotox(0);
-			printf("RAM error, bank: %i\n", i);
-			enableInterrupts();
-			anyKey();
-			return;
-		}
-		adr += 0x100;
-	}
+	// standard mode
+	CART_CONFIG = CART_CONFIG_RAM_ON;
+	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 	gotox(0);
 	cputs("RAM as ROM test ok\r\n");
@@ -656,7 +674,7 @@ int main(void)
 		cputs("r: ram test\r\n");
 		cputs("f: flash test\r\n");
 		cputs("m: MIDI test\r\n");
-		cputs("k: KERNAL and RAM as ROM test\r\n");
+		cputs("o: RAM as ROM tests\r\n");
 		cputs("e: start EasyFlash\r\n");
 		cputs("v: receive MIDI file\r\n");
 		cputs("s: start program\r\n");
@@ -672,8 +690,8 @@ int main(void)
 			case 'm':
 				testMidi();
 				break;
-			case 'k':
-				testKernal();
+			case 'o':
+				testRamAsRom();
 				break;
 			case 'e':
 				startEasyFlash();

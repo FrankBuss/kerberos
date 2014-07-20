@@ -149,6 +149,15 @@
 				<description>enables the RAM as ROM mode</description>
 			</case>
 		</bit>
+		<bit position="5" name="BASIC_HACK">
+			<description>BASIC replacement hack control</description>
+			<case value="0" name="OFF">
+				<description>disable BASIC hack</description>
+			</case>
+			<case value="1" name="ON">
+				<description>enable BASIC hack</description>
+			</case>
+		</bit>
 	</reg>
 	<reg name="ADDRESS_EXTENSION" address="0xde3e">
 		<description>Address bits 15..8 for RAM and 20..13 for flash.</description>
