@@ -74,6 +74,7 @@ constant CART_CONFIG_KERNAL_HACK : integer := 1;
 constant CART_CONFIG_HIGHRAM_HACK : integer := 2;
 constant CART_CONFIG_EASYFLASH : integer := 3;
 constant CART_CONFIG_RAM_AS_ROM : integer := 4;
+constant CART_CONFIG_BASIC_HACK : integer := 5;
 constant ADDRESS_EXTENSION2_A16 : integer := 0;
 constant ADDRESS_EXTENSION2_A20 : integer := 1;
 
@@ -197,12 +198,7 @@ begin
                     at(12 downto 8) <= a(12 downto 8);
                 else
                     -- RAM as ROM mode
-                    at(12 downto 8) <= a(12 downto 8);
-                    if romL = '0' then
-                        at(13) <= '0';
-                    elsif romH = '0' then
-                        at(13) <= '1';
-                    end if;
+                    at(15 downto 8) <= a(15 downto 8);
                 end if;
             else
                 -- EasyFlash mode
@@ -232,16 +228,16 @@ begin
                 flashCE <= '0';
                 oe <= '0';
                 dir <= '1';
-            elsif ramRead = '1' and rw = '1' and
-                (io2 = '0' or 
-                ((romL = '0' or romH = '0') and cart_config(CART_CONFIG_RAM_AS_ROM) = '1'))
-            then
-                ramCE <= '0';
-                oe <= '0';
-                dir <= '1';
+            elsif ramRead = '1' and rw = '1' then
+                -- RAM read access if IO2 is addressed,
+                -- or if in RAM as ROM mode and if ROM is addressed
+                if io2 = '0' or  ((romL = '0' or romH = '0') and cart_config(CART_CONFIG_RAM_AS_ROM) = '1') then
+                    ramCE <= '0';
+                    oe <= '0';
+                    dir <= '1';
+                end if;
             end if;
         end if;
-
     end process;
     
 	process(clk24, mc6850_rxData, mc6850_irq, rw, s02, a, reset, midi_config, mc6850_txData)
@@ -435,21 +431,29 @@ begin
 					game <= 'Z';
 				end if;
 
-				-- kernal hack: enable ultimax mode for kernal read
-				--if a(15 downto 13) = "111" and s02 = '1' and ba = '1' and rw = '1' then
-				--	game <= '0';
-				--	exRom <= 'Z';
-				--end if;
-
-				--if romH = '0' and rw_latched = '1' and a(15 downto 13) = "111" then
-					-- read from flash
-				--	at(12 downto 8) <= a(12 downto 8);
-				--	at(16) <= '1';
-				--	we <= '1';
-				--	flashCE <= '0';
-				--	oe <= '0';
-				--	dir <= '1';
-				--end if;
+                -- KERNAL hack: enable ultimax mode for KERNAL read
+                if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
+                    if a(15 downto 13) = "111" and s02 = '1' and ba = '1' and rw = '1' then
+                        game <= '0';
+                        exRom <= 'Z';
+                        flashWrite <= '0';
+                        flashRead <= '0';
+                        ramWrite <= '0';
+                        ramRead <= '1';
+                    end if;
+                end if;
+                
+                -- BASIC hack: enable ROM for BASIC read
+                if cart_config(CART_CONFIG_BASIC_HACK) = '1' then
+                    if a(15 downto 13) = "101" and s02 = '1' and ba = '1' and rw = '1' then
+                        game <= '0';
+                        exRom <= '0';
+                        flashWrite <= '0';
+                        flashRead <= '0';
+                        ramWrite <= '0';
+                        ramRead <= '1';
+                    end if;
+                end if;
                 
                 -- LED overwrite
                 if cart_control(CART_CONTROL_LED1) = '1' then

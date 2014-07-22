@@ -50,7 +50,7 @@ void testRam()
 	memset(g_blockBuffer, 0xff, 256);
 	for (i = 0; i < 512; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 9);
+		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
 		memcpy(g_ram, g_blockBuffer, 256);
 	}
@@ -60,11 +60,11 @@ void testRam()
 	srand(1);
 	for (i = 0; i < 512; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 9);
+		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
 		if (memcmp(g_ram, g_blockBuffer, 256)) {
 			gotox(0);
-			printf("RAM error, bank: %i\n", i);
+			cprintf("RAM error, bank: %i\r\n", i);
 			anyKey();
 			return;
 		}
@@ -75,7 +75,7 @@ void testRam()
 	srand(1);
 	for (i = 0; i < 512; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 9);
+		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
 		rand256Block();
 		memcpy(g_ram, g_blockBuffer, 256);
@@ -86,12 +86,12 @@ void testRam()
 	srand(1);
 	for (i = 0; i < 512; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 9);
+		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
 		rand256Block();
 		if (memcmp(g_ram, g_blockBuffer, 256)) {
 			gotox(0);
-			printf("RAM error, bank: %i\n", i);
+			cprintf("RAM error, bank: %i\r\n", i);
 			anyKey();
 			return;
 		}
@@ -102,7 +102,7 @@ void testRam()
 	memset(g_blockBuffer, 0, 256);
 	for (i = 0; i < 512; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 9);
+		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
 		memcpy(g_ram, g_blockBuffer, 256);
 	}
@@ -112,11 +112,11 @@ void testRam()
 	srand(1);
 	for (i = 0; i < 512; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 9);
+		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
 		if (memcmp(g_ram, g_blockBuffer, 256)) {
 			gotox(0);
-			printf("RAM error, bank: %i\n", i);
+			cprintf("RAM error, bank: %i\r\n", i);
 			anyKey();
 			return;
 		}
@@ -134,7 +134,7 @@ void testFlash()
 	uint8_t* adr;
 	uint16_t id = flashReadId();
 	clrscr();
-	printf("flash id: 0x%04x\n", id);
+	cprintf("flash id: 0x%04x\r\n", id);
 	if (id != 0xbfc8) {
 		cputs("wrong flash id\r\n");
 		return;
@@ -146,7 +146,7 @@ void testFlash()
 	memset(g_blockBuffer, 0, 256);
 	for (i = 0; i < FLASH_BANKS; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 8);
+		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
 		adr = (uint8_t*) 0x8000;
 		flashEraseSector(adr);
@@ -165,13 +165,13 @@ void testFlash()
 	cputs("flash 0 verify...\r\n");
 	for (i = 0; i < FLASH_BANKS; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 8);
+		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
 		adr = (uint8_t*) 0x8000;
 		for (j = 0; j < 32; j++) {
 			if (flashCompare256Block(adr)) {
 				gotox(0);
-				printf("flash error, bank: %i\n", i);
+				cprintf("flash error, bank: %i\r\n", i);
 				anyKey();
 				return;
 			}
@@ -184,7 +184,7 @@ void testFlash()
 	srand(1);
 	for (i = 0; i < FLASH_BANKS; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 8);
+		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
 		adr = (uint8_t*) 0x8000;
 		flashEraseSector(adr);
@@ -206,14 +206,14 @@ void testFlash()
 	srand(1);
 	for (i = 0; i < FLASH_BANKS; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 8);
+		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
 		adr = (uint8_t*) 0x8000;
 		for (j = 0; j < 32; j++) {
 			rand256Block();
 			if (flashCompare256Block(adr)) {
 				gotox(0);
-				printf("flash error, bank: %i\n", i);
+				cprintf("flash error, bank: %i\r\n", i);
 				anyKey();
 				return;
 			}
@@ -225,7 +225,7 @@ void testFlash()
 	cputs("flash erase test...\r\n");
 	for (i = 0; i < FLASH_BANKS; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 8);
+		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
 		flashEraseSector((uint8_t*) 0x8000);
 		flashEraseSector((uint8_t*) 0x9000);
@@ -236,13 +236,13 @@ void testFlash()
 	memset(g_blockBuffer, 0xff, 256);
 	for (i = 0; i < FLASH_BANKS; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 8);
+		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
 		adr = (uint8_t*) 0x8000;
 		for (j = 0; j < 32; j++) {
 			if (flashCompare256Block(adr)) {
 				gotox(0);
-				printf("flash error, bank: %i\n", i);
+				cprintf("flash error, bank: %i\r\n", i);
 				anyKey();
 				return;
 			}
@@ -306,7 +306,7 @@ void testMidi()
 					return;
 			}
 		} else if (midiByteReceived()) {
-			printf("MIDI-in: %02x\n", midiReadByte());
+			cprintf("MIDI-in: %02x\r\n", midiReadByte());
 		}
 	}
 }
@@ -323,7 +323,7 @@ void flashProgram()
 	uint8_t* adr;
 	
 	clrscr();
-	printf("flash id: 0x%04x\n", id);
+	cprintf("flash id: 0x%04x\r\n", id);
 	if (id != 0xbfc8) {
 		cputs("wrong flash id\r\n");
 		return;
@@ -338,7 +338,7 @@ void flashProgram()
 	blocks = (size + 255) >> 8;
 	for (i = 0; i < blocks; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 / blocks);
+		cprintf("%i%%", i * 100 / blocks);
 		
 		// load RAM to block
 		ramSetBank(ramBank);
@@ -367,7 +367,7 @@ void flashProgram()
 	ramBank = 1;
 	for (i = 0; i < blocks; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 / blocks);
+		cprintf("%i%%", i * 100 / blocks);
 		
 		// load RAM to block
 		ramSetBank(ramBank);
@@ -382,7 +382,7 @@ void flashProgram()
 		// compare
 		if (flashCompare256Block(adr)) {
 			gotox(0);
-			printf("flash error, bank: %i\n", i);
+			cprintf("flash error, bank: %i\r\n", i);
 			anyKey();
 			return;
 		}
@@ -408,8 +408,8 @@ uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 		gotox(0);
-		printf("RAM error in bank 0x%02x\n", bank);
-		printf("test: %s\n", test);
+		cprintf("RAM error in bank 0x%02x\r\n", bank);
+		cprintf("test: %s\r\n", test);
 		enableInterrupts();
 		anyKey();
 		return 0;
@@ -427,22 +427,20 @@ void testRamAsRom()
 	srand(1);
 	for (i = 0; i < 256; i++) {
 		gotox(0);
-		printf("%i%%", i * 100 >> 8);
+		cprintf("%i%%", i * 100 >> 8);
 		ramSetBank(i);
 		rand256Block();
 	}
-	
+
 	gotox(0);
 	cputs("verify...\r\n");
 	for (i = 0; i < 32; i++) {
 		// standard mode
-		disableInterrupts();
 		CART_CONFIG = CART_CONFIG_RAM_ON;
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 		gotox(0);
-		printf("%i%%", i * 100 >> 5);
-		disableInterrupts();
+		cprintf("%i%%", i * 100 >> 5);
 
 		// enable special cartridge RAM as ROM mode
 		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON;
@@ -455,6 +453,7 @@ void testRamAsRom()
 		if (!testRomAsRamCompare(i + 0xa0, "0xa000, cartridge mode")) return;
 
 		// standard mode
+		ramSetBank(0xa0);
 		CART_CONFIG = CART_CONFIG_RAM_ON;
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
@@ -466,6 +465,12 @@ void testRamAsRom()
 
 		// enable special cartridge RAM as ROM mode and KERNAL hack
 		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
+	
+		// test KERNAL
+		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
+
+		// enable HIGHRAM hack
+		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON | CART_CONFIG_HIGHRAM_HACK_ON;
 	
 		// test KERNAL
 		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
@@ -551,9 +556,9 @@ void receiveMidiFile(void)
 	disableInterrupts();
 	loadProgram();
 	ramSetBank(0);
-	printf("program size: %i\n", g_ram[0] | (g_ram[1] << 8));
+	cprintf("program size: %i\r\n", g_ram[0] | (g_ram[1] << 8));
 	start = g_ram[2] | (g_ram[3] << 8) | (((uint32_t)g_ram[4]) << 16) | (((uint32_t)g_ram[5]) << 24);
-	printf("program start: 0x%04x\n", g_ram[2] | (g_ram[3] << 8));
+	cprintf("program start: 0x%04x\r\n", g_ram[2] | (g_ram[3] << 8));
 	switch (type) {
 		case 1:
 			cputs("program loaded, starting...\r\n");
@@ -592,7 +597,7 @@ void startProgramInSlot(void)
 		// 64 kb per slot
 		ADDRESS_EXTENSION = i * 8;
 		adr = (uint8_t*) 0x8000;
-		printf("%i: ", i);
+		cprintf("%i: ", i);
 		if (adr[0] == 0x42) {
 			for (j = 1; j < 32; j++) {
 				uint8_t b = adr[j];
@@ -629,10 +634,10 @@ void startProgramInSlot(void)
 				if (adr[0] == 0x42 || 1) {
 					cputs("starting program\r\n");
 					flashSetBank(key * 8);
-/*					printf("$80fc: %02x\n", adr[0xfc]);
-					printf("$80fd: %02x\n", adr[0xfd]);
-					printf("$80fe: %02x\n", adr[0xfe]);
-					printf("$80ff: %02x\n", adr[0xff]);
+/*					cprintf("$80fc: %02x\r\n", adr[0xfc]);
+					cprintf("$80fd: %02x\r\n", adr[0xfd]);
+					cprintf("$80fe: %02x\r\n", adr[0xfe]);
+					cprintf("$80ff: %02x\r\n", adr[0xff]);
 					anyKey();*/
 					startProgramFromRom();
 				}
