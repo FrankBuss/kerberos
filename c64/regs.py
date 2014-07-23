@@ -109,3 +109,27 @@ for reg in root:
 						caseDescription = case.find('description').text
 						print('%s = $%02x' % (caseName, caseValue << bitPosition))
 		print('')
+
+print("VHDL testbench bit constants")
+print("==============================")
+for reg in root:
+	if reg.tag == 'reg':
+		regName = reg.get('name')
+		for child in reg:
+			if child.tag == 'bit':
+				bitPosition = int(child.get('position'), 0)
+				bitName = regName + "_" + child.get('name')
+				print('constant %s : std_logic_vector(7 downto 0) := x"%02x";' % (bitName, 1 << bitPosition))
+print('')
+print('')
+
+print("VHDL testbench registers")
+print("==============================")
+for reg in root:
+	if reg.tag == 'reg':
+		regName = reg.get('name')
+		regAddress = int(reg.get('address'), 0)
+		print('constant %s : std_logic_vector(15 downto 0) := x"%04x";' % (regName, regAddress))
+print('')
+print('')
+

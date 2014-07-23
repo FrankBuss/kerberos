@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.all;
 
 entity main is
 	port(
@@ -36,7 +37,7 @@ entity main is
 		s02: in std_logic;
 		io1: in std_logic;
 		io2: in std_logic;
-		a: in std_logic_vector(15 downto 0);
+		a: inout std_logic_vector(15 downto 0);
 		romL: in std_logic;
 		romH: in std_logic;
 		exRom: inout std_logic;
@@ -78,6 +79,15 @@ constant CART_CONFIG_BASIC_HACK : integer := 5;
 constant ADDRESS_EXTENSION2_A16 : integer := 0;
 constant ADDRESS_EXTENSION2_A20 : integer := 1;
 
+-- KERNAL hiram hack
+signal kernal_a14:          std_logic;
+signal kernal_n_game:       std_logic;
+signal kernal_n_exrom:      std_logic;
+signal kernal_set_bank_lo:  std_logic;
+signal kernal_new_bank_lo:  std_logic_vector(2 downto 0);
+signal kernal_flash_read:   std_logic;
+signal kernal_start_reset:  std_logic;
+
 signal io1_latched: std_logic_vector(2 downto 0);
 signal io2_latched: std_logic_vector(2 downto 0);
 signal s02_latched: std_logic_vector(2 downto 0);
@@ -98,8 +108,11 @@ signal mc6850_clkBuffer: std_logic;
 signal prev_phi2:       std_logic;
 signal phi2_s:          std_logic;
 signal cycle_time:     std_logic_vector(10 downto 0);
+signal cycle_start:  std_logic;
 signal cycle_middle: std_logic;
 signal reset_i: std_logic;
+signal exRom_i: std_logic;
+signal game_i: std_logic;
 signal romL_filtered: std_logic;
 signal romH_filtered: std_logic;
 signal io1_filtered: std_logic;
@@ -107,6 +120,24 @@ signal io2_filtered: std_logic;
 signal s02_filtered: std_logic;
 
 begin
+
+    u_cart_kernal: entity cart_kernal port map
+    (
+        clk                     => clk24,
+        n_reset                 => reset_i,
+        enable                  => cart_config(CART_CONFIG_KERNAL_HACK),
+        phi2                    => s02,
+        ba                      => ba,
+        n_romh                  => romH,
+        n_wr                    => rw,
+        cycle_time              => cycle_time,
+        cycle_start             => cycle_start,
+        addr                    => a,
+        a14                     => kernal_a14,
+        n_game                  => kernal_n_game,
+        n_exrom                 => kernal_n_exrom,
+        flash_read              => kernal_flash_read
+    );
 
     ---------------------------------------------------------------------------
     -- Create a synchronized version of Phi2 (phi2_s) and a copy of phi2_s
@@ -238,6 +269,35 @@ begin
                 end if;
             end if;
         end if;
+
+        -- KERNAL hack
+        a <= (others => 'Z');
+        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' and kernal_a14 = '0' then
+            a(14) <= '0';
+        end if;
+
+        -- default value for game and exRom
+        game <= 'Z';
+        exRom <= 'Z';
+        
+        -- can be overwritten by cartridge setting
+        if game_i <= '0' then
+            game <= '0';
+        end if;
+        if exRom_i = '0' then
+            exRom <= '0';
+        end if;
+
+        -- and can be overwritten by KERNAL hack for HIRAM access
+        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
+            if kernal_n_game = '0' then
+                game <= '0';
+            end if;
+            if kernal_n_exrom = '0' then
+                exRom <= '0';
+            end if;
+        end if;
+        
     end process;
     
 	process(clk24, mc6850_rxData, mc6850_irq, rw, s02, a, reset, midi_config, mc6850_txData)
@@ -261,8 +321,8 @@ begin
                 address_extension <= (others => '0');
                 address_extension2 <= (others => '0');
                 dt <= (others => 'Z');
-                exRom <= 'Z';
-                game <= 'Z';
+                exRom_i <= '1';
+                game_i <= '1';
                 irq <= 'Z';
                 nmi <= 'Z';
                 mc6850_rxTxClk <= '0';
@@ -421,21 +481,19 @@ begin
 				
 				-- game and exrom
 				if cart_control(CART_CONTROL_EXROM) = '0' then
-					exRom <= '0';
+					exRom_i <= '0';
 				else
-					exRom <= 'Z';
+					exRom_i <= '1';
 				end if;
 				if cart_control(CART_CONTROL_GAME) = '0' then
-					game <= '0';
+					game_i <= '0';
 				else
-					game <= 'Z';
+					game_i <= '1';
 				end if;
 
-                -- KERNAL hack: enable ultimax mode for KERNAL read
+                -- KERNAL hack: read from RAM for KERNAL hack
                 if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
-                    if a(15 downto 13) = "111" and s02 = '1' and ba = '1' and rw = '1' then
-                        game <= '0';
-                        exRom <= 'Z';
+                    if kernal_flash_read = '1' then
                         flashWrite <= '0';
                         flashRead <= '0';
                         ramWrite <= '0';
@@ -446,8 +504,8 @@ begin
                 -- BASIC hack: enable ROM for BASIC read
                 if cart_config(CART_CONFIG_BASIC_HACK) = '1' then
                     if a(15 downto 13) = "101" and s02 = '1' and ba = '1' and rw = '1' then
-                        game <= '0';
-                        exRom <= '0';
+                        game_i <= '0';
+                        exRom_i <= '0';
                         flashWrite <= '0';
                         flashRead <= '0';
                         ramWrite <= '0';
@@ -470,5 +528,6 @@ begin
 	
     cycle_middle <= cycle_time(3) or cycle_time(4) or cycle_time(5);
 	at(7 downto 0) <= a(7 downto 0);
+    cycle_start <= phi2_s xor prev_phi2;
 
 end architecture rtl;

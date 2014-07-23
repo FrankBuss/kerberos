@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="C:/Users/Frank/Documents/GitHub/kerberos/cpld/kerberos/main_testbench_isim_beh.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="main_testbench" />
+            <top_module name="numeric_std" />
+            <top_module name="std_logic_1164" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="25" />
+   <wvobject fp_name="/main_testbench/at" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">at[20:0]</obj_property>
+      <obj_property name="ObjectShortName">at[20:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/flashce" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">flashce</obj_property>
+      <obj_property name="ObjectShortName">flashce</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/ramce" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">ramce</obj_property>
+      <obj_property name="ObjectShortName">ramce</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/we" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">we</obj_property>
+      <obj_property name="ObjectShortName">we</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/oe" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">oe</obj_property>
+      <obj_property name="ObjectShortName">oe</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/dt" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">dt[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dt[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/dir" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">dir</obj_property>
+      <obj_property name="ObjectShortName">dir</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/ba" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">ba</obj_property>
+      <obj_property name="ObjectShortName">ba</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/s02" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">s02</obj_property>
+      <obj_property name="ObjectShortName">s02</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/io1" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">io1</obj_property>
+      <obj_property name="ObjectShortName">io1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/io2" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">io2</obj_property>
+      <obj_property name="ObjectShortName">io2</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/a" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">a[15:0]</obj_property>
+      <obj_property name="ObjectShortName">a[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/roml" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">roml</obj_property>
+      <obj_property name="ObjectShortName">roml</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/romh" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">romh</obj_property>
+      <obj_property name="ObjectShortName">romh</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/exrom" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">exrom</obj_property>
+      <obj_property name="ObjectShortName">exrom</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/game" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">game</obj_property>
+      <obj_property name="ObjectShortName">game</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/rw" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rw</obj_property>
+      <obj_property name="ObjectShortName">rw</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/nmi" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">nmi</obj_property>
+      <obj_property name="ObjectShortName">nmi</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/irq" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">irq</obj_property>
+      <obj_property name="ObjectShortName">irq</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/main_instance/io1_filtered" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">io1_filtered</obj_property>
+      <obj_property name="ObjectShortName">io1_filtered</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/main_instance/cycle_start" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">cycle_start</obj_property>
+      <obj_property name="ObjectShortName">cycle_start</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/main_instance/cycle_middle" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">cycle_middle</obj_property>
+      <obj_property name="ObjectShortName">cycle_middle</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/main_instance/cart_config" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">cart_config[7:0]</obj_property>
+      <obj_property name="ObjectShortName">cart_config[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/main_instance/cart_control" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">cart_control[7:0]</obj_property>
+      <obj_property name="ObjectShortName">cart_control[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+</wave_config>

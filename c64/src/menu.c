@@ -424,12 +424,36 @@ void testRamAsRom()
 	disableInterrupts();
 	clrscr();
 	cputs("write random data in RAM...\r\n");
+
+#if 0
+		// enable special cartridge RAM as ROM mode and KERNAL hack
+		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
+		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+
+		while (1) {
+			// enable internal C64 RAM under KERNAL
+			*((uint8_t*) 1) = 0x35;
+			i += *((uint8_t*) 0xe000);
+		}
+#endif
+
 	srand(1);
+	
+	// fill external RAM for ROM hack test
 	for (i = 0; i < 256; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
-		ramSetBank(i);
 		rand256Block();
+		ramSetBank(i);
+		memcpy(g_ram, g_blockBuffer, 256);
+	}
+
+	// fill external RAM and copy to internal C64 RAM for HIRAM test
+	for (i = 0; i < 32; i++) {
+		rand256Block();
+		ramSetBank(i + 0x100);
+		memcpy(g_ram, g_blockBuffer, 256);
+		memcpy((uint8_t*) ((i + 0xe0) << 8), g_blockBuffer, 256);
 	}
 
 	gotox(0);
@@ -469,13 +493,33 @@ void testRamAsRom()
 		// test KERNAL
 		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
 
-		// enable HIGHRAM hack
-		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON | CART_CONFIG_HIGHRAM_HACK_ON;
-	
+		// trigger initial highram detection and enable KERNAL
+		*((uint8_t*) 1) = 0x37;
+
 		// test KERNAL
 		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
-	}
 
+		// enable internal C64 RAM under KERNAL
+		*((uint8_t*) 1) = 0x35;
+
+		// test internal C64 RAM under KERNAL
+		ramSetBank(0x100 + i);
+		if (memcmp(g_ram, (i + 0xe0) << 8, 256)) {
+			*((uint8_t*) 1) = 0x37;
+			CART_CONFIG = CART_CONFIG_RAM_ON;
+			CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+			enableInterrupts();
+			gotox(0);
+			cprintf("KERNAL HIGHRAM hack error\r\n");
+			cprintf("bank: %i\r\n", i);
+			anyKey();
+			return;
+		}
+
+		// default value
+		*((uint8_t*) 1) = 0x37;
+	}
+	
 	// standard mode
 	CART_CONFIG = CART_CONFIG_RAM_ON;
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
@@ -554,6 +598,7 @@ void receiveMidiFile(void)
 	}
 
 	disableInterrupts();
+	ramSetBank(0);
 	loadProgram();
 	ramSetBank(0);
 	cprintf("program size: %i\r\n", g_ram[0] | (g_ram[1] << 8));
