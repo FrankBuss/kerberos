@@ -42,7 +42,7 @@ entity main is
 		romH: in std_logic;
 		exRom: inout std_logic;
 		game: inout std_logic;
-		reset: in std_logic;
+		reset: inout std_logic;
 		rw: in std_logic;
 		nmi: inout std_logic;
 		irq: inout std_logic
@@ -54,7 +54,7 @@ architecture rtl of main is
 -- registers    
 signal midi_address: std_logic_vector(7 downto 0);
 signal midi_config: std_logic_vector(7 downto 0);
-signal cart_control: std_logic_vector(7 downto 0);
+signal cart_control: std_logic_vector(7 downto 0) := (others => '0');
 signal cart_config: std_logic_vector(7 downto 0);
 signal address_extension: std_logic_vector(7 downto 0);
 signal address_extension2: std_logic_vector(7 downto 0);
@@ -105,12 +105,14 @@ signal flashRead: std_logic := '0';
 signal counter: integer range 0 to 23;
 signal mc6850_clkBuffer: std_logic;
 
-signal prev_phi2:       std_logic;
-signal phi2_s:          std_logic;
-signal cycle_time:     std_logic_vector(10 downto 0);
-signal cycle_start:  std_logic;
+signal prev_phi2: std_logic;
+signal phi2_s: std_logic;
+signal cycle_time: std_logic_vector(10 downto 0);
+signal cycle_start: std_logic;
 signal cycle_middle: std_logic;
 signal reset_i: std_logic;
+signal reset_counter: integer range 0 to 15 := 0;
+signal ignore_reset: std_logic := '0';
 signal exRom_i: std_logic;
 signal game_i: std_logic;
 signal romL_filtered: std_logic;
@@ -311,7 +313,7 @@ begin
 		mc6850_rs <= a(0);
 
 		if rising_edge(clk24) then 
-            if reset_i = '0' then
+            if reset_i = '0' and ignore_reset = '0' then
                 cart_control <= "00000001";  -- game = 1, exrom = 0
                 midi_config <= (others => '0');
                 midi_config <= "00010101";
@@ -331,7 +333,33 @@ begin
                 ramRead <= '0';
                 flashWrite <= '0';
                 flashRead <= '0';
+                reset <= 'Z';
             else
+                if reset_counter > 0 then
+                    -- count cycles
+                    if s02 = '0' and cycle_start = '1' then
+                        -- release reset after 7 cycles
+                        if reset_counter = 8 then
+                            reset <= 'Z';
+                        end if;
+
+                        -- don't ignore external resets after 15 cycles
+                        if reset_counter = 1 then
+                            ignore_reset <= '0';
+                        end if;
+                        reset_counter <= reset_counter - 1;
+                    end if;
+                end if;
+
+                -- reset generator
+                if cart_control(CART_CONTROL_RESET) = '1' then
+                    -- reset for 7 cycles, reset ignore for 15 cycles
+                    reset_counter <= 15;
+                    ignore_reset <= '1';
+                    cart_control(CART_CONTROL_RESET) <= '0';
+                    reset <= '0';
+                end if;
+
 				-- generate clock for the MC6850
 				if midi_config(MIDI_CONFIG_CLOCK) = '1' then
 					-- 2 MHz
