@@ -83,14 +83,12 @@ constant ADDRESS_EXTENSION2_A20 : integer := 1;
 signal kernal_a14:          std_logic;
 signal kernal_n_game:       std_logic;
 signal kernal_n_exrom:      std_logic;
-signal kernal_set_bank_lo:  std_logic;
-signal kernal_new_bank_lo:  std_logic_vector(2 downto 0);
 signal kernal_flash_read:   std_logic;
 signal kernal_start_reset:  std_logic;
 
 signal io1_latched: std_logic_vector(2 downto 0);
 signal io2_latched: std_logic_vector(2 downto 0);
-signal s02_latched: std_logic_vector(2 downto 0);
+signal s02_latched: std_logic;
 signal romL_latched: std_logic_vector(2 downto 0);
 signal romH_latched: std_logic_vector(2 downto 0);
 signal rw_latched: std_logic;
@@ -102,6 +100,9 @@ signal ramRead: std_logic := '0';
 signal flashWrite: std_logic := '0';
 signal flashRead: std_logic := '0';
 
+signal flashCE_i: std_logic := '0';
+signal ramCE_i: std_logic := '0';
+
 signal counter: integer range 0 to 23;
 signal mc6850_clkBuffer: std_logic;
 
@@ -109,9 +110,8 @@ signal prev_phi2: std_logic;
 signal phi2_s: std_logic;
 signal cycle_time: std_logic_vector(10 downto 0);
 signal cycle_start: std_logic;
-signal cycle_middle: std_logic;
 signal reset_i: std_logic;
-signal reset_counter: integer range 0 to 15 := 0;
+signal reset_running: std_logic := '0';
 signal ignore_reset: std_logic := '0';
 signal exRom_i: std_logic;
 signal game_i: std_logic;
@@ -157,11 +157,11 @@ begin
             io2_latched <= io2_latched(1 downto 0) & io2;
 
             -- ROMH is still low for 60 ns after rising edge of s02, if the VIC access the memory in Ultimax mode, mask it
-            romL_latched <= romL_latched(1 downto 0) & (not ((not romL) and s02_filtered and s02));
-            romH_latched <= romH_latched(1 downto 0) & (not ((not romH) and s02_filtered and s02));
+            romL_latched <= romL_latched(1 downto 0) & (not ((not romL) and s02_latched));
+            romH_latched <= romH_latched(1 downto 0) & (not ((not romH) and s02_latched));
             
             -- latch inputs
-            s02_latched <= s02_latched(1 downto 0) & s02;
+            s02_latched <= s02;
             rw_latched <= rw;
 
             -- generate filtered outputs
@@ -185,11 +185,9 @@ begin
             else
                 io2_filtered <= '1';
             end if;
-            if s02_latched = "000" then
-                s02_filtered <= '0';
-            else
-                s02_filtered <= '1';
-            end if;
+            
+            ramCE <= ramCE_i;
+            flashCE <= flashCE_i;
         end if;
 
     end process synchronize_stuff;
@@ -209,7 +207,7 @@ begin
         end if;
     end process;
 
-	process(flashWrite, flashRead, ramWrite, ramRead, rw, romL, romH, io2, cart_config, address_extension, address_extension2, s02, cycle_middle, a)
+	process(flashWrite, flashRead, ramWrite, ramRead, rw, romL, romH, io2, cart_config, address_extension, address_extension2, s02_latched, a)
 	begin
         -- generate address
         at(20 downto 8) <= (others => '0');
@@ -248,24 +246,24 @@ begin
 
         -- generate read/write signals
         dir <= '0';
-        ramCE <= '1';
+        ramCE_i <= '1';
         oe <= '1';
-        flashCE <= '1';
+        flashCE_i <= '1';
         we <= rw;
-        if s02 = '1' then
-            if flashWrite = '1' and rw = '0' and (romL = '0' or romH = '0') and cycle_middle = '1' then
-                flashCE <= '0';
-            elsif ramWrite = '1' and rw = '0' and io2 = '0' and cycle_middle = '1' then
-                ramCE <= '0';
+        if s02_latched = '1' then
+            if flashWrite = '1' and rw = '0' and (romL = '0' or romH = '0') and (cycle_time(5) = '1' or cycle_time(6) = '1' or cycle_time(7) = '1') then
+                flashCE_i <= '0';
+            elsif ramWrite = '1' and rw = '0' and io2 = '0' and (cycle_time(3) = '1' or cycle_time(4) = '1' or cycle_time(5) = '1') then
+                ramCE_i <= '0';
             elsif flashRead = '1' and rw = '1' and (romL = '0' or romH = '0') then
-                flashCE <= '0';
+                flashCE_i <= '0';
                 oe <= '0';
                 dir <= '1';
             elsif ramRead = '1' and rw = '1' then
                 -- RAM read access if IO2 is addressed,
                 -- or if in RAM as ROM mode and if ROM is addressed
                 if io2 = '0' or  ((romL = '0' or romH = '0') and cart_config(CART_CONFIG_RAM_AS_ROM) = '1') then
-                    ramCE <= '0';
+                    ramCE_i <= '0';
                     oe <= '0';
                     dir <= '1';
                 end if;
@@ -302,16 +300,8 @@ begin
         
     end process;
     
-	process(clk24, mc6850_rxData, mc6850_irq, rw, s02, a, reset, midi_config, mc6850_txData)
+	process(clk24, mc6850_rxData, mc6850_irq, rw, s02_latched, a, reset, midi_config, mc6850_txData)
 	begin
-		-- 68B50 MIDI
-        if midi_config(MIDI_CONFIG_THRU) = '1' then
-            midiThru <= mc6850_txData;
-        else
-            midiThru <= mc6850_rxData;
-        end if;
-		mc6850_rs <= a(0);
-
 		if rising_edge(clk24) then 
             if reset_i = '0' and ignore_reset = '0' then
                 cart_control <= "00000001";  -- game = 1, exrom = 0
@@ -323,135 +313,90 @@ begin
                 address_extension <= (others => '0');
                 address_extension2 <= (others => '0');
                 dt <= (others => 'Z');
-                exRom_i <= '1';
-                game_i <= '1';
-                irq <= 'Z';
-                nmi <= 'Z';
                 mc6850_rxTxClk <= '0';
                 easyflashLed <= '0';
-                ramWrite <= '0';
-                ramRead <= '0';
-                flashWrite <= '0';
-                flashRead <= '0';
                 reset <= 'Z';
             else
-                if reset_counter > 0 then
-                    -- count cycles
-                    if s02 = '0' and cycle_start = '1' then
-                        -- release reset after 7 cycles
-                        if reset_counter = 8 then
-                            reset <= 'Z';
-                        end if;
-
-                        -- don't ignore external resets after 15 cycles
-                        if reset_counter = 1 then
-                            ignore_reset <= '0';
-                        end if;
-                        reset_counter <= reset_counter - 1;
+                if reset_running = '1' then
+                    if counter = 5 then
+                        reset <= 'Z';
                     end if;
+                    if counter = 23 then
+                        ignore_reset <= '0';
+                        reset_running <= '0';
+                    else
+                        -- count cycles
+                        if s02_latched = '0' and cycle_start = '1' then
+                            counter <= counter + 1;
+                        end if;
+                    end if;
+                else
+                    -- generate clock for the MC6850
+                    if midi_config(MIDI_CONFIG_CLOCK) = '1' then
+                        -- 2 MHz
+                        if counter = 5 then
+                            counter <= 0;
+                            mc6850_clkBuffer <= not mc6850_clkBuffer;
+                        else
+                            counter <= counter + 1;
+                        end if;
+                    else
+                        -- 500 kHz
+                        if counter = 23 then
+                            counter <= 0;
+                            mc6850_clkBuffer <= not mc6850_clkBuffer;
+                        else
+                            counter <= counter + 1;
+                        end if;
+                    end if;
+                    mc6850_rxTxClk <= mc6850_clkBuffer;
                 end if;
-
+                
                 -- reset generator
                 if cart_control(CART_CONTROL_RESET) = '1' then
-                    -- reset for 7 cycles, reset ignore for 15 cycles
-                    reset_counter <= 15;
+                    -- reset for 3 cycles, reset ignore for 7 cycles
+                    counter <= 0;
                     ignore_reset <= '1';
                     cart_control(CART_CONTROL_RESET) <= '0';
                     reset <= '0';
+                    reset_running <= '1';
                 end if;
-
-				-- generate clock for the MC6850
-				if midi_config(MIDI_CONFIG_CLOCK) = '1' then
-					-- 2 MHz
-					if counter = 5 then
-						counter <= 0;
-						mc6850_clkBuffer <= not mc6850_clkBuffer;
-					else
-						counter <= counter + 1;
-					end if;
-				else
-					-- 500 kHz
-					if counter = 23 then
-						counter <= 0;
-						mc6850_clkBuffer <= not mc6850_clkBuffer;
-					else
-						counter <= counter + 1;
-					end if;
-				end if;
-				mc6850_rxTxClk <= mc6850_clkBuffer;
 				
 				mc6850_CS2 <= '1';
 				
 				-- defaults
-				irq <= 'Z';
-				nmi <= 'Z';
 				dt <= (others => 'Z');
-                ramWrite <= '0';
-                ramRead <= '0';
-                flashWrite <= '0';
-                flashRead <= '0';
-                led1 <= not mc6850_rxData;
-                led2 <= '0';
-
-                -- IRQ/NMI if not in EasyFlash mode
-                if mc6850_irq = '0' and cart_config(CART_CONFIG_EASYFLASH) = '0' then
-					if midi_config(MIDI_CONFIG_IRQ) = '1' then
-						irq <= '0';
-					end if;
-					if midi_config(MIDI_CONFIG_NMI) = '1' then
-						nmi <= '0';
-					end if;
-                    led2 <= not mc6850_txData;
-				end if;
-
-                -- LED2
-				if cart_config(CART_CONFIG_EASYFLASH) = '1' then
-                    -- EasyFlash mode
-                    led2 <= easyflashLed;
-                else
-                    -- from 6850
-                    led2 <= not mc6850_txData;
-				end if;
-
-				-- RAM access
-				if io2_filtered = '1' and cart_config(CART_CONFIG_RAM) = '1' then
-                    if rw_latched = '0' then
-                        ramWrite <= '1';
-                    else
-                        ramRead <= '1';
-                    end if;
-				end if;
 
 				-- register write access
 				if io1_filtered = '0' then
 					if a(7 downto 0) = x"3a" then
-						if rw_latched = '0' and cycle_middle = '1' then
+						if rw_latched = '0' and cycle_time(6) = '1' then
 							midi_address <= dt;
 						end if;
 					elsif a(7 downto 0) = x"3b" then
-						if rw_latched = '0' and cycle_middle = '1' then
+						if rw_latched = '0' and cycle_time(6) = '1' then
 							midi_config <= dt;
 						end if;
 					elsif a(7 downto 0) = x"3c" then
-						if rw_latched = '0' and cycle_middle = '1' then
+						if rw_latched = '0' and cycle_time(6) = '1' then
 							cart_control <= dt;
 						end if;
 					elsif a(7 downto 0) = x"3d" then
-						if rw_latched = '0' and cycle_middle = '1' then
+						if rw_latched = '0' and cycle_time(6) = '1' then
 							cart_config <= dt;
 						end if;
 					elsif a(7 downto 0) = x"3e" then
-						if rw_latched = '0' and cycle_middle = '1' then
+						if rw_latched = '0' and cycle_time(6) = '1' then
 							address_extension <= dt;
 						end if;
 					elsif a(7 downto 0) = x"3f" then
-						if rw_latched = '0' and cycle_middle = '1' then
+						if rw_latched = '0' and cycle_time(6) = '1' then
 							address_extension2 <= dt;
 						end if;
 					elsif a(7 downto 4) = "0000" then
                         if cart_config(CART_CONFIG_EASYFLASH) = '1' then
                             -- EasyFlash mode
-                            if rw_latched = '0' and cycle_middle = '1' then
+                            if rw_latched = '0' and cycle_time(6) = '1' then
                                 if a(3 downto 0) = x"0" then
                                     -- $de00
                                     address_extension <= "00" & dt(5 downto 0);
@@ -462,7 +407,7 @@ begin
                                     cart_control(CART_CONTROL_GAME) <= not dt(0);
                                 end if;
                             end if;
-                        elsif midi_config(MIDI_CONFIG_ENABLE) = '1' then
+                        elsif midi_config(MIDI_CONFIG_ENABLE) = '1' and s02_latched = '1' then
                             -- MIDI access
                             if rw_latched = '0' then
                                 -- write
@@ -479,82 +424,135 @@ begin
                     end if;
 				end if;
 				
-				-- flash access
-				if cart_config(CART_CONFIG_EASYFLASH) = '0' then
-                    -- standard mode
-                    if cart_config(CART_CONFIG_RAM_AS_ROM) = '0' then
-                        if romL_filtered = '0' then
-                            if rw_latched = '0' then
-                                flashWrite <= '1';
-                            else
-                                flashRead <= '1';
-                            end if;
-                        end if;
-                    else
-                        -- RAM as ROM mode
-                        if (romL_filtered = '0' or romH_filtered = '0') and rw_latched = '1' then
-                            ramRead <= '1';
-                        end if;
-                    end if;
-                else
-                    -- EasyFlash mode
-                    if romL_filtered = '0' or romH_filtered = '0' then
-                        if rw_latched = '0' then
-                            flashWrite <= '1';
-                        else
-                            flashRead <= '1';
-                        end if;
-                    end if;
-                end if;
-				
-				-- game and exrom
-				if cart_control(CART_CONTROL_EXROM) = '0' then
-					exRom_i <= '0';
-				else
-					exRom_i <= '1';
-				end if;
-				if cart_control(CART_CONTROL_GAME) = '0' then
-					game_i <= '0';
-				else
-					game_i <= '1';
-				end if;
-
-                -- KERNAL hack: read from RAM for KERNAL hack
-                if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
-                    if kernal_flash_read = '1' then
-                        flashWrite <= '0';
-                        flashRead <= '0';
-                        ramWrite <= '0';
-                        ramRead <= '1';
-                    end if;
-                end if;
-                
-                -- BASIC hack: enable ROM for BASIC read
-                if cart_config(CART_CONFIG_BASIC_HACK) = '1' then
-                    if a(15 downto 13) = "101" and s02 = '1' and ba = '1' and rw = '1' then
-                        game_i <= '0';
-                        exRom_i <= '0';
-                        flashWrite <= '0';
-                        flashRead <= '0';
-                        ramWrite <= '0';
-                        ramRead <= '1';
-                    end if;
-                end if;
-                
-                -- LED overwrite
-                if cart_control(CART_CONTROL_LED1) = '1' then
-                    led1 <= '1';
-                end if;
-                if cart_control(CART_CONTROL_LED2) = '1' then
-                    led2 <= '1';
-                end if;
-				
 			end if;
 		end if;
 
 	end process;
 	
-    cycle_middle <= cycle_time(3) or cycle_time(4) or cycle_time(5);
+	process(clk24, mc6850_rxData, mc6850_irq, rw, s02_latched, a, reset, midi_config, mc6850_txData)
+	begin
+		-- 68B50 MIDI
+        if midi_config(MIDI_CONFIG_THRU) = '1' then
+            midiThru <= mc6850_txData;
+        else
+            midiThru <= mc6850_rxData;
+        end if;
+		mc6850_rs <= a(0);
+
+        -- defaults
+        irq <= 'Z';
+        nmi <= 'Z';
+        dt <= (others => 'Z');
+        ramWrite <= '0';
+        ramRead <= '0';
+        flashWrite <= '0';
+        flashRead <= '0';
+        led1 <= not mc6850_rxData;
+        led2 <= '0';
+
+        -- IRQ/NMI if not in EasyFlash mode
+        if mc6850_irq = '0' and cart_config(CART_CONFIG_EASYFLASH) = '0' then
+            if midi_config(MIDI_CONFIG_IRQ) = '1' then
+                irq <= '0';
+            end if;
+            if midi_config(MIDI_CONFIG_NMI) = '1' then
+                nmi <= '0';
+            end if;
+            led2 <= not mc6850_txData;
+        end if;
+
+        -- LED2
+        if cart_config(CART_CONFIG_EASYFLASH) = '1' then
+            -- EasyFlash mode
+            led2 <= easyflashLed;
+        else
+            -- from 6850
+            led2 <= not mc6850_txData;
+        end if;
+
+        -- RAM access
+        if io2_filtered = '1' and cart_config(CART_CONFIG_RAM) = '1' then
+            if rw_latched = '0' then
+                ramWrite <= '1';
+            else
+                ramRead <= '1';
+            end if;
+        end if;
+
+        -- flash access
+        if cart_config(CART_CONFIG_EASYFLASH) = '0' then
+            -- standard mode
+            if cart_config(CART_CONFIG_RAM_AS_ROM) = '0' then
+                if romL_filtered = '0' then
+                    if rw_latched = '0' then
+                        flashWrite <= '1';
+                    else
+                        flashRead <= '1';
+                    end if;
+                end if;
+            else
+                -- RAM as ROM mode
+                if (romL_filtered = '0' or romH_filtered = '0') and rw_latched = '1' then
+                    ramRead <= '1';
+                end if;
+            end if;
+        else
+            -- EasyFlash mode
+            if romL_filtered = '0' or romH_filtered = '0' then
+                if rw_latched = '0' then
+                    flashWrite <= '1';
+                else
+                    flashRead <= '1';
+                end if;
+            end if;
+        end if;
+        
+        -- game and exrom
+        exRom_i <= 'Z';
+        game_i <= 'Z';
+        if cart_control(CART_CONTROL_EXROM) = '0' then
+            exRom_i <= '0';
+        else
+            exRom_i <= '1';
+        end if;
+        if cart_control(CART_CONTROL_GAME) = '0' then
+            game_i <= '0';
+        else
+            game_i <= '1';
+        end if;
+
+        -- KERNAL hack: read from RAM for KERNAL hack
+        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
+            if kernal_flash_read = '1' then
+                flashWrite <= '0';
+                flashRead <= '0';
+                ramWrite <= '0';
+                ramRead <= '1';
+            end if;
+        end if;
+        
+        -- BASIC hack: enable ROM for BASIC read
+        if cart_config(CART_CONFIG_BASIC_HACK) = '1' then
+            if a(15 downto 13) = "101" and s02_latched = '1' and ba = '1' and rw = '1' then
+                game_i <= '0';
+                exRom_i <= '0';
+                flashWrite <= '0';
+                flashRead <= '0';
+                ramWrite <= '0';
+                ramRead <= '1';
+            end if;
+        end if;
+        
+        -- LED overwrite
+        if cart_control(CART_CONTROL_LED1) = '1' then
+            led1 <= '1';
+        end if;
+        if cart_control(CART_CONTROL_LED2) = '1' then
+            led2 <= '1';
+        end if;
+				
+	end process;
+
 	at(7 downto 0) <= a(7 downto 0);
     cycle_start <= phi2_s xor prev_phi2;
 

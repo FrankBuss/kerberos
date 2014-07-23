@@ -11,7 +11,7 @@
          </top_modules>
       </db_ref>
    </db_ref_list>
-   <WVObjectSize size="25" />
+   <WVObjectSize size="29" />
    <wvobject fp_name="/main_testbench/at" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">at[20:0]</obj_property>
       <obj_property name="ObjectShortName">at[20:0]</obj_property>
@@ -116,5 +116,21 @@
       <obj_property name="ElementShortName">cart_control[7:0]</obj_property>
       <obj_property name="ObjectShortName">cart_control[7:0]</obj_property>
       <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/clk24" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk24</obj_property>
+      <obj_property name="ObjectShortName">clk24</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/main_instance/flashwrite" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">flashwrite</obj_property>
+      <obj_property name="ObjectShortName">flashwrite</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/main_instance/roml_filtered" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">roml_filtered</obj_property>
+      <obj_property name="ObjectShortName">roml_filtered</obj_property>
+   </wvobject>
+   <wvobject fp_name="/main_testbench/main_instance/rw_latched" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">rw_latched</obj_property>
+      <obj_property name="ObjectShortName">rw_latched</obj_property>
    </wvobject>
 </wave_config>

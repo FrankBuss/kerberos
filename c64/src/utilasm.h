@@ -17,9 +17,16 @@ uint8_t __fastcall__ flashReadByte(uint8_t* address);
 uint8_t __fastcall__ flashCompare256Block(uint8_t* address);
 uint16_t __fastcall__ flashReadId(void);
 
-//extern uint8_t g_oldMenu;
-
 extern uint8_t _BLOCK_BUFFER_START__;
 #define g_blockBuffer (&_BLOCK_BUFFER_START__)
+
+extern uint8_t _CART128_LOAD__;
+#define cart128Load (&_CART128_LOAD__)
+
+extern uint8_t cart128Start;
+#define cart128StartPtr (&cart128Start)
+
+extern uint8_t cart128End;
+#define cart128EndPtr (&cart128End)
 
 #endif

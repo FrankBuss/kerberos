@@ -137,6 +137,7 @@ void testFlash()
 	cprintf("flash id: 0x%04x\r\n", id);
 	if (id != 0xbfc8) {
 		cputs("wrong flash id\r\n");
+		anyKey();
 		return;
 	}
 	cputs("flash id ok\r\n");
@@ -326,6 +327,7 @@ void flashProgram()
 	cprintf("flash id: 0x%04x\r\n", id);
 	if (id != 0xbfc8) {
 		cputs("wrong flash id\r\n");
+		anyKey();
 		return;
 	}
 	cputs("flash id ok\r\n");
@@ -490,6 +492,7 @@ void testRamAsRom()
 		// enable special cartridge RAM as ROM mode and KERNAL hack
 		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
 	
+	#if 0
 		// test KERNAL
 		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
 
@@ -504,7 +507,7 @@ void testRamAsRom()
 
 		// test internal C64 RAM under KERNAL
 		ramSetBank(0x100 + i);
-		if (memcmp(g_ram, (i + 0xe0) << 8, 256)) {
+		if (memcmp(g_ram, (uint8_t*) ((i + 0xe0) << 8), 256)) {
 			*((uint8_t*) 1) = 0x37;
 			CART_CONFIG = CART_CONFIG_RAM_ON;
 			CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
@@ -518,6 +521,7 @@ void testRamAsRom()
 
 		// default value
 		*((uint8_t*) 1) = 0x37;
+		#endif
 	}
 	
 	// standard mode
@@ -696,6 +700,54 @@ void startProgramInSlot(void)
 	}
 }
 
+void c128Test()
+{
+	// CC65 bug? cart128Start doesn't work
+	uint8_t* start = (uint8_t*) 0x8000;
+	uint16_t size = ((uint16_t) cart128EndPtr) - ((uint16_t) start);
+	uint16_t i;
+	
+	clrscr();
+	
+	cputs("C128 test...\r\n");
+
+	// clear id for the two autostart ROMs in RAM
+	memset(g_blockBuffer, 0xff, 256);
+	ramSetBank(0x80);
+	memcpy(g_ram, g_blockBuffer, 256);
+	ramSetBank(0xc0);
+	memcpy(g_ram, g_blockBuffer, 256);
+
+	// copy 128 catridge code to RAM at $8000
+	cputs("copy cartridge code and start C128...\r\n");
+	for (i = 0; i < size; i++) {
+		uint16_t target = ((uint16_t) start) + i;
+		if ((target & 0xff) == 0) {
+			ramSetBank(target >> 8);
+		}
+		g_ram[target & 0xff] = cart128Load[i];
+	}
+	
+	// CPLD generated reset for starting C128, with RAM as ROM enabled
+	anyKey();
+	CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON;
+	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH | CART_CONTROL_RESET_GENERATE;
+	while (1);
+}
+
+void toBasic()
+{
+	clrscr();
+	
+	cputs("back to BASIC\r\n");
+
+	// CPLD generated reset for starting c64, with disabled cartridge
+	anyKey();
+	CART_CONFIG = 0;
+	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH | CART_CONTROL_RESET_GENERATE;
+	while (1);
+}
+
 int main(void)
 {
 	bgcolor(BACKGROUND_COLOR);
@@ -728,6 +780,8 @@ int main(void)
 		cputs("e: start EasyFlash\r\n");
 		cputs("v: receive MIDI file\r\n");
 		cputs("s: start program\r\n");
+		cputs("8: C128 test\r\n");
+		cputs("b: back to BASIC\r\n");
 		cputs("\r\n");
 		while (!kbhit());
 		switch (cgetc()) {
@@ -751,6 +805,12 @@ int main(void)
 				break;
 			case 's':
 				startProgramInSlot();
+				break;
+			case '8':
+				c128Test();
+				break;
+			case 'b':
+				toBasic();
 				break;
 		}
 	}

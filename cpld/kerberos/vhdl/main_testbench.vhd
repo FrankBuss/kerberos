@@ -117,6 +117,21 @@ begin
 	end process;
 	
 	stimulus: process
+	procedure romlWrite(address: std_logic_vector(15 downto 0); data: std_logic_vector(7 downto 0)) is
+	begin
+        -- wait for CPU cycle start and write to address
+        wait until s02 = '1';
+        rw <= '0';
+        a <= address;
+        dt <= data;
+        romL <= '0';
+        
+        -- wait for CPU cycle end and change to read again
+        wait until s02 = '0';
+        rw <= '1';
+        dt <= (others => 'Z');
+        romL <= '1';
+	end;
 	procedure io1Write(address: std_logic_vector(15 downto 0); data: std_logic_vector(7 downto 0)) is
 	begin
         -- wait for CPU cycle start and write to address
@@ -179,6 +194,8 @@ begin
         io1Write(CART_CONFIG, CART_CONFIG_RAM or CART_CONFIG_RAM_AS_ROM or CART_CONFIG_KERNAL_HACK);
         io1Write(CART_CONTROL, CART_CONTROL_GAME or CART_CONTROL_EXROM);
         romhRead(x"e000");
+        io1Write(CART_CONFIG, CART_CONFIG_RAM);
+        romlWrite(x"8000", x"00");
 		
 		wait for 10 us;
 
