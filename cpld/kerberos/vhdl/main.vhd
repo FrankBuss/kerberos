@@ -186,7 +186,7 @@ begin
                 io2_filtered <= '1';
             end if;
             
-            ramCE <= ramCE_i;
+--            ramCE <= ramCE_i;
             flashCE <= flashCE_i;
         end if;
 
@@ -246,15 +246,15 @@ begin
 
         -- generate read/write signals
         dir <= '0';
-        ramCE_i <= '1';
+        ramCE <= '1';
         oe <= '1';
         flashCE_i <= '1';
         we <= rw;
-        if s02_latched = '1' then
+        if s02 = '1' then
             if flashWrite = '1' and rw = '0' and (romL = '0' or romH = '0') and (cycle_time(5) = '1' or cycle_time(6) = '1' or cycle_time(7) = '1') then
                 flashCE_i <= '0';
-            elsif ramWrite = '1' and rw = '0' and io2 = '0' and (cycle_time(3) = '1' or cycle_time(4) = '1' or cycle_time(5) = '1') then
-                ramCE_i <= '0';
+            elsif ramWrite = '1' and rw = '0' and io2_filtered = '0' then
+                ramCE <= '0';
             elsif flashRead = '1' and rw = '1' and (romL = '0' or romH = '0') then
                 flashCE_i <= '0';
                 oe <= '0';
@@ -262,8 +262,8 @@ begin
             elsif ramRead = '1' and rw = '1' then
                 -- RAM read access if IO2 is addressed,
                 -- or if in RAM as ROM mode and if ROM is addressed
-                if io2 = '0' or  ((romL = '0' or romH = '0') and cart_config(CART_CONFIG_RAM_AS_ROM) = '1') then
-                    ramCE_i <= '0';
+                if io2_filtered = '0' or  ((romL = '0' or romH = '0') and cart_config(CART_CONFIG_RAM_AS_ROM) = '1') then
+                    ramCE <= '0';
                     oe <= '0';
                     dir <= '1';
                 end if;
@@ -471,7 +471,7 @@ begin
         end if;
 
         -- RAM access
-        if io2_filtered = '1' and cart_config(CART_CONFIG_RAM) = '1' then
+        if io2 = '0' and cart_config(CART_CONFIG_RAM) = '1' then
             if rw_latched = '0' then
                 ramWrite <= '1';
             else

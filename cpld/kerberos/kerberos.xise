@@ -47,8 +47,8 @@
     <property xil_pn:name="Case" xil_pn:value="Maintain" xil_pn:valueState="default"/>
     <property xil_pn:name="Case Implementation Style" xil_pn:value="None" xil_pn:valueState="default"/>
     <property xil_pn:name="Clock Enable" xil_pn:value="true" xil_pn:valueState="default"/>
-    <property xil_pn:name="Collapsing Input Limit (2-54)" xil_pn:value="20" xil_pn:valueState="non-default"/>
-    <property xil_pn:name="Collapsing Pterm Limit (1-90)" xil_pn:value="20" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Collapsing Input Limit (2-54)" xil_pn:value="54" xil_pn:valueState="default"/>
+    <property xil_pn:name="Collapsing Pterm Limit (1-90)" xil_pn:value="90" xil_pn:valueState="default"/>
     <property xil_pn:name="Compile CPLD Simulation Library" xil_pn:value="true" xil_pn:valueState="default"/>
     <property xil_pn:name="Compile SIMPRIM (Timing) Simulation Library" xil_pn:value="true" xil_pn:valueState="default"/>
     <property xil_pn:name="Compile UNISIM (Functional) Simulation Library" xil_pn:value="true" xil_pn:valueState="default"/>
