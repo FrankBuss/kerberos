@@ -19,6 +19,8 @@
 
 uint8_t* g_ram = (uint8_t*) 0xdf00;
 
+uint8_t g_isC128 = 0;
+
 void ramSetBank(uint16_t bank)
 {
 	// A16
@@ -426,22 +428,9 @@ void testRamAsRom()
 	disableInterrupts();
 	clrscr();
 	cputs("write random data in RAM...\r\n");
-
-#if 0
-		// enable special cartridge RAM as ROM mode and KERNAL hack
-		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
-		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
-
-		while (1) {
-			// enable internal C64 RAM under KERNAL
-			*((uint8_t*) 1) = 0x35;
-			i += *((uint8_t*) 0xe000);
-		}
-#endif
-
-	srand(1);
 	
 	// fill external RAM for ROM hack test
+	srand(1);
 	for (i = 0; i < 256; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
@@ -492,36 +481,40 @@ void testRamAsRom()
 		// enable special cartridge RAM as ROM mode and KERNAL hack
 		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
 	
-	#if 0
 		// test KERNAL
 		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
 
-		// trigger initial highram detection and enable KERNAL
-		*((uint8_t*) 1) = 0x37;
-
-		// test KERNAL
-		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
-
-		// enable internal C64 RAM under KERNAL
-		*((uint8_t*) 1) = 0x35;
-
-		// test internal C64 RAM under KERNAL
-		ramSetBank(0x100 + i);
-		if (memcmp(g_ram, (uint8_t*) ((i + 0xe0) << 8), 256)) {
+		// C128 has no HIRAM hack
+		if (!g_isC128) {
+			// enable special cartridge RAM as ROM mode and KERNAL hack with HIRAM hack
+			CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON | CART_CONFIG_HIGHRAM_HACK_ON;
+		
+			// trigger initial highram detection and enable KERNAL
 			*((uint8_t*) 1) = 0x37;
-			CART_CONFIG = CART_CONFIG_RAM_ON;
-			CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
-			enableInterrupts();
-			gotox(0);
-			cprintf("KERNAL HIGHRAM hack error\r\n");
-			cprintf("bank: %i\r\n", i);
-			anyKey();
-			return;
+	
+			// test KERNAL
+			if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL/HIRAM hack, ROM")) return;
+	
+			// enable internal C64 RAM under KERNAL
+			*((uint8_t*) 1) = 0x35;
+	
+			// test internal C64 RAM under KERNAL
+			ramSetBank(0x100 + i);
+			if (memcmp(g_ram, (uint8_t*) ((i + 0xe0) << 8), 256)) {
+				*((uint8_t*) 1) = 0x37;
+				CART_CONFIG = CART_CONFIG_RAM_ON;
+				CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+				enableInterrupts();
+				gotox(0);
+				cprintf("KERNAL HIGHRAM hack RAM error\r\n");
+				cprintf("bank: %i\r\n", i);
+				anyKey();
+				return;
+			}
+	
+			// default value
+			*((uint8_t*) 1) = 0x37;
 		}
-
-		// default value
-		*((uint8_t*) 1) = 0x37;
-		#endif
 	}
 	
 	// standard mode
@@ -750,16 +743,13 @@ void toBasic()
 
 int main(void)
 {
+	g_isC128 = isC128();
+	
 	bgcolor(BACKGROUND_COLOR);
 	bordercolor(BACKGROUND_COLOR);
 	textcolor(TEXT_COLOR);
 	gotoxy(0, 0);
 	textcolor(1);
-	
-	//testRam();
-	//testFlash();
-	//flashMenu();
-	//testMidi();
 	
 	for (;;) {
 		// disable MIDI
@@ -772,6 +762,7 @@ int main(void)
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 		
 		clrscr();
+		if (g_isC128) cputs("C128 computer detected\r\n");
 		cputs("Menu V0.6\r\n");
 		cputs("r: ram test\r\n");
 		cputs("f: flash test\r\n");
@@ -780,7 +771,7 @@ int main(void)
 		cputs("e: start EasyFlash\r\n");
 		cputs("v: receive MIDI file\r\n");
 		cputs("s: start program\r\n");
-		cputs("8: C128 test\r\n");
+		if (g_isC128) cputs("8: C128 test\r\n");
 		cputs("b: back to BASIC\r\n");
 		cputs("\r\n");
 		while (!kbhit());

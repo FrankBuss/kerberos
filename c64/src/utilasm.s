@@ -17,6 +17,32 @@ prg = $2d
 
 .segment "LOWCODE"
 
+
+; =============================================================================
+;
+; Test if we are running on a C128 in C64 mode
+;
+; uint8_t __fastcall__ isC128(void);
+;
+; parameters:
+;       -
+;
+; return:
+;       1 in A, if it is running on a C128, 0 on a C64
+;
+; =============================================================================
+.export _isC128
+_isC128:
+	inc $d02f
+	lda $d02f
+	dec $d02f
+	eor $d02f
+	beq isC64
+	lda #1
+isC64:	ldx #0
+	rts
+
+
 ; =============================================================================
 ;
 ; Converts ASCII to PETSCII

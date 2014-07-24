@@ -15,7 +15,7 @@
 
 int main(void)
 {
-	uint16_t id = 0;
+	uint16_t i = 0;
 	clrscr();
 	bgcolor(BACKGROUND_COLOR);
 	bordercolor(BACKGROUND_COLOR);
@@ -23,10 +23,20 @@ int main(void)
 	gotoxy(0, 0);
 	textcolor(1);
 	
+	cputs("HIRAM test\r\n");
+
+	// enable special cartridge RAM as ROM mode and KERNAL hack
+	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+	CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
+	
 	while (1) {
-		id = flashReadId();
-		gotoxy(0, 0);
-		cprintf("flash id: 0x%04x\r\n", id);
+		disableInterrupts();
+		*((uint8_t*) 1) = 0x35;
+		i += *((uint8_t*) 0xe000);
+		*((uint8_t*) 1) = 0x37;
+		enableInterrupts();
+		gotox(0);
+		cprintf("%i", i);
 	}
 
 	return 0;

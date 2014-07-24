@@ -1,6 +1,7 @@
 #ifndef UTIL_ASM_H
 #define UTIL_ASM_H
 
+uint8_t __fastcall__ isC128(void);
 void __fastcall__ startProgramFromRom(void);
 void __fastcall__ loadProgram(void);
 void __fastcall__ startProgram(void);

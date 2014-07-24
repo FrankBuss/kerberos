@@ -272,7 +272,7 @@ begin
 
         -- KERNAL hack
         a <= (others => 'Z');
-        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' and kernal_a14 = '0' then
+        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' and kernal_a14 = '0' and cart_config(CART_CONFIG_HIGHRAM_HACK) = '1' then
             a(14) <= '0';
         end if;
 
@@ -289,7 +289,7 @@ begin
         end if;
 
         -- and can be overwritten by KERNAL hack for HIRAM access
-        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
+        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' and cart_config(CART_CONFIG_HIGHRAM_HACK) = '1' then
             if kernal_n_game = '0' then
                 game <= '0';
             end if;
@@ -523,11 +523,24 @@ begin
 
         -- KERNAL hack: read from RAM for KERNAL hack
         if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
-            if kernal_flash_read = '1' then
-                flashWrite <= '0';
-                flashRead <= '0';
-                ramWrite <= '0';
-                ramRead <= '1';
+            if cart_config(CART_CONFIG_HIGHRAM_HACK) = '1' then
+                -- with HIRAM hack
+                if kernal_flash_read = '1' then
+                    flashWrite <= '0';
+                    flashRead <= '0';
+                    ramWrite <= '0';
+                    ramRead <= '1';
+                end if;
+            else
+                -- without HIRAM hack (enable Ultimax mode, read always ROM)
+                if a(15 downto 13) = "111" and s02_latched = '1' and ba = '1' and rw = '1' then
+                    game_i <= '0';
+                    exRom_i <= '1';
+                    flashWrite <= '0';
+                    flashRead <= '0';
+                    ramWrite <= '0';
+                    ramRead <= '1';
+                end if;
             end if;
         end if;
         
