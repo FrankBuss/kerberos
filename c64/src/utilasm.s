@@ -191,7 +191,8 @@ _startEasyFlash:
 		
 		; first bank
 		lda #0
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
+		sta RAM_ADDRESS_EXTENSION
 		
 		; enable A20 for second mb of flash
 		lda #ADDRESS_EXTENSION2_FLASH_A20
@@ -288,7 +289,7 @@ _flashEraseSector:
 		
 		; activate the right bank
 		lda flashBank
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 		
 		; cycle 6: write $50 to base + SA
 		ldx tmp1
@@ -362,7 +363,7 @@ _flashCompare256Block:
 		
 		; activate bank
 		lda flashBank
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 
 		; read byte
 cmp1:		ldx tmp1
@@ -428,7 +429,7 @@ _flashWriteByte:
 		
 		; now we have to activate the right bank
 		lda flashBank
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 		
 		; cycle 4: write data
 		ldx tmp1
@@ -459,10 +460,6 @@ writeEnd:	rts
 ; =============================================================================
 .export _flashReadId
 _flashReadId:
-		; activate bank 0
-		lda #0
-		sta ADDRESS_EXTENSION
-		
 		; check for flash
 		jsr prepareWrite
 		
@@ -513,7 +510,7 @@ _flashReadByte:
 		
 		; activate bank
 		lda flashBank
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 		
 		; read byte
 		ldx tmp1
@@ -535,7 +532,7 @@ _flashReadByte:
 prepareWrite:
 		; select bank 0
 		lda #0
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 		
 		; cycle 1: write $AA to $AAA
 		ldx #<$8aaa
@@ -684,13 +681,13 @@ copyCrt2:	sta $0801,y
 		sta copyCrt1+2
 		inc romLoaderFlashBank
 		lda romLoaderFlashBank
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 copyCrt3:	dex
 		bne copyCrt1
 		
 		; adjust prg end
 		pla
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 		clc
 		lda $80fc
 		adc $80fe
@@ -761,7 +758,7 @@ readFilename:	jsr readByte
 		
 		; init RAM write variables
 nameEnd:	lda #0
-		sta ADDRESS_EXTENSION
+		sta RAM_ADDRESS_EXTENSION
 		sta ramBank
 		sta ramIndex
 		lda #1
@@ -798,7 +795,7 @@ nameEnd:	lda #0
 
 		lda #1
 		sta ramBank
-		sta ADDRESS_EXTENSION
+		sta RAM_ADDRESS_EXTENSION
 		
 		; read program
 readProgram:	jsr readByte
@@ -808,7 +805,7 @@ readProgram:	jsr readByte
 		bne readProgram2
 		inc ramBank
 		lda ramBank
-		sta ADDRESS_EXTENSION
+		sta RAM_ADDRESS_EXTENSION
 readProgram2:	inc start
 		bne readProgram3
 		inc start+1
@@ -931,7 +928,7 @@ loaderStart:
 
 startProgram:
 		lda #0
-		sta ADDRESS_EXTENSION
+		sta RAM_ADDRESS_EXTENSION
 		
 		lda prgStart
 		beq testHigh
@@ -953,7 +950,7 @@ startAsm:	jmp (prgStart)
 		; copy program from RAM and start it
 loadRamPrg:	sei
 		lda #0
-		sta ADDRESS_EXTENSION
+		sta RAM_ADDRESS_EXTENSION
 		lda prgCounter
 		pha
 		lda prgCounter+1
@@ -970,7 +967,7 @@ loadRamPrg:	sei
 		sta prg+1
 		lda #1
 		sta bank
-		sta ADDRESS_EXTENSION
+		sta RAM_ADDRESS_EXTENSION
 		ldy #0
 copyRom1:	lda $df00,y
 		sta (prg),y
@@ -985,7 +982,7 @@ copyRom2:	iny
 		inc prg+1
 		inc bank
 		lda bank
-		sta ADDRESS_EXTENSION
+		sta RAM_ADDRESS_EXTENSION
 		bne copyRom1
 copyRomEnd:	pla
 		sta bank

@@ -402,7 +402,11 @@ returnCSet:
 ;
 ; =============================================================================
 EAPIWriteFlash:
-        sta EAPI_TMP_VAL1
+        cmp #$ff
+        bne write
+        clc
+        rts
+write:  sta EAPI_TMP_VAL1
         stx EAPI_TMP_VAL2
         sty EAPI_TMP_VAL3
         php

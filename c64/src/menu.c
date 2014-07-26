@@ -29,7 +29,7 @@ void ramSetBank(uint16_t bank)
 	ADDRESS_EXTENSION2 = control;
 	
 	// A15..A8
-	ADDRESS_EXTENSION = bank & 0xff;
+	RAM_ADDRESS_EXTENSION = bank & 0xff;
 }
 
 void anyKey()
@@ -260,6 +260,9 @@ void testFlash()
 
 void testMidi()
 {
+	uint8_t midiThruOut = 0;
+	uint8_t midiThruIn = 0;
+	uint8_t config = 0;
 	clrscr();
 	if (!midiIrqNmiTest()) {
 		cputs("MIDI IRQ not working\r\n");
@@ -271,12 +274,17 @@ void testMidi()
 	cputs("MIDI menu\r\n");
 	cputs("n: send note on\r\n");
 	cputs("f: send note off\r\n");
-	cputs("i: MIDI thru setting: MIDI in\r\n");
-	cputs("o: MIDI thru setting: MIDI out\r\n");
+	cputs("i: MIDI thru in setting\r\n");
+	cputs("o: MIDI thru out setting\r\n");
 	cputs("\x1f: back\r\n");
 	cputs("\r\n");
 
 	for (;;) {
+		config = MIDI_CONFIG_ENABLE_ON | MIDI_CONFIG_NMI_ON;
+		if (midiThruIn) config |= MIDI_CONFIG_THRU_IN_ON;
+		if (midiThruOut) config |= MIDI_CONFIG_THRU_OUT_ON;
+		MIDI_CONFIG = config;
+
 		if (kbhit()) {
 			switch (cgetc()) {
 				case 'n':
@@ -296,13 +304,13 @@ void testMidi()
 					break;
 				
 				case 'i':
-					cputs("MIDI thru setting: MIDI in\r\n");
-					MIDI_CONFIG = MIDI_CONFIG_ENABLE_ON | MIDI_CONFIG_NMI_ON;
+					midiThruIn = !midiThruIn;
+					cprintf("MIDI thru in setting: %s\r\n", midiThruIn ? "on" : "off");
 					break;
 
 				case 'o':
-					cputs("MIDI thru setting: MIDI out\r\n");
-					MIDI_CONFIG = MIDI_CONFIG_ENABLE_ON | MIDI_CONFIG_NMI_ON | MIDI_CONFIG_THRU_OUT;
+					midiThruOut = !midiThruOut;
+					cprintf("MIDI thru out setting: %s\r\n", midiThruOut ? "on" : "off");
 					break;
 
 				case LEFT_ARROW_KEY:  // left arrow
@@ -637,7 +645,7 @@ void startProgramInSlot(void)
 	
 	for (i = 1; i < 8; i++) {
 		// 64 kb per slot
-		ADDRESS_EXTENSION = i * 8;
+		FLASH_ADDRESS_EXTENSION = i * 8;
 		adr = (uint8_t*) 0x8000;
 		cprintf("%i: ", i);
 		if (adr[0] == 0x42) {
@@ -671,7 +679,7 @@ void startProgramInSlot(void)
 				// enable ROM at $8000	
 				CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW;
 				
-				ADDRESS_EXTENSION = key * 8;
+				FLASH_ADDRESS_EXTENSION = key * 8;
 				adr = (uint8_t*) 0x8000;
 				if (adr[0] == 0x42 || 1) {
 					cputs("starting program\r\n");

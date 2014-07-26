@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <regs>
-	<reg name="MIDI_ADDRESS" address="0xde3a">
+	<reg name="MIDI_ADDRESS" address="0xde39">
 		<description>address offset for MIDI read/write access from $de00.</description>
 		<bits start="1" end="3" name="READ_OFFSET">
 			<description>read offset</description>
@@ -9,7 +9,7 @@
 			<description>write offset</description>
 		</bits>
 	</reg>
-	<reg name="MIDI_CONFIG" address="0xde3b">
+	<reg name="MIDI_CONFIG" address="0xde3a">
 		<description>MIDI configuration for MC68B50 and routing.</description>
 		<bit position="0" name="IRQ">
 			<description>IRQ routing from MC68B50 to C64 IRQ</description>
@@ -38,16 +38,25 @@
 				<description>2 MHz</description>
 			</case>
 		</bit>
-		<bit position="3" name="THRU">
+		<bit position="3" name="THRU_IN">
 			<description>MIDI thru signal source</description>
-			<case value="0" name="IN">
-				<description>MIDI in</description>
+			<case value="0" name="OFF">
+				<description>don't use MIDI in</description>
 			</case>
-			<case value="1" name="OUT">
+			<case value="1" name="ON">
+				<description>use MIDI in</description>
+			</case>
+		</bit>
+		<bit position="4" name="THRU_OUT">
+			<description>MIDI thru signal source</description>
+			<case value="0" name="OFF">
+				<description>don't use MIDI out</description>
+			</case>
+			<case value="1" name="ON">
 				<description>MIDI out</description>
 			</case>
 		</bit>
-		<bit position="4" name="ENABLE">
+		<bit position="5" name="ENABLE">
 			<description>enable MIDI address</description>
 			<case value="0" name="OFF">
 				<description>disable MIDI</description>
@@ -57,7 +66,7 @@
 			</case>
 		</bit>
 	</reg>
-	<reg name="CART_CONTROL" address="0xde3c">
+	<reg name="CART_CONTROL" address="0xde3b">
 		<description>Controls the GAME/EXROM levels, LEDs and software reset.</description>
 		<bit position="0" name="GAME">
 			<description>GAME level</description>
@@ -102,7 +111,7 @@
 			</case>
 		</bit>
 	</reg>
-	<reg name="CART_CONFIG" address="0xde3d">
+	<reg name="CART_CONFIG" address="0xde3c">
 		<description>RAM and mode configurations.</description>
 		<bit position="0" name="RAM">
 			<description>RAM control for $df00-$dfff</description>
@@ -159,8 +168,11 @@
 			</case>
 		</bit>
 	</reg>
-	<reg name="ADDRESS_EXTENSION" address="0xde3e">
-		<description>Address bits 15..8 for RAM and 20..13 for flash.</description>
+	<reg name="FLASH_ADDRESS_EXTENSION" address="0xde3d">
+		<description>Address bits 20..13 for flash.</description>
+	</reg>
+	<reg name="RAM_ADDRESS_EXTENSION" address="0xde3e">
+		<description>Address bits 15..8 for RAM.</description>
 	</reg>
 	<reg name="ADDRESS_EXTENSION2" address="0xde3f">
 		<description>More address bits.</description>

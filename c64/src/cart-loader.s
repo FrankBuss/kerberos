@@ -65,7 +65,7 @@ loaderStart:
 		ldx #(>(menuEnd - menuStart))+1
 		lda #0
 		sta bank
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 		ldy #0
 copyRom1:	lda menuStart,y
 copyRom2:	sta $0801,y
@@ -80,7 +80,7 @@ copyRom2:	sta $0801,y
 		sta copyRom1+2
 		inc bank
 		lda bank
-		sta ADDRESS_EXTENSION
+		sta FLASH_ADDRESS_EXTENSION
 copyRom3:	dex
 		bne copyRom1
 		lda #<prgEnd
