@@ -14,13 +14,13 @@ entity main is
 		
 		-- RAM/flash
 		at: out std_logic_vector(20 downto 0);
-		flashCE: out std_logic;
-		ramCE: out std_logic;
+		flash_ce: out std_logic;
+		ram_ce: out std_logic;
 		we: out std_logic;
 		oe: out std_logic;
 
 		-- data bus
-		dt: inout std_logic_vector(7 downto 0);
+		dt: in std_logic_vector(7 downto 0);
 		dir: out std_logic;
 
 		-- 68B50 MIDI
@@ -42,8 +42,8 @@ entity main is
 		c64_a15: in std_logic;
 		romL: in std_logic;
 		romH: in std_logic;
-		exRom: inout std_logic;
-		game: inout std_logic;
+		exrom: out std_logic;
+		game: out std_logic;
 		reset: inout std_logic;
 		rw: in std_logic;
 		nmi: inout std_logic;
@@ -74,147 +74,458 @@ constant CART_CONTROL_EXROM : integer := 1;
 constant CART_CONTROL_LED1 : integer := 2;
 constant CART_CONTROL_LED2 : integer := 3;
 constant CART_CONTROL_RESET : integer := 4;
-constant CART_CONFIG_RAM : integer := 0;
-constant CART_CONFIG_KERNAL_HACK : integer := 1;
-constant CART_CONFIG_HIGHRAM_HACK : integer := 2;
-constant CART_CONFIG_EASYFLASH : integer := 3;
-constant CART_CONFIG_RAM_AS_ROM : integer := 4;
-constant CART_CONFIG_BASIC_HACK : integer := 5;
+constant CART_CONFIG_EASYFLASH : integer := 0;
+constant CART_CONFIG_RAM_AS_ROM : integer := 1;
+constant CART_CONFIG_KERNAL_HACK : integer := 2;
+constant CART_CONFIG_BASIC_HACK : integer := 3;
+constant CART_CONFIG_HIRAM_HACK : integer := 4;
 constant ADDRESS_EXTENSION2_RAM : integer := 0;
 constant ADDRESS_EXTENSION2_FLASH : integer := 1;
 
--- KERNAL hiram hack
-signal kernal_a14:          std_logic;
-signal kernal_n_game:       std_logic;
-signal kernal_n_exrom:      std_logic;
-signal kernal_flash_read:   std_logic;
-signal kernal_start_reset:  std_logic;
-
-signal io1_latched: std_logic_vector(2 downto 0);
-signal io2_latched: std_logic_vector(2 downto 0);
+signal io1_latched: std_logic_vector(1 downto 0);
+signal io2_latched: std_logic_vector(1 downto 0);
 signal s02_latched: std_logic;
-signal romL_latched: std_logic_vector(2 downto 0);
-signal romH_latched: std_logic_vector(2 downto 0);
+signal prev_s02: std_logic;
+signal romL_latched: std_logic_vector(1 downto 0);
+signal romH_latched: std_logic_vector(1 downto 0);
 signal rw_latched: std_logic;
 signal easyflashLed: std_logic;
 
-signal ramWrite: std_logic := '0';
-signal ramRead: std_logic := '0';
-
-signal flashWrite: std_logic := '0';
-signal flashRead: std_logic := '0';
-
-signal flashCE_i: std_logic := '0';
-signal ramCE_i: std_logic := '0';
+signal ram_write: std_logic := '0';
+signal flash_write: std_logic := '0';
+signal mem_access_allowed: boolean;
 
 signal counter: integer range 0 to 23;
 signal mc6850_clkBuffer: std_logic;
 
-signal prev_phi2: std_logic;
-signal phi2_s: std_logic;
-signal cycle_time: std_logic_vector(10 downto 0);
-signal cycle_start: std_logic;
 signal reset_i: std_logic;
 signal reset_running: std_logic := '0';
 signal ignore_reset: std_logic := '0';
-signal exRom_i: std_logic;
-signal game_i: std_logic;
 signal romL_filtered: std_logic;
 signal romH_filtered: std_logic;
 signal io1_filtered: std_logic;
 signal io2_filtered: std_logic;
-signal s02_filtered: std_logic;
 signal adr: std_logic_vector(15 downto 0);
+
+-- HIRAM hack
+signal cpu_port_changed: boolean;
+signal kernal_read_active: boolean;
+signal hiram_state: std_logic;
+
+type state_type is (
+    idle,
+    address_valid,
+    delay,
+    delay2,
+    delay3,
+    delay4,
+    delay5,
+    delay6,
+    delay7
+);
+signal state: state_type := idle;
+
 
 begin
 
-    u_cart_kernal: entity cart_kernal port map
-    (
-        clk                     => clk24,
-        n_reset                 => reset_i,
-        enable                  => cart_config(CART_CONFIG_KERNAL_HACK),
-        phi2                    => s02,
-        ba                      => ba,
-        n_romh                  => romH,
-        n_wr                    => rw,
-        cycle_time              => cycle_time,
-        cycle_start             => cycle_start,
-        addr                    => adr,
-        a14                     => kernal_a14,
-        n_game                  => kernal_n_game,
-        n_exrom                 => kernal_n_exrom,
-        flash_read              => kernal_flash_read
-    );
-
-    ---------------------------------------------------------------------------
-    -- Create a synchronized version of Phi2 (phi2_s) and a copy of phi2_s
-    -- which is delayed by one clock cycle (prev_phi2).
-    ---------------------------------------------------------------------------
-    synchronize_stuff: process(clk24)
+    -- synchronize inputs
+    process(clk24)
     begin
         if rising_edge(clk24) then
-            prev_phi2 <= phi2_s;
-            phi2_s <= s02;
+            -- filter IO glitches: max. measured glitch is 20 ns, filter for 83 ns
+            io1_latched <= io1_latched(0) & io1;
+            io2_latched <= io2_latched(0) & io2;
+
+            -- latch inputs
+            romL_latched <= romL_latched(0) & romL;
+            romH_latched <= romH_latched(0) & romH;
+            s02_latched <= s02;
+            prev_s02 <= s02_latched;
+            rw_latched <= rw;
             reset_i <= reset;
 
-            -- filter IO and ROML/ROMH glitches: max. measured glitch is 20 ns, filter for 83 ns
-            io1_latched <= io1_latched(1 downto 0) & io1;
-            io2_latched <= io2_latched(1 downto 0) & io2;
-
-            -- ROMH is still low for 60 ns after rising edge of s02, if the VIC access the memory in Ultimax mode, mask it
-            romL_latched <= romL_latched(1 downto 0) & (not ((not romL) and s02_latched));
-            romH_latched <= romH_latched(1 downto 0) & (not ((not romH) and s02_latched));
-            
-            -- latch inputs
-            s02_latched <= s02;
-            rw_latched <= rw;
-
-            -- generate filtered outputs
-            if romL_latched = "000" then
-                romL_filtered <= '0';
-            else
-                romL_filtered <= '1';
-            end if;
-            if romH_latched = "000" then
-                romH_filtered <= '0';
-            else
-                romH_filtered <= '1';
-            end if;
-            if io1_latched = "000" then
-                io1_filtered <= '0';
-            else
-                io1_filtered <= '1';
-            end if;
-            if io2_latched = "000" then
-                io2_filtered <= '0';
-            else
-                io2_filtered <= '1';
-            end if;
-            
---            ramCE <= ramCE_i;
-            flashCE <= flashCE_i;
-        end if;
-
-    end process synchronize_stuff;
-
-    ---------------------------------------------------------------------------
-    -- count clk24 cycles in both phases of phi2 with a shift register
-    ---------------------------------------------------------------------------
-    clk_time_shift: process(clk24, prev_phi2, phi2_s)
-    begin
-        if rising_edge(clk24) then
-            if prev_phi2 /= phi2_s then
-                cycle_time <= (others => '0');
-                cycle_time(0) <= '1';
-            else
-                cycle_time <= cycle_time(9 downto 0) & '0';
-            end if;
         end if;
     end process;
 
-	process(flashWrite, flashRead, ramWrite, ramRead, rw, romL, romH, io2, cart_config, address_extension2, s02_latched)
-	begin
-        -- generate address
+
+    -- main statemachine
+    
+    -- C64/C128 timings:
+    -- address from CPU is valid 12 ns after rising edge of s02 on a fast C64, but needs up to 95 ns on a C128
+    -- data from CPU is valid 70 ns after rising edge of s02 (but needs up to 330 ns after falling edge on C128 in 2 MHz mode)
+    -- address from CPU can be valid until 31 ns after falling edge of s02
+    -- on a C128, RW can be low 50 ns after falling edge of s02, for a full cycle of s02
+    -- the RAM from the internal C64 can be as slow as valid 330 ns after rising edge of s02
+    -- IO1/IO2 goes low 80-120 ns after rising edge of s02
+    
+    -- implementation:
+    -- s02 is latched with 24 MHz, which means a delay from 41 ns to 82 ns
+    -- statemachine starts with rising edge detection on s02
+    -- after one more delay, address_valid state is reached 120-160 ns after s02
+
+    -- register write access with IO1:
+    -- the filtered IO1/IO2 signal is valid 230-270 ns after rising edge of s02
+    -- sample address and data for register write 325-365 ns after rising edge s02
+    process(clk24, s02)
+    begin
+        if rising_edge(clk24) then
+            if reset_i = '0' and ignore_reset = '0' then
+                cart_control <= "00000001";  -- game = 1, exrom = 0
+                midi_config <= (others => '0');
+                midi_config <= (others => '0');
+                midi_address <= (others => '0');
+                midi_address <= (others => '0');
+                cart_config <= (others => '0');
+                ram_address_extension <= (others => '0');
+                flash_address_extension <= (others => '0');
+                address_extension2 <= (others => '0');
+                mc6850_rxTxClk <= '0';
+                easyflashLed <= '0';
+                reset <= 'Z';
+                dir <= '0';
+                ram_ce <= '1';
+                oe <= '1';
+                flash_ce <= '1';
+                game <= '1';
+                exrom <= '1';
+                c64_a14 <= 'Z';
+                cpu_port_changed <= true;
+                hiram_state <= '0';
+            else
+                if reset_running = '1' then
+                    -- reset counter mode
+                    if counter = 5 then
+                        reset <= 'Z';
+                    end if;
+                    if counter = 23 then
+                        ignore_reset <= '0';
+                        reset_running <= '0';
+                    else
+                        -- count s02 cycles
+                        if s02_latched = '1' and prev_s02 = '0' then
+                            counter <= counter + 1;
+                        end if;
+                    end if;
+                else
+                    -- generate clock for the MC6850
+                    if midi_config(MIDI_CONFIG_CLOCK) = '1' then
+                        -- 2 MHz
+                        if counter = 5 then
+                            counter <= 0;
+                            mc6850_clkBuffer <= not mc6850_clkBuffer;
+                        else
+                            counter <= counter + 1;
+                        end if;
+                    else
+                        -- 500 kHz
+                        if counter = 23 then
+                            counter <= 0;
+                            mc6850_clkBuffer <= not mc6850_clkBuffer;
+                        else
+                            counter <= counter + 1;
+                        end if;
+                    end if;
+                    mc6850_rxTxClk <= mc6850_clkBuffer;
+                end if;
+
+                -- reset generator
+                if cart_control(CART_CONTROL_RESET) = '1' then
+                    -- reset for 3 cycles, reset ignore for 7 cycles
+                    counter <= 0;
+                    ignore_reset <= '1';
+                    cart_control(CART_CONTROL_RESET) <= '0';
+                    reset <= '0';
+                    reset_running <= '1';
+                end if;
+
+                -- main statemachine
+                case state is
+                    when idle => null;
+
+                    -- 80-120 ns after rising edge of s02
+                    when delay =>
+                        if s02_latched = '1' then
+                            -- game and exrom can be overwritten by hacks
+                            -- KERNAL hack: read from RAM for KERNAL hack
+                            if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
+                                if cart_config(CART_CONFIG_HIRAM_HACK) = '1' then
+                                    -- with HIRAM hack; doesn't work on C128, so address is valid earlier for C64
+                                    if adr(15 downto 13) = "111" and ba = '1' and rw_latched = '1' then
+                                        kernal_read_active <= true;
+                                        if cpu_port_changed then
+                                            -- start detection
+                                            game  <= '0';
+                                            exrom <= '0';
+                                            c64_a14 <= '0';
+                                        else
+                                            -- use previously detected HIRAM state
+                                            if hiram_state = '1' then
+                                                -- ram
+                                                game  <= '1';
+                                                exrom <= '1';
+                                            else
+                                                -- rom
+                                                game  <= '0';
+                                                exrom <= '1'; -- Ultimax mode
+                                            end if;
+                                        end if;
+                                    end if;
+                                end if;
+                            end if;
+                        end if;
+
+                        state <= delay2;
+                        
+                    -- 120-160 ns after rising edge of s02
+                    when delay2 =>
+                        mem_access_allowed <= true;
+                        if s02_latched = '1' then
+                            -- detect CPU port writes for HIRAM hack
+                            if adr(15 downto 1) = "000000000000000" and rw_latched= '0' then
+                                cpu_port_changed <= true;
+                            end if;
+
+                            -- game and exrom can be overwritten by hacks
+                            -- KERNAL hack: read from RAM for KERNAL hack
+                            if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
+                                if cart_config(CART_CONFIG_HIRAM_HACK) = '0' then
+                                    -- without HIRAM hack (enable Ultimax mode, read always ROM; works for C128, too)
+                                    if adr(15 downto 13) = "111" and ba = '1' and rw_latched = '1' then
+                                        game <= '0';
+                                        exrom <= '1';
+                                    end if;
+                                end if;
+                            end if;
+                            
+                            -- BASIC hack: enable ROM for BASIC read
+                            if cart_config(CART_CONFIG_BASIC_HACK) = '1' and not kernal_read_active then
+                                if adr(15 downto 13) = "101" and ba = '1' and rw_latched = '1' then
+                                    game <= '0';
+                                    exrom <= '0';
+                                end if;
+                            end if;
+                        end if;
+                        state <= address_valid;
+
+                    -- 161-201 ns after rising edge of s02
+                    when address_valid =>
+                        if s02_latched = '1' then
+                            -- evaluate HIRAM detection (only for C64)
+                            -- ROMH reflects hiram now
+                            if kernal_read_active and cpu_port_changed then
+                                hiram_state <= romh;
+                                if romh = '1' then
+                                    -- ram
+                                    game  <= '1';
+                                    exrom <= '1';
+                                else
+                                    -- rom
+                                    game  <= '0';
+                                    exrom <= '1'; -- Ultimax mode
+                                end if;
+                                cpu_port_changed <= false;
+                            end if;
+                        end if;
+                        c64_a14 <= 'Z';
+                        state <= delay3;
+
+                    -- 202-242 ns after rising edge of s02
+                    when delay3 =>
+                        state <= delay4;
+
+                    -- 243-283 ns after rising edge of s02
+                    when delay4 =>
+                        state <= delay5;
+
+                    -- 284-324 ns after rising edge of s02
+                    when delay5 =>
+                        -- register write access
+                        if s02_latched = '1' and rw_latched = '0' then
+                            -- flash / RAM write
+                            if flash_write = '1' and (romL_filtered = '0' or romH_filtered = '0') then
+                                we <= '0';
+                                flash_ce <= '0';
+                            elsif ram_write = '1' and io2_filtered = '0' then
+                                we <= '0';
+                                ram_ce <= '0';
+                            end if;
+                        end if;
+                        state <= delay6;
+
+                    -- 325-365 ns after rising edge of s02
+                    when delay6 =>
+                        state <= delay7;
+
+                    -- 366-486 ns after rising edge of s02
+                    when delay7 =>
+                        -- register write access
+                        if s02_latched = '1' and rw_latched = '0' then
+                            if io1_filtered = '0' then
+                                if adr(7 downto 0) = x"39" then
+                                    midi_address <= dt;
+                                elsif adr(7 downto 0) = x"3a" then
+                                    midi_config <= dt;
+                                elsif adr(7 downto 0) = x"3b" then
+                                    cart_control <= dt;
+                                elsif adr(7 downto 0) = x"3c" then
+                                    cart_config <= dt;
+                                elsif adr(7 downto 0) = x"3d" then
+                                    flash_address_extension <= dt;
+                                elsif adr(7 downto 0) = x"3e" then
+                                    ram_address_extension <= dt;
+                                elsif adr(7 downto 0) = x"3f" then
+                                    address_extension2 <= dt;
+                                elsif adr(7 downto 4) = "0000" then
+                                    if cart_config(CART_CONFIG_EASYFLASH) = '1' then
+                                        -- EasyFlash mode
+                                        if adr(3 downto 0) = x"0" then
+                                            -- $de00
+                                            flash_address_extension <= "00" & dt(5 downto 0);
+                                        elsif adr(3 downto 0) = x"2" then
+                                            -- $de02
+                                            easyflashLed <= dt(7);
+                                            cart_control(CART_CONTROL_EXROM) <= not dt(1);
+                                            cart_control(CART_CONTROL_GAME) <= not dt(0);
+                                        end if;
+                                    end if;
+                                end if;
+                            end if;
+                        end if;
+
+                        -- stop flash / RAM write
+                        if flash_write = '1' then
+                            we <= '1';
+                            flash_ce <= '1';
+                        elsif ram_write = '1' then
+                            we <= '1';
+                            ram_ce <= '1';
+                        end if;
+
+                        state <= idle;
+                end case;
+
+                -- set default for exrom and game with rising edge of s02
+                if s02 = '1' and prev_s02 = '0' then
+                    exrom <= cart_control(CART_CONTROL_EXROM);
+                    game <= cart_control(CART_CONTROL_GAME);
+                end if;
+                
+                -- memory access allowed from address_valid state until s02=0
+                if mem_access_allowed then
+                    -- prepare RAM/flash access
+                    if io2_filtered = '0' and rw_latched = '0' and s02_latched = '1' then
+                        ram_write <= '1';
+                    end if;
+                    if (romL_filtered = '0' or romH_filtered = '0') and rw_latched = '0' and s02_latched = '1' then
+                        flash_write <= '1';
+                    end if;
+
+                    -- RAM/flash read
+                    -- special case for C128: ignore rw=0 for s02=0, because it is wrong
+                    if (s02_latched = '0') or (rw_latched = '1') then
+                        if (((romL_filtered = '0') or (romH_filtered = '0')) and cart_config(CART_CONFIG_RAM_AS_ROM) = '1') or (io2_filtered = '0') then
+                            we <= '1';
+                            ram_ce <= '0';
+                            oe <= '0';
+                            dir <= '1';
+                        elsif (romL_filtered = '0') or (romH_filtered = '0') then
+                            we <= '1';
+                            flash_ce <= '0';
+                            oe <= '0';
+                            dir <= '1';
+                        end if;
+                    end if;
+                end if;
+
+                -- cycle start detection
+                if s02_latched /= prev_s02 then
+                    -- disable outputs on cycle start
+                    dir <= '0';
+                    oe <= '1';
+                    flash_ce <= '1';
+                    ram_ce <= '1';
+                    
+                    -- init variables
+                    flash_write <= '0';
+                    ram_write <= '0';
+                    mem_access_allowed <= false;
+                    kernal_read_active <= false;
+                    state <= delay;
+                end if;
+                
+            end if;
+
+        end if;
+
+    end process;
+
+    -- MIDI, LEDs and IRQs, not clocked
+    process(reset, midi_config, io1_filtered, s02_latched, rw_latched, adr, midi_address, mc6850_rxData, mc6850_txData, mc6850_irq, cart_config, easyflashLed, cart_control)
+    begin
+        if reset = '0' then
+            mc6850_CS2 <= '1';
+            led1 <= '0';
+            led2 <= '0';
+            irq <= 'Z';
+            nmi <= 'Z';
+        else
+            -- MIDI access
+            -- "chip select setup time before E" is violated, because the C64 address is not stable at that moment,
+            -- but all other timings are met, so the MC68B50 has enough time to sample the address and for data IO
+            mc6850_CS2 <= '1';
+            if midi_config(MIDI_CONFIG_ENABLE) = '1' and io1_filtered = '0' and s02_latched = '1' then
+                if rw_latched = '0' then
+                    -- write
+                    if adr(7 downto 4) = "0000" and (adr(3 downto 1) = midi_address(7 downto 5) or midi_address(7 downto 5) = "111") then
+                        mc6850_CS2 <= '0';
+                    end if;
+                else
+                    -- read
+                    if adr(7 downto 4) = "0000" and (adr(3 downto 1) = midi_address(3 downto 1) or midi_address(3 downto 1) = "111") then
+                        mc6850_CS2 <= '0';
+                    end if;
+                end if;
+            end if;
+            midiThru <= (not midi_config(MIDI_CONFIG_THRU_OUT) or mc6850_txData) and (not midi_config(MIDI_CONFIG_THRU_IN) or mc6850_rxData);
+
+            -- LED defaults
+            led1 <= not mc6850_rxData;
+            led2 <= not mc6850_txData;
+            
+            -- IRQ/NMI if not in EasyFlash mode
+            irq <= 'Z';
+            nmi <= 'Z';
+            if mc6850_irq = '0' then
+                if midi_config(MIDI_CONFIG_IRQ) = '1' then
+                    irq <= '0';
+                end if;
+                if midi_config(MIDI_CONFIG_NMI) = '1' then
+                    nmi <= '0';
+                end if;
+            end if;
+
+            -- LED2 EasyFlash overwrite
+            if cart_config(CART_CONFIG_EASYFLASH) = '1' then
+                -- EasyFlash mode
+                if easyflashLed = '1' then
+                    led2 <= '1';
+                end if;
+            end if;
+
+            -- global LED overwrite
+            if cart_control(CART_CONTROL_LED1) = '1' then
+                led1 <= '1';
+            end if;
+            if cart_control(CART_CONTROL_LED2) = '1' then
+                led2 <= '1';
+            end if;
+        end if;
+
+    end process;
+
+    -- generate address
+    process(io2, address_extension2, ram_address_extension, cart_config, flash_address_extension, adr, romL, romH)
+    begin
         at(20 downto 8) <= (others => '0');
         if io2 = '0' then
             -- RAM address
@@ -242,338 +553,19 @@ begin
                 at(20) <= address_extension2(ADDRESS_EXTENSION2_FLASH);
             end if;
         end if;
-
-        -- generate read/write signals
-        dir <= '0';
-        ramCE <= '1';
-        oe <= '1';
-        flashCE_i <= '1';
-        we <= rw;
-        if s02 = '1' then
-            if flashWrite = '1' and rw = '0' and (romL = '0' or romH = '0') and (cycle_time(5) = '1' or cycle_time(6) = '1' or cycle_time(7) = '1') then
-                flashCE_i <= '0';
-            elsif ramWrite = '1' and rw = '0' and io2_filtered = '0' then
-                ramCE <= '0';
-            elsif flashRead = '1' and rw = '1' and (romL = '0' or romH = '0') then
-                flashCE_i <= '0';
-                oe <= '0';
-                dir <= '1';
-            elsif ramRead = '1' and rw = '1' then
-                -- RAM read access if IO2 is addressed,
-                -- or if in RAM as ROM mode and if ROM is addressed
-                if io2_filtered = '0' or  ((romL = '0' or romH = '0') and cart_config(CART_CONFIG_RAM_AS_ROM) = '1') then
-                    ramCE <= '0';
-                    oe <= '0';
-                    dir <= '1';
-                end if;
-            end if;
-        end if;
-
-        -- KERNAL hack
-        c64_a14 <= 'Z';
-        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' and kernal_a14 = '0' and cart_config(CART_CONFIG_HIGHRAM_HACK) = '1' then
-            c64_a14 <= '0';
-        end if;
-
-        -- default value for game and exRom
-        game <= 'Z';
-        exRom <= 'Z';
-        
-        -- can be overwritten by cartridge setting
-        if game_i <= '0' then
-            game <= '0';
-        end if;
-        if exRom_i = '0' then
-            exRom <= '0';
-        end if;
-
-        -- and can be overwritten by KERNAL hack for HIRAM access
-        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' and cart_config(CART_CONFIG_HIGHRAM_HACK) = '1' then
-            if kernal_n_game = '0' then
-                game <= '0';
-            end if;
-            if kernal_n_exrom = '0' then
-                exRom <= '0';
-            end if;
-        end if;
-        
     end process;
-    
-	process(clk24, mc6850_rxData, mc6850_irq, rw, s02_latched, reset, midi_config, mc6850_txData)
-	begin
-		if rising_edge(clk24) then 
-            if reset_i = '0' and ignore_reset = '0' then
-                cart_control <= "00000001";  -- game = 1, exrom = 0
-                midi_config <= (others => '0');
-                midi_config <= (others => '0');
-                midi_address <= (others => '0');
-                midi_address <= (others => '0');
-                cart_config <= (others => '0');
-                ram_address_extension <= (others => '0');
-                flash_address_extension <= (others => '0');
-                address_extension2 <= (others => '0');
-                dt <= (others => 'Z');
-                mc6850_rxTxClk <= '0';
-                easyflashLed <= '0';
-                reset <= 'Z';
-            else
-                if reset_running = '1' then
-                    if counter = 5 then
-                        reset <= 'Z';
-                    end if;
-                    if counter = 23 then
-                        ignore_reset <= '0';
-                        reset_running <= '0';
-                    else
-                        -- count cycles
-                        if s02_latched = '0' and cycle_start = '1' then
-                            counter <= counter + 1;
-                        end if;
-                    end if;
-                else
-                    -- generate clock for the MC6850
-                    if midi_config(MIDI_CONFIG_CLOCK) = '1' then
-                        -- 2 MHz
-                        if counter = 5 then
-                            counter <= 0;
-                            mc6850_clkBuffer <= not mc6850_clkBuffer;
-                        else
-                            counter <= counter + 1;
-                        end if;
-                    else
-                        -- 500 kHz
-                        if counter = 23 then
-                            counter <= 0;
-                            mc6850_clkBuffer <= not mc6850_clkBuffer;
-                        else
-                            counter <= counter + 1;
-                        end if;
-                    end if;
-                    mc6850_rxTxClk <= mc6850_clkBuffer;
-                end if;
-                
-                -- reset generator
-                if cart_control(CART_CONTROL_RESET) = '1' then
-                    -- reset for 3 cycles, reset ignore for 7 cycles
-                    counter <= 0;
-                    ignore_reset <= '1';
-                    cart_control(CART_CONTROL_RESET) <= '0';
-                    reset <= '0';
-                    reset_running <= '1';
-                end if;
-				
-				mc6850_CS2 <= '1';
-				
-				-- defaults
-				dt <= (others => 'Z');
 
-				-- register write access
-				if io1_filtered = '0' then
-					if adr(7 downto 0) = x"39" then
-						if rw_latched = '0' and cycle_time(6) = '1' then
-							midi_address <= dt;
-						end if;
-					elsif adr(7 downto 0) = x"3a" then
-						if rw_latched = '0' and cycle_time(6) = '1' then
-							midi_config <= dt;
-						end if;
-					elsif adr(7 downto 0) = x"3b" then
-						if rw_latched = '0' and cycle_time(6) = '1' then
-							cart_control <= dt;
-						end if;
-					elsif adr(7 downto 0) = x"3c" then
-						if rw_latched = '0' and cycle_time(6) = '1' then
-							cart_config <= dt;
-						end if;
-					elsif adr(7 downto 0) = x"3d" then
-						if rw_latched = '0' and cycle_time(6) = '1' then
-							flash_address_extension <= dt;
-						end if;
-					elsif adr(7 downto 0) = x"3e" then
-						if rw_latched = '0' and cycle_time(6) = '1' then
-							ram_address_extension <= dt;
-						end if;
-					elsif adr(7 downto 0) = x"3f" then
-						if rw_latched = '0' and cycle_time(6) = '1' then
-							address_extension2 <= dt;
-						end if;
-					elsif adr(7 downto 4) = "0000" then
-                        if cart_config(CART_CONFIG_EASYFLASH) = '1' then
-                            -- EasyFlash mode
-                            if rw_latched = '0' and cycle_time(6) = '1' then
-                                if adr(3 downto 0) = x"0" then
-                                    -- $de00
-                                    flash_address_extension <= "00" & dt(5 downto 0);
-                                elsif adr(3 downto 0) = x"2" then
-                                    -- $de02
-                                    easyflashLed <= dt(7);
-                                    cart_control(CART_CONTROL_EXROM) <= not dt(1);
-                                    cart_control(CART_CONTROL_GAME) <= not dt(0);
-                                end if;
-                            end if;
-                        elsif midi_config(MIDI_CONFIG_ENABLE) = '1' and s02_latched = '1' then
-                            -- MIDI access
-                            if rw_latched = '0' then
-                                -- write
-                                if adr(7 downto 4) = "0000" and (adr(3 downto 1) = midi_address(7 downto 5) or midi_address(7 downto 5) = "111") then
-                                    mc6850_CS2 <= '0';
-                                end if;
-                            else
-                                -- read
-                                if adr(7 downto 4) = "0000" and (adr(3 downto 1) = midi_address(3 downto 1) or midi_address(3 downto 1) = "111") then
-                                    mc6850_CS2 <= '0';
-                                end if;
-                            end if;
-                        end if;
-                    end if;
-				end if;
-				
-			end if;
-		end if;
+    -- generate filtered outputs
+    romL_filtered <= '0' when romL_latched = "00" else '1';
+    romH_filtered <= '0' when romH_latched = "00" else '1';
+    io1_filtered <= '0' when io1_latched = "00" else '1';
+    io2_filtered <= '0' when io2_latched = "00" else '1';
 
-	end process;
-	
-	process(clk24, mc6850_rxData, mc6850_irq, rw, s02_latched, reset, midi_config, mc6850_txData)
-	begin
-		-- 68B50 MIDI
-        midiThru <= (not midi_config(MIDI_CONFIG_THRU_OUT) or mc6850_txData) and (not midi_config(MIDI_CONFIG_THRU_IN) or mc6850_rxData);
---        if midi_config(MIDI_CONFIG_THRU) = '1' then
---            midiThru <= mc6850_txData;
---        else
---            midiThru <= mc6850_rxData;
---        end if;
-		mc6850_rs <= adr(0);
+    -- fixed connections
+    mc6850_rs <= adr(0);
+    at(7 downto 0) <= adr(7 downto 0);
 
-        -- defaults
-        irq <= 'Z';
-        nmi <= 'Z';
-        dt <= (others => 'Z');
-        ramWrite <= '0';
-        ramRead <= '0';
-        flashWrite <= '0';
-        flashRead <= '0';
-        led1 <= not mc6850_rxData;
-        led2 <= '0';
-
-        -- IRQ/NMI if not in EasyFlash mode
-        if mc6850_irq = '0' and cart_config(CART_CONFIG_EASYFLASH) = '0' then
-            if midi_config(MIDI_CONFIG_IRQ) = '1' then
-                irq <= '0';
-            end if;
-            if midi_config(MIDI_CONFIG_NMI) = '1' then
-                nmi <= '0';
-            end if;
-            led2 <= not mc6850_txData;
-        end if;
-
-        -- LED2
-        if cart_config(CART_CONFIG_EASYFLASH) = '1' then
-            -- EasyFlash mode
-            led2 <= easyflashLed;
-        else
-            -- from 6850
-            led2 <= not mc6850_txData;
-        end if;
-
-        -- RAM access
-        if io2 = '0' and cart_config(CART_CONFIG_RAM) = '1' then
-            if rw_latched = '0' then
-                ramWrite <= '1';
-            else
-                ramRead <= '1';
-            end if;
-        end if;
-
-        -- flash access
-        if cart_config(CART_CONFIG_EASYFLASH) = '0' then
-            -- standard mode
-            if cart_config(CART_CONFIG_RAM_AS_ROM) = '0' then
-                if romL_filtered = '0' then
-                    if rw_latched = '0' then
-                        flashWrite <= '1';
-                    else
-                        flashRead <= '1';
-                    end if;
-                end if;
-            else
-                -- RAM as ROM mode
-                if (romL_filtered = '0' or romH_filtered = '0') and rw_latched = '1' then
-                    ramRead <= '1';
-                end if;
-            end if;
-        else
-            -- EasyFlash mode
-            if romL_filtered = '0' or romH_filtered = '0' then
-                if rw_latched = '0' then
-                    flashWrite <= '1';
-                else
-                    flashRead <= '1';
-                end if;
-            end if;
-        end if;
-        
-        -- game and exrom
-        exRom_i <= 'Z';
-        game_i <= 'Z';
-        if cart_control(CART_CONTROL_EXROM) = '0' then
-            exRom_i <= '0';
-        else
-            exRom_i <= '1';
-        end if;
-        if cart_control(CART_CONTROL_GAME) = '0' then
-            game_i <= '0';
-        else
-            game_i <= '1';
-        end if;
-
-        -- KERNAL hack: read from RAM for KERNAL hack
-        if cart_config(CART_CONFIG_KERNAL_HACK) = '1' then
-            if cart_config(CART_CONFIG_HIGHRAM_HACK) = '1' then
-                -- with HIRAM hack
-                if kernal_flash_read = '1' then
-                    flashWrite <= '0';
-                    flashRead <= '0';
-                    ramWrite <= '0';
-                    ramRead <= '1';
-                end if;
-            else
-                -- without HIRAM hack (enable Ultimax mode, read always ROM)
-                if adr(15 downto 13) = "111" and s02_latched = '1' and ba = '1' and rw = '1' then
-                    game_i <= '0';
-                    exRom_i <= '1';
-                    flashWrite <= '0';
-                    flashRead <= '0';
-                    ramWrite <= '0';
-                    ramRead <= '1';
-                end if;
-            end if;
-        end if;
-        
-        -- BASIC hack: enable ROM for BASIC read
-        if cart_config(CART_CONFIG_BASIC_HACK) = '1' then
-            if adr(15 downto 13) = "101" and s02_latched = '1' and ba = '1' and rw = '1' then
-                game_i <= '0';
-                exRom_i <= '0';
-                flashWrite <= '0';
-                flashRead <= '0';
-                ramWrite <= '0';
-                ramRead <= '1';
-            end if;
-        end if;
-        
-        -- LED overwrite
-        if cart_control(CART_CONTROL_LED1) = '1' then
-            led1 <= '1';
-        end if;
-        if cart_control(CART_CONTROL_LED2) = '1' then
-            led2 <= '1';
-        end if;
-				
-	end process;
-
-	at(7 downto 0) <= adr(7 downto 0);
-    cycle_start <= phi2_s xor prev_phi2;
-
+    -- internal helper signal
     adr <= c64_a15 & c64_a14 & c64_a;
     
 end architecture rtl;

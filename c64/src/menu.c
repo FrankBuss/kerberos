@@ -144,7 +144,6 @@ void testFlash()
 	}
 	cputs("flash id ok\r\n");
 
-	gotox(0);
 	cputs("flash 0 test...\r\n");
 	memset(g_blockBuffer, 0, 256);
 	for (i = 0; i < FLASH_BANKS; i++) {
@@ -416,7 +415,7 @@ uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
 	memcpy(g_blockBuffer, g_ram, 256);
 	if (memcmp(adr, g_blockBuffer, 256)) {
 		// standard mode
-		CART_CONFIG = CART_CONFIG_RAM_ON;
+		CART_CONFIG = 0;
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 		gotox(0);
@@ -459,14 +458,14 @@ void testRamAsRom()
 	cputs("verify...\r\n");
 	for (i = 0; i < 32; i++) {
 		// standard mode
-		CART_CONFIG = CART_CONFIG_RAM_ON;
+		CART_CONFIG = 0;
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 5);
 
 		// enable special cartridge RAM as ROM mode
-		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON;
+		CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON;
 	
 		// enable cartridge ROM at $8000 and $a000, which is mapped to the cartridge RAM
 		CART_CONTROL = CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_LOW;
@@ -477,17 +476,17 @@ void testRamAsRom()
 
 		// standard mode
 		ramSetBank(0xa0);
-		CART_CONFIG = CART_CONFIG_RAM_ON;
+		CART_CONFIG = 0;
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 		// enable special cartridge RAM as ROM mode and BASIC hack
-		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_BASIC_HACK_ON;
+		CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_BASIC_HACK_ON;
 	
 		// test BASIC
 		if (!testRomAsRamCompare(i + 0xa0, "0xa000, BASIC hack")) return;
 
 		// enable special cartridge RAM as ROM mode and KERNAL hack
-		CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
+		CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
 	
 		// test KERNAL
 		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
@@ -495,9 +494,9 @@ void testRamAsRom()
 		// C128 has no HIRAM hack
 		if (!g_isC128) {
 			// enable special cartridge RAM as ROM mode and KERNAL hack with HIRAM hack
-			CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON | CART_CONFIG_HIGHRAM_HACK_ON;
+			CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON | CART_CONFIG_HIRAM_HACK_ON;
 		
-			// trigger initial highram detection and enable KERNAL
+			// trigger initial HIRAM detection and enable KERNAL
 			*((uint8_t*) 1) = 0x37;
 	
 			// test KERNAL
@@ -510,11 +509,11 @@ void testRamAsRom()
 			ramSetBank(0x100 + i);
 			if (memcmp(g_ram, (uint8_t*) ((i + 0xe0) << 8), 256)) {
 				*((uint8_t*) 1) = 0x37;
-				CART_CONFIG = CART_CONFIG_RAM_ON;
+				CART_CONFIG = 0;
 				CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 				enableInterrupts();
 				gotox(0);
-				cprintf("KERNAL HIGHRAM hack RAM error\r\n");
+				cprintf("KERNAL HIRAM hack RAM error\r\n");
 				cprintf("bank: %i\r\n", i);
 				anyKey();
 				return;
@@ -526,7 +525,7 @@ void testRamAsRom()
 	}
 	
 	// standard mode
-	CART_CONFIG = CART_CONFIG_RAM_ON;
+	CART_CONFIG = 0;
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 	gotox(0);
@@ -731,9 +730,67 @@ void c128Test()
 	
 	// CPLD generated reset for starting C128, with RAM as ROM enabled
 	anyKey();
-	CART_CONFIG = CART_CONFIG_RAM_ON | CART_CONFIG_RAM_AS_ROM_ON;
+	CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON;
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH | CART_CONTROL_RESET_GENERATE;
 	while (1);
+}
+
+void timingTests()
+{
+	clrscr();
+	cputs("timing tests\r\n");
+	cputs("1: sta $0400 write test\r\n");
+	cputs("2: lda $0400 read test\r\n");
+	cputs("3: IO2 $df00 read test\r\n");
+	cputs("4: IO2 $df00 write test\r\n");
+	cputs("5: Ultimax ROMH $f000 read test\r\n");
+	cputs("6: Ultimax ROMH $f000 write test\r\n");
+	cputs("7: Kernal HIRAM hack test\r\n");
+	cputs("\x1f: back\r\n");
+	cputs("\r\n");
+
+	while (1) {
+		while (!kbhit());
+		switch (cgetc()) {
+			case '1':
+				cputs("test 1\r\n");
+				test1();
+				break;
+			
+			case '2':
+				cputs("test 2\r\n");
+				test2();
+				break;
+
+			case '3':
+				cputs("test 3\r\n");
+				test3();
+				break;
+
+			case '4':
+				cputs("test 4\r\n");
+				test4();
+				break;
+
+			case '5':
+				cputs("test 5\r\n");
+				test5();
+				break;
+
+			case '6':
+				cputs("test 6\r\n");
+				test6();
+				break;
+
+			case '7':
+				cputs("test 7\r\n");
+				test7();
+				break;
+
+			case LEFT_ARROW_KEY:  // left arrow
+				return;
+		}
+	}
 }
 
 void toBasic()
@@ -763,8 +820,8 @@ int main(void)
 		// disable MIDI
 		MIDI_CONFIG = 0;
 	
-		// enable RAM
-		CART_CONFIG = CART_CONFIG_RAM_ON;
+		// standard mode
+		CART_CONFIG = 0;
 	
 		// /GAME high, /EXROM low
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
@@ -780,6 +837,8 @@ int main(void)
 		cputs("v: receive MIDI file\r\n");
 		cputs("s: start program\r\n");
 		if (g_isC128) cputs("8: C128 test\r\n");
+		if (g_isC128) cputs("2: C128 2 MHz mode\r\n");
+		cputs("t: timing tests\r\n");
 		cputs("b: back to BASIC\r\n");
 		cputs("\r\n");
 		while (!kbhit());
@@ -806,10 +865,16 @@ int main(void)
 				startProgramInSlot();
 				break;
 			case '8':
-				c128Test();
+				if (g_isC128) c128Test();
 				break;
 			case 'b':
 				toBasic();
+				break;
+			case 't':
+				timingTests();
+				break;
+			case '2':
+				if (g_isC128) *((uint8_t*)0xd030) = 1;
 				break;
 		}
 	}

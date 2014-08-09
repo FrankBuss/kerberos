@@ -12,8 +12,9 @@ architecture rtl of main_testbench is
 constant MIDI_CONFIG_IRQ : std_logic_vector(7 downto 0) := x"01";
 constant MIDI_CONFIG_NMI : std_logic_vector(7 downto 0) := x"02";
 constant MIDI_CONFIG_CLOCK : std_logic_vector(7 downto 0) := x"04";
-constant MIDI_CONFIG_THRU : std_logic_vector(7 downto 0) := x"08";
-constant MIDI_CONFIG_ENABLE : std_logic_vector(7 downto 0) := x"10";
+constant MIDI_CONFIG_THRU_IN : std_logic_vector(7 downto 0) := x"08";
+constant MIDI_CONFIG_THRU_OUT : std_logic_vector(7 downto 0) := x"10";
+constant MIDI_CONFIG_ENABLE : std_logic_vector(7 downto 0) := x"20";
 constant CART_CONTROL_GAME : std_logic_vector(7 downto 0) := x"01";
 constant CART_CONTROL_EXROM : std_logic_vector(7 downto 0) := x"02";
 constant CART_CONTROL_LED1 : std_logic_vector(7 downto 0) := x"04";
@@ -21,7 +22,7 @@ constant CART_CONTROL_LED2 : std_logic_vector(7 downto 0) := x"08";
 constant CART_CONTROL_RESET : std_logic_vector(7 downto 0) := x"10";
 constant CART_CONFIG_RAM : std_logic_vector(7 downto 0) := x"01";
 constant CART_CONFIG_KERNAL_HACK : std_logic_vector(7 downto 0) := x"02";
-constant CART_CONFIG_HIGHRAM_HACK : std_logic_vector(7 downto 0) := x"04";
+constant CART_CONFIG_HIRAM_HACK : std_logic_vector(7 downto 0) := x"04";
 constant CART_CONFIG_EASYFLASH : std_logic_vector(7 downto 0) := x"08";
 constant CART_CONFIG_RAM_AS_ROM : std_logic_vector(7 downto 0) := x"10";
 constant CART_CONFIG_BASIC_HACK : std_logic_vector(7 downto 0) := x"20";
@@ -29,19 +30,20 @@ constant ADDRESS_EXTENSION2_RAM : std_logic_vector(7 downto 0) := x"01";
 constant ADDRESS_EXTENSION2_FLASH : std_logic_vector(7 downto 0) := x"02";
 
 -- register addresses
-constant MIDI_ADDRESS : std_logic_vector(15 downto 0) := x"de3a";
-constant MIDI_CONFIG : std_logic_vector(15 downto 0) := x"de3b";
-constant CART_CONTROL : std_logic_vector(15 downto 0) := x"de3c";
-constant CART_CONFIG : std_logic_vector(15 downto 0) := x"de3d";
-constant ADDRESS_EXTENSION : std_logic_vector(15 downto 0) := x"de3e";
+constant MIDI_ADDRESS : std_logic_vector(15 downto 0) := x"de39";
+constant MIDI_CONFIG : std_logic_vector(15 downto 0) := x"de3a";
+constant CART_CONTROL : std_logic_vector(15 downto 0) := x"de3b";
+constant CART_CONFIG : std_logic_vector(15 downto 0) := x"de3c";
+constant FLASH_ADDRESS_EXTENSION : std_logic_vector(15 downto 0) := x"de3d";
+constant RAM_ADDRESS_EXTENSION : std_logic_vector(15 downto 0) := x"de3e";
 constant ADDRESS_EXTENSION2 : std_logic_vector(15 downto 0) := x"de3f";
 
 signal led1: std_logic;
 signal led2: std_logic;
 signal clk24:std_logic := '0';
 signal at: std_logic_vector(20 downto 0) := (others => '0');
-signal flashCE: std_logic := '1';
-signal ramCE: std_logic := '1';
+signal flash_ce: std_logic := '1';
+signal ram_ce: std_logic := '1';
 signal we: std_logic := '1';
 signal oe: std_logic := '1';
 signal dt: std_logic_vector(7 downto 0) := (others => 'Z');
@@ -57,10 +59,13 @@ signal ba: std_logic := '1';
 signal s02: std_logic := '0';
 signal io1: std_logic := '1';
 signal io2: std_logic := '1';
-signal a: std_logic_vector(15 downto 0) := (others => '0');
+signal c64_a: std_logic_vector(13 downto 0) := (others => '0');
+signal c64_a14: std_logic := '0';
+signal c64_a15: std_logic := '0';
+signal a: std_logic_vector(15 downto 0);
 signal romL: std_logic := '1';
 signal romH: std_logic := '1';
-signal exRom: std_logic := '1';
+signal exrom: std_logic := '1';
 signal game: std_logic := '1';
 signal reset: std_logic := '1';
 signal rw: std_logic := '1';
@@ -74,8 +79,8 @@ begin
         led2 => led2,
         clk24 => clk24,
         at => at,
-        flashCE => flashCE,
-        ramCE => ramCE,
+        flash_ce => flash_ce,
+        ram_ce => ram_ce,
         we => we,
         oe => oe,
         dt => dt,
@@ -91,10 +96,12 @@ begin
         s02 => s02,
         io1 => io1,
         io2 => io2,
-        a => a,
+        c64_a => c64_a,
+        c64_a14 => c64_a14,
+        c64_a15 => c64_a15,
         romL => romL,
         romH => romH,
-        exRom => exRom,
+        exrom => exrom,
         game => game,
         reset => reset,
         rw => rw,
@@ -147,6 +154,20 @@ begin
         dt <= (others => 'Z');
         io1 <= '1';
 	end;
+	procedure romlRead(address: std_logic_vector(15 downto 0)) is
+	begin
+        -- wait for CPU cycle start and read from address
+        wait until s02 = '1';
+        rw <= '1';
+        a <= address;
+        dt <= (others => 'Z');
+        roml <= '0';
+        
+        -- wait for CPU cycle end
+        wait until s02 = '0';
+        dt <= (others => 'Z');
+        roml <= '1';
+	end;
 	procedure romhRead(address: std_logic_vector(15 downto 0)) is
 	begin
         -- wait for CPU cycle start and read from address
@@ -191,11 +212,14 @@ begin
 		wait for 60 ns; reset  <= '0';
 		wait for 60 ns; reset  <= '1';
         
+        romlRead(x"8000");
         io1Write(CART_CONFIG, CART_CONFIG_RAM or CART_CONFIG_RAM_AS_ROM or CART_CONFIG_KERNAL_HACK);
         io1Write(CART_CONTROL, CART_CONTROL_GAME or CART_CONTROL_EXROM);
         romhRead(x"e000");
         io1Write(CART_CONFIG, CART_CONFIG_RAM);
         romlWrite(x"8000", x"00");
+        io1Write(CART_CONFIG, CART_CONFIG_RAM or CART_CONFIG_RAM_AS_ROM or CART_CONFIG_KERNAL_HACK or CART_CONFIG_HIRAM_HACK);
+        romhRead(x"e001");
 		
 		wait for 10 us;
 
@@ -203,5 +227,9 @@ begin
 		assert false report "no failure, simulation successful" severity failure;
 		
 	end process;
+
+    c64_a <= a(13 downto 0);
+    c64_a14 <= a(14);
+    c64_a15 <= a(15);
 
 end;

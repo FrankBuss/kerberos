@@ -113,34 +113,7 @@
 	</reg>
 	<reg name="CART_CONFIG" address="0xde3c">
 		<description>RAM and mode configurations.</description>
-		<bit position="0" name="RAM">
-			<description>RAM control for $df00-$dfff</description>
-			<case value="0" name="OFF">
-				<description>disable cartridge RAM</description>
-			</case>
-			<case value="1" name="ON">
-				<description>enable cartridge RAM</description>
-			</case>
-		</bit>
-		<bit position="1" name="KERNAL_HACK">
-			<description>KERNAL replacement hack control</description>
-			<case value="0" name="OFF">
-				<description>disable KERNAL hack</description>
-			</case>
-			<case value="1" name="ON">
-				<description>enable KERNAL hack</description>
-			</case>
-		</bit>
-		<bit position="2" name="HIGHRAM_HACK">
-			<description>HIGHRAM detection hack control, to access RAM under the KERNAL replacement</description>
-			<case value="0" name="OFF">
-				<description>disable HIGHRAM detection hack</description>
-			</case>
-			<case value="1" name="ON">
-				<description>enable HIGHRAM detection hack</description>
-			</case>
-		</bit>
-		<bit position="3" name="EASYFLASH">
+		<bit position="0" name="EASYFLASH">
 			<description>EasyFlash emulation control</description>
 			<case value="0" name="OFF">
 				<description>disable EasyFlash mode</description>
@@ -149,7 +122,7 @@
 				<description>enable EasyFlash mode</description>
 			</case>
 		</bit>
-		<bit position="4" name="RAM_AS_ROM">
+		<bit position="1" name="RAM_AS_ROM">
 			<description>use the external RAM as cartridge ROM instead of the flash</description>
 			<case value="0" name="OFF">
 				<description>disables the RAM as ROM mode</description>
@@ -158,13 +131,31 @@
 				<description>enables the RAM as ROM mode</description>
 			</case>
 		</bit>
-		<bit position="5" name="BASIC_HACK">
+		<bit position="2" name="KERNAL_HACK">
+			<description>KERNAL replacement hack control</description>
+			<case value="0" name="OFF">
+				<description>disable KERNAL hack</description>
+			</case>
+			<case value="1" name="ON">
+				<description>enable KERNAL hack</description>
+			</case>
+		</bit>
+		<bit position="3" name="BASIC_HACK">
 			<description>BASIC replacement hack control</description>
 			<case value="0" name="OFF">
 				<description>disable BASIC hack</description>
 			</case>
 			<case value="1" name="ON">
 				<description>enable BASIC hack</description>
+			</case>
+		</bit>
+		<bit position="4" name="HIRAM_HACK">
+			<description>HIRAM detection hack control, to access RAM under the KERNAL replacement</description>
+			<case value="0" name="OFF">
+				<description>disable HIRAM detection hack</description>
+			</case>
+			<case value="1" name="ON">
+				<description>enable HIRAM detection hack</description>
 			</case>
 		</bit>
 	</reg>

@@ -431,11 +431,6 @@ write:  sta EAPI_TMP_VAL1
         ldy EAPI_TMP_VAL3
         jsr ultimaxWrite
 
-	; max 10 us for byte programming, wait a bit longer
-		ldy #15
-writeWait:	dey
-		bne writeWait
-		
         ; compare if byte was written
         ldx EAPI_TMP_VAL2
         ldy EAPI_TMP_VAL3
@@ -536,7 +531,7 @@ seskip:
         jsr ultimaxWrite
 
         ; wait min. 25 ms
-        ldy #25
+        ldy #20
 sewait2:
         ldx #0
 sewait:

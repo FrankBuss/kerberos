@@ -18,6 +18,43 @@ prg = $2d
 .segment "LOWCODE"
 
 
+.export _test5
+_test5:
+		sei
+		; enable Ultimax mode
+		lda #(CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_HIGH)
+		sta CART_CONTROL
+test5_loop:	lda $f000
+		jmp test5_loop
+
+.export _test6
+_test6:
+		sei
+		; enable Ultimax mode
+		lda #(CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_HIGH)
+		sta CART_CONTROL
+		lda #$42
+test6_loop:	sta $f000
+		jmp test6_loop
+
+.export _test7
+_test7:
+		sei
+		lda #(CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH)
+		sta CART_CONTROL
+		; enable kernal hack and hiram hack
+		lda #(CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON | CART_CONFIG_HIRAM_HACK_ON)
+		sta CART_CONFIG
+		lda 1
+		ldx #$35
+		ldy #$37
+test7_loop:	stx 1
+		lda $f000
+		sty 1
+		lda $f000
+		jmp test7_loop
+
+
 ; =============================================================================
 ;
 ; Test if we are running on a C128 in C64 mode
@@ -203,7 +240,7 @@ _startEasyFlash:
 		sta CART_CONTROL
 		
 		; enable EasyFlash mode and RAM
-		lda #(CART_CONFIG_RAM_ON | CART_CONFIG_EASYFLASH_ON)
+		lda #(CART_CONFIG_EASYFLASH_ON)
 		sta CART_CONFIG
 		
 		; reset
@@ -298,7 +335,7 @@ _flashEraseSector:
 		jsr ultimaxWrite
 		
 		; wait min. 25 ms
-		ldy #25
+		ldy #20
 sewait2:
 		ldx #0
 sewait:
@@ -324,22 +361,56 @@ sewait:
 ; =============================================================================
 .export _flashWrite256Block
 _flashWrite256Block:
-		sta ptr1
-		stx ptr1+1
+		sei
+		sta blwDest
+		stx blwDest+1
+		ldy #0
+block2:		lda __BLOCK_BUFFER_START__,y
+		cmp #$ff
+		; nothing to be done if $ff
+		beq blockEnd
+
+		; Ultimax mode
+		ldx #(CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_HIGH)
+		stx CART_CONTROL
+
+		; select bank 0
 		ldx #0
-		stx tmp3
-write1:		lda ptr1
-		ldx ptr1+1
-		jsr pushax
-		ldy tmp3
-		lda __BLOCK_BUFFER_START__,y
-		jsr _flashWriteByte
-		inc ptr1
-		bne write2
-		inc ptr2
-write2:		inc tmp3
-		bne write1
+		stx FLASH_ADDRESS_EXTENSION
+		
+		; cycle 1: write $AA to $AAA
+		ldx #$aa
+		stx $8aaa
+		
+		; cycle 2: write $55 to $555
+		ldx #$55
+		stx $8555
+
+		; cycle 3: write $A0 to $AAA
+		ldx #$a0
+		stx $8aaa
+
+		; now we have to activate the right bank
+		ldx flashBank
+		stx FLASH_ADDRESS_EXTENSION
+		
+		; cycle 4: write data
+blwDest = * + 1
+		sta $ffff           ; will be modified
+		; wait max 10 us for byte programming; next commands are longer, so no more delay needed
+		
+		; normal cartridge mode
+		ldx #(CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW)
+		stx CART_CONTROL
+		
+blockEnd:	inc blwDest
+		bne block3
+		inc blwDest+1
+block3:		iny
+		bne block2
+		cli
 		rts
+
 
 ; =============================================================================
 ;
@@ -410,6 +481,73 @@ cmpErr: 	lda #1
 _flashWriteByte:
 		pha
 		jsr popax
+		sta bwDest
+		stx bwDest+1
+		
+		; nothing to be done if $ff
+		pla
+		cmp #$ff
+		beq writeEnd
+		pha
+		
+		sei
+
+		; Ultimax mode
+		ldx #(CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_HIGH)
+		stx CART_CONTROL
+
+		; select bank 0
+		lda #0
+		sta FLASH_ADDRESS_EXTENSION
+		
+		; cycle 1: write $AA to $AAA
+		lda #$aa
+		sta $8aaa
+		
+		; cycle 2: write $55 to $555
+		lda #$55
+		sta $8555
+
+		; cycle 3: write $A0 to $AAA
+		lda #$a0
+		sta $8aaa
+
+		; now we have to activate the right bank
+		lda flashBank
+		sta FLASH_ADDRESS_EXTENSION
+		
+		; cycle 4: write data
+		pla
+bwDest = * + 1
+		sta $ffff           ; will be modified
+		; wait max 10 us for byte programming; next commands are longer, so no more delay needed
+		
+writeEnd:	
+		; normal cartridge mode
+		ldx #(CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW)
+		stx CART_CONTROL
+		cli
+		rts
+
+
+; =============================================================================
+;
+; Write byte to flash (address starts at $8000, set bank before)
+;
+; void __fastcall__ flashWriteByte(uint8_t* address, uint8_t data);
+;
+; parameters:
+;       value in A
+;       address on cc65-stack $8xxx/$9xxx
+;
+; return:
+;       -
+;
+; =============================================================================
+.export _flashWriteByte2
+_flashWriteByte2:
+		pha
+		jsr popax
 		sta tmp1
 		stx tmp2
 		
@@ -439,10 +577,10 @@ _flashWriteByte:
 		
 		; max 10 us for byte programming, wait a bit longer
 		ldy #15
-writeWait:	dey
-		bne writeWait
+writeWaitx:	dey
+		bne writeWaitx
 
-writeEnd:	rts
+writeEndx:	rts
 
 
 ; =============================================================================
@@ -898,8 +1036,8 @@ _startProgram:
 		ldx #$fb
 		txs			; Reduce stack pointer for BASIC
 
-		; enable RAM
-		lda #CART_CONFIG_RAM_ON
+		; standard mode
+		lda #0
 		sta CART_CONFIG
 
 		; copy RAM loader to datasette buffer
@@ -913,7 +1051,6 @@ copy2:		lda __LOADER_LOAD__,x
 		; load program from RAM and start it
 		jmp loadRamPrg		
 
-.data
 flashBank:
 		.res 1
 
@@ -1014,3 +1151,38 @@ startup:	sei
 		jmp startup
 
 _cart128End:
+
+
+.segment "TEST"
+
+.org $7000
+.export _test1
+_test1:
+		sei
+		lda #1
+test1_loop:	sta $0400
+		jmp test1_loop
+.align 256
+
+.export _test2
+_test2:
+		sei
+test2_loop:	lda $0400
+		jmp test2_loop
+.align 256
+
+.export _test3
+_test3:
+		sei
+		lda #$42
+test3_loop:	lda $df00
+		jmp test3_loop
+.align 256
+
+.export _test4
+_test4:
+		sei
+		lda #$42
+test4_loop:	sta $df00
+		jmp test4_loop
+.align 256
