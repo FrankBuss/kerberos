@@ -82,6 +82,8 @@ constant CART_CONFIG_HIRAM_HACK : integer := 4;
 constant ADDRESS_EXTENSION2_RAM : integer := 0;
 constant ADDRESS_EXTENSION2_FLASH : integer := 1;
 
+constant AFTERGLOW_COUNTER_MAX : integer := 8191;
+
 signal io1_latched: std_logic_vector(1 downto 0);
 signal io2_latched: std_logic_vector(1 downto 0);
 signal s02_latched: std_logic;
@@ -97,6 +99,10 @@ signal mem_access_allowed: boolean;
 
 signal counter: integer range 0 to 23;
 signal mc6850_clkBuffer: std_logic;
+
+signal afterglow_counter: integer range 0 to AFTERGLOW_COUNTER_MAX;
+signal led1_afterglow: std_logic;
+signal led2_afterglow: std_logic;
 
 signal reset_i: std_logic;
 signal reset_running: std_logic := '0';
@@ -437,8 +443,26 @@ begin
                     end if;
                 end if;
 
+                -- if there is some activiy on the RX/TX lines, restart afterglow counter
+                if mc6850_txData = '0' or mc6850_rxData = '0' then
+                    if mc6850_rxData = '0' then
+                        led1_afterglow <= '1';
+                    end if;
+                    if mc6850_txData = '0' then
+                        led2_afterglow <= '1';
+                    end if;
+                    afterglow_counter <= AFTERGLOW_COUNTER_MAX;
+                end if;
+
                 -- cycle start detection
                 if s02_latched /= prev_s02 then
+                    if afterglow_counter > 0 then
+                        afterglow_counter <= afterglow_counter - 1;
+                    else
+                        led1_afterglow <= '0';
+                        led2_afterglow <= '0';
+                    end if;
+                    
                     -- disable outputs on cycle start
                     dir <= '0';
                     oe <= '1';
@@ -489,9 +513,9 @@ begin
             midiThru <= (not midi_config(MIDI_CONFIG_THRU_OUT) or mc6850_txData) and (not midi_config(MIDI_CONFIG_THRU_IN) or mc6850_rxData);
 
             -- LED defaults
-            led1 <= not mc6850_rxData;
-            led2 <= not mc6850_txData;
-            
+            led1 <= led1_afterglow;
+            led2 <= led2_afterglow;
+
             -- IRQ/NMI if not in EasyFlash mode
             irq <= 'Z';
             nmi <= 'Z';
