@@ -17,6 +17,32 @@ prg = $2d
 
 .segment "LOWCODE"
 
+.export _test1
+_test1:
+		sei
+		lda #1
+test1_loop:	sta $0400
+		jmp test1_loop
+
+.export _test2
+_test2:
+		sei
+test2_loop:	lda $0400
+		jmp test2_loop
+
+.export _test3
+_test3:
+		sei
+		lda #$42
+test3_loop:	lda $df00
+		jmp test3_loop
+
+.export _test4
+_test4:
+		sei
+		lda #$42
+test4_loop:	sta $df00
+		jmp test4_loop
 
 .export _test5
 _test5:
@@ -838,6 +864,12 @@ copyCrt3:	dex
 		lda #(CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH)
 		sta CART_CONTROL
 
+		; enable MIDI DATEL
+		lda #(MIDI_CONFIG_IRQ_ON | MIDI_CONFIG_CLOCK_2_MHZ | MIDI_CONFIG_ENABLE_ON)
+		sta MIDI_CONFIG
+		lda #$46
+		sta MIDI_ADDRESS
+
 		; start as BASIC program
 		jsr $a663		; CLR
 		cli
@@ -1054,6 +1086,199 @@ copy2:		lda __LOADER_LOAD__,x
 flashBank:
 		.res 1
 
+.segment "GRAPHICS"
+leftBlack:
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $1c, $f0, $00
+        .byte $35, $9f, $ff
+        .byte $27, $1b, $18
+        .byte $26, $31, $6b
+        .byte $20, $67, $6b
+        .byte $20, $63, $18
+        .byte $20, $f7, $1b
+        .byte $30, $d1, $4b
+        .byte $10, $7f, $6b
+        .byte $10, $19, $f8
+        .byte $10, $0c, $0f
+        .byte $13, $84, $00
+        .byte $12, $cc, $00
+        .byte $12, $78, $00
+        .byte $1e, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte 0
+
+rightBlack:
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $81, $c0, $00
+        .byte $fd, $60, $f8
+        .byte $47, $31, $8c
+        .byte $5e, $d1, $06
+        .byte $c6, $d1, $22
+        .byte $5c, $3f, $3e
+        .byte $45, $73, $0c
+        .byte $7d, $6d, $86
+        .byte $cb, $6d, $e2
+        .byte $8f, $b2, $32
+        .byte $00, $fe, $12
+        .byte $00, $13, $12
+        .byte $00, $11, $f2
+        .byte $00, $10, $06
+        .byte $00, $18, $04
+        .byte $00, $0e, $1c
+        .byte $00, $03, $f0
+        .byte $00, $00, $00
+        .byte 0
+
+leftOrange:
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $08, $60, $00
+        .byte $18, $e4, $e7
+        .byte $19, $ce, $94
+        .byte $1f, $98, $94
+        .byte $1f, $9c, $e7
+        .byte $1f, $08, $e4
+        .byte $0f, $0e, $b4
+        .byte $0f, $80, $94
+        .byte $0f, $e0, $07
+        .byte $0f, $f0, $00
+        .byte $0c, $78, $00
+        .byte $0c, $30, $00
+        .byte $0c, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte 0
+
+rightOrange:
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $80, $00
+        .byte $b8, $c0, $70
+        .byte $a1, $20, $f8
+        .byte $39, $20, $dc
+        .byte $a3, $c0, $c0
+        .byte $ba, $8c, $f0
+        .byte $82, $92, $78
+        .byte $04, $92, $1c
+        .byte $00, $4c, $0c
+        .byte $00, $00, $0c
+        .byte $00, $0c, $0c
+        .byte $00, $0e, $0c
+        .byte $00, $0f, $f8
+        .byte $00, $07, $f8
+        .byte $00, $01, $e0
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte 0
+
+leftTop:
+        .byte $fe, $4c, $b3
+        .byte $82, $9f, $62
+        .byte $ba, $fc, $fa
+        .byte $ba, $77, $22
+        .byte $ba, $86, $aa
+        .byte $82, $d6, $32
+        .byte $fe, $aa, $ab
+        .byte $00, $ca, $70
+        .byte $d3, $21, $ab
+        .byte $91, $b3, $0a
+        .byte $4b, $60, $d0
+        .byte $cc, $02, $af
+        .byte $36, $89, $c6
+        .byte $b1, $38, $9c
+        .byte $a3, $88, $2b
+        .byte $89, $ae, $78
+        .byte $0f, $56, $d4
+        .byte $48, $a0, $86
+        .byte $8a, $64, $0d
+        .byte $30, $d4, $74
+        .byte $9e, $1b, $8f
+        .byte 0
+
+rightTop:
+        .byte $f8, $00, $00
+        .byte $08, $00, $00
+        .byte $e8, $00, $00
+        .byte $e8, $00, $00
+        .byte $e8, $00, $00
+        .byte $08, $00, $00
+        .byte $f8, $00, $00
+        .byte $00, $00, $00
+        .byte $b0, $00, $00
+        .byte $48, $00, $00
+        .byte $70, $00, $00
+        .byte $70, $00, $00
+        .byte $58, $00, $00
+        .byte $20, $00, $00
+        .byte $38, $00, $00
+        .byte $d0, $00, $00
+        .byte $50, $00, $00
+        .byte $08, $00, $00
+        .byte $58, $00, $00
+        .byte $18, $00, $00
+        .byte $a0, $00, $00
+        .byte 0
+
+leftBottom:
+        .byte $00, $dc, $f8
+        .byte $fe, $be, $6a
+        .byte $82, $5c, $08
+        .byte $ba, $12, $4f
+        .byte $ba, $f6, $52
+        .byte $ba, $56, $38
+        .byte $82, $f1, $de
+        .byte $fe, $ac, $5f
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte 0
+
+rightBottom:
+        .byte $b8, $00, $00
+        .byte $90, $00, $00
+        .byte $b8, $00, $00
+        .byte $c8, $00, $00
+        .byte $d0, $00, $00
+        .byte $e8, $00, $00
+        .byte $90, $00, $00
+        .byte $90, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte $00, $00, $00
+        .byte 0
+
 .segment "LOADER"
 
 prgCounter = $5e
@@ -1152,37 +1377,3 @@ startup:	sei
 
 _cart128End:
 
-
-.segment "TEST"
-
-.org $7000
-.export _test1
-_test1:
-		sei
-		lda #1
-test1_loop:	sta $0400
-		jmp test1_loop
-.align 256
-
-.export _test2
-_test2:
-		sei
-test2_loop:	lda $0400
-		jmp test2_loop
-.align 256
-
-.export _test3
-_test3:
-		sei
-		lda #$42
-test3_loop:	lda $df00
-		jmp test3_loop
-.align 256
-
-.export _test4
-_test4:
-		sei
-		lda #$42
-test4_loop:	sta $df00
-		jmp test4_loop
-.align 256

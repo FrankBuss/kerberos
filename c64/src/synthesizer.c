@@ -84,7 +84,7 @@ int main(void)
 	midiInit();
 
 	// show instructions
-	cputs("simple sequencer demo\r\n");
+	cputs("simple synthesizer demo\r\n");
 	cputs("use MIDI channel 1-4 for waveform\r\n");
 	cputs("\r\n");
 	

@@ -673,6 +673,9 @@ void startProgramInSlot(void)
 			}
 			key -= '0';
 			if (key >= 1 && key <= 7) {
+				// clear MIDI interrupts
+				midiIrqNmiTest();
+
 				disableInterrupts();
 			
 				// enable ROM at $8000	
@@ -683,11 +686,6 @@ void startProgramInSlot(void)
 				if (adr[0] == 0x42 || 1) {
 					cputs("starting program\r\n");
 					flashSetBank(key * 8);
-/*					cprintf("$80fc: %02x\r\n", adr[0xfc]);
-					cprintf("$80fd: %02x\r\n", adr[0xfd]);
-					cprintf("$80fe: %02x\r\n", adr[0xfe]);
-					cprintf("$80ff: %02x\r\n", adr[0xff]);
-					anyKey();*/
 					startProgramFromRom();
 				}
 			
