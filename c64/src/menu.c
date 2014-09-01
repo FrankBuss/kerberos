@@ -135,18 +135,43 @@ void testFlash()
 	uint8_t j;
 	uint8_t* adr;
 	uint16_t id = flashReadId();
-	clrscr();
-	cprintf("flash id: 0x%04x\r\n", id);
-	if (id != 0xbfc8) {
-		cputs("wrong flash id\r\n");
-		anyKey();
-		return;
+	uint16_t firstBank = 0;
+	uint16_t lastBank = 0;
+
+	while (1) {
+		clrscr();
+		cprintf("flash id: 0x%04x\r\n", id);
+		if (id != 0xbfc8) {
+			cputs("wrong flash id\r\n");
+			anyKey();
+			return;
+		}
+		cputs("flash id ok\r\n");
+		
+		cputs("1: full test, all data will be erased\r\n");
+		cputs("2: quick test in unused area\r\n");
+		cputs("\x1f: back\r\n");
+		cputs("\r\n");
+
+		while (!kbhit());
+		switch (cgetc()) {
+			case '1':
+				firstBank = 0;
+				lastBank = FLASH_BANKS;
+				break;
+			case '2':
+				firstBank = 112;
+				lastBank = 120;
+				break;
+			case LEFT_ARROW_KEY:  // left arrow
+				return;
+		}
+		if (lastBank) break;
 	}
-	cputs("flash id ok\r\n");
 
 	cputs("flash 0 test...\r\n");
 	memset(g_blockBuffer, 0, 256);
-	for (i = 0; i < FLASH_BANKS; i++) {
+	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
@@ -165,7 +190,7 @@ void testFlash()
 
 	gotox(0);
 	cputs("flash 0 verify...\r\n");
-	for (i = 0; i < FLASH_BANKS; i++) {
+	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
@@ -184,7 +209,7 @@ void testFlash()
 	gotox(0);
 	cputs("flash random test...\r\n");
 	srand(1);
-	for (i = 0; i < FLASH_BANKS; i++) {
+	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
@@ -206,7 +231,7 @@ void testFlash()
 	gotox(0);
 	cputs("flash random verify...\r\n");
 	srand(1);
-	for (i = 0; i < FLASH_BANKS; i++) {
+	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
@@ -225,7 +250,7 @@ void testFlash()
 
 	gotox(0);
 	cputs("flash erase test...\r\n");
-	for (i = 0; i < FLASH_BANKS; i++) {
+	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
@@ -236,7 +261,7 @@ void testFlash()
 	gotox(0);
 	cputs("flash erase verify...\r\n");
 	memset(g_blockBuffer, 0xff, 256);
-	for (i = 0; i < FLASH_BANKS; i++) {
+	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
@@ -642,11 +667,11 @@ void startProgramInSlot(void)
 	// enable ROM at $8000	
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW;
 	
-	for (i = 1; i < 8; i++) {
+	for (i = 1; i < 11; i++) {
 		// 64 kb per slot
 		FLASH_ADDRESS_EXTENSION = i * 8;
 		adr = (uint8_t*) 0x8000;
-		cprintf("%i: ", i);
+		cprintf("%i: ", i == 10 ? 0 : i);
 		if (adr[0] == 0x42) {
 			for (j = 1; j < 32; j++) {
 				uint8_t b = adr[j];
@@ -667,12 +692,14 @@ void startProgramInSlot(void)
 
 	for (;;) {
 		if (kbhit()) {
-			uint8_t key = cgetc();
+			int key = cgetc();
 			if (key == LEFT_ARROW_KEY) {
 				return;
 			}
 			key -= '0';
-			if (key >= 1 && key <= 7) {
+			if (key >= 0 && key <= 9) {
+				if (key == 0) key = 10;
+				
 				// clear MIDI interrupts
 				midiIrqNmiTest();
 
