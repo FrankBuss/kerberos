@@ -127,8 +127,8 @@
           <widget class="QPushButton" name="noteOnButton">
            <property name="font">
             <font>
-             <weight>50</weight>
-             <bold>false</bold>
+             <weight>75</weight>
+             <bold>true</bold>
             </font>
            </property>
            <property name="text">
@@ -140,12 +140,26 @@
           <widget class="QPushButton" name="noteOffButton">
            <property name="font">
             <font>
-             <weight>50</weight>
-             <bold>false</bold>
+             <weight>75</weight>
+             <bold>true</bold>
             </font>
            </property>
            <property name="text">
             <string>Note Off</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="startTestSequenceButton">
+           <property name="text">
+            <string>Start Test Sequence</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="stopTestSequenceButton">
+           <property name="text">
+            <string>Stop Test Sequence</string>
            </property>
           </widget>
          </item>
@@ -210,8 +224,8 @@
            <property name="font">
             <font>
              <pointsize>10</pointsize>
-             <weight>50</weight>
-             <bold>false</bold>
+             <weight>75</weight>
+             <bold>true</bold>
             </font>
            </property>
            <property name="text">
@@ -291,7 +305,7 @@
              </font>
             </property>
             <property name="maximum">
-             <number>7</number>
+             <number>10</number>
             </property>
             <property name="value">
              <number>1</number>

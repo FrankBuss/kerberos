@@ -1,4 +1,3 @@
-rmdir /s /q .build
 call "c:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\qtenv2.bat"
 
 del makefile

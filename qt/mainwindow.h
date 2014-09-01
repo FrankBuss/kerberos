@@ -21,12 +21,15 @@ public:
 
 protected:
     void customEvent(QEvent* event);
+    void timerEvent(QTimerEvent *event);
 
 private slots:
     void onSelectFile();
     void onUploadFile();
     void onNoteOn();
     void onNoteOff();
+    void onStartTestSequence();
+    void onStopTestSequence();
     void onSelectMidiOutInterfaceName(QString name);
     void onSelectMidiInInterfaceName(QString name);
 
@@ -37,6 +40,7 @@ private:
     QString getMidiInInterfaceName();
     void setMidiOutInterfaceName(QString name);
     void setMidiInInterfaceName(QString name);
+    bool m_testSequenceRunning;
 };
 
 extern QEvent::Type g_midiMessageEventType;

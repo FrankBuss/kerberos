@@ -167,13 +167,17 @@ uint16_t crc16(uint8_t* data, int length)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
+    m_testSequenceRunning = false;
     setupUi(this);
     statusBar()->setVisible(false);
+    startTimer(100);
 
     QObject::connect(selectFileButton, SIGNAL(clicked()), this, SLOT(onSelectFile()));
     QObject::connect(uploadFileButton, SIGNAL(clicked()), this, SLOT(onUploadFile()));
     QObject::connect(noteOnButton, SIGNAL(clicked()), this, SLOT(onNoteOn()));
     QObject::connect(noteOffButton, SIGNAL(clicked()), this, SLOT(onNoteOff()));
+    QObject::connect(startTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStartTestSequence()));
+    QObject::connect(stopTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStopTestSequence()));
     QObject::connect(midiInInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiInInterfaceName(QString)));
     QObject::connect(midiOutInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiOutInterfaceName(QString)));
 
@@ -232,7 +236,6 @@ MainWindow::~MainWindow() {
 void MainWindow::onNoteOn()
 {
     try {
-        //while (1) {
         vector<unsigned char> message;
         unsigned char chan = 0;
 
@@ -244,7 +247,6 @@ void MainWindow::onNoteOn()
         message.push_back(midiNote);
         message.push_back(vel);
         g_midiOut.sendMessage(&message);
-        //Sleep(100); }
     } catch (RtError& err) {
         //qWarning() << QString::fromStdString(err.getMessage());
     }
@@ -267,6 +269,16 @@ void MainWindow::onNoteOff()
     } catch (RtError& err) {
         //qWarning() << QString::fromStdString(err.getMessage());
     }
+}
+
+void MainWindow::onStartTestSequence()
+{
+    m_testSequenceRunning = true;
+}
+
+void MainWindow::onStopTestSequence()
+{
+    m_testSequenceRunning = false;
 }
 
 void MainWindow::onSelectFile()
@@ -464,4 +476,24 @@ void MainWindow::customEvent(QEvent *event)
         }
     }
     event->accept();
+}
+
+void MainWindow::timerEvent(QTimerEvent *event)
+{
+    static int state = 0;
+    if (m_testSequenceRunning) {
+        switch (state) {
+            case 0:
+                onNoteOn();
+                state++;
+                break;
+            case 1:
+                onNoteOff();
+                state++;
+                break;
+            case 2:
+                state = 0;
+                break;
+        }
+    }
 }
