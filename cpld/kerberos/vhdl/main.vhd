@@ -488,8 +488,8 @@ begin
     begin
         if reset = '0' then
             mc6850_CS2 <= '1';
-            led1 <= '0';
-            led2 <= '0';
+            led1 <= '1';
+            led2 <= '1';
             irq <= 'Z';
             nmi <= 'Z';
         else
