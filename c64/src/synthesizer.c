@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <cbm.h>
 
-#include "utilasm.h"
+#include "util.h"
 #include "midi.h"
 #include "regs.h"
 

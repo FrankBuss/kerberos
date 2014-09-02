@@ -1,14 +1,16 @@
-#ifndef UTIL_ASM_H
-#define UTIL_ASM_H
+#ifndef UTIL_H
+#define UTIL_H
 
-// timing tests
-void __fastcall__ test1(void);
-void __fastcall__ test2(void);
-void __fastcall__ test3(void);
-void __fastcall__ test4(void);
-void __fastcall__ test5(void);
-void __fastcall__ test6(void);
-void __fastcall__ test7(void);
+#include <stdint.h>
+
+
+// util.c
+
+void ramSetBank(uint16_t bank);
+void anyKey();
+
+
+// util_asm.s
 
 uint8_t __fastcall__ isC128(void);
 void __fastcall__ startProgramFromRom(void);
