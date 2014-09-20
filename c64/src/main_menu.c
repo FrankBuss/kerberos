@@ -258,6 +258,8 @@ void showTitle(char* subtitle)
 
 int main(void)
 {
+	*((uint8_t*)1) = 55;
+	
 	g_isC128 = isC128();
 	
 	bgcolor(BACKGROUND_COLOR);

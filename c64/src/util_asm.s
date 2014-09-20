@@ -7,7 +7,7 @@
 .import         pushax
 .import		_midiWaitAndReadByte
 .import         _rand
-.import         __BLOCK_BUFFER_START__
+.import         __BLOCK_BUFFER_LOAD__
 .import         __LOADER_LOAD__
 .import         __ROMLOADER_LOAD__
 
@@ -61,7 +61,11 @@ _startEasyFlash:
 		jmp ($fffc)
 
 
-.segment "CODE"
+.segment "BLOCK_BUFFER"
+.res 256
+
+
+.segment "TABLES"
 
 ascii2petsciiTable:
 		.byte 0, 1, 2, 3, 4, 5, 6, 7
@@ -188,7 +192,7 @@ _fastCompare256:
 		stx cmpDest+1
 		ldx #0
 		ldy #0
-fastCmp:	lda __BLOCK_BUFFER_START__,y
+fastCmp:	lda __BLOCK_BUFFER_LOAD__,y
 cmpDest = * + 1
 		cmp $8000,y
 		bne fastCmpErr
@@ -299,7 +303,7 @@ _enableInterrupts:
 _rand256Block:
 		ldy #0
 fill:		jsr _rand
-		sta __BLOCK_BUFFER_START__,y
+		sta __BLOCK_BUFFER_LOAD__,y
 		iny
 		bne fill
 		rts
@@ -352,7 +356,7 @@ _midiReadCommand:
 		and #$80
 		beq midiLoadData
 		lda cmdLength
-		sta __BLOCK_BUFFER_START__
+		sta __BLOCK_BUFFER_LOAD__
 		
 		; get checksum and return 0, if checksum is ok
 midiTestCrc:	jsr readByte
@@ -369,7 +373,7 @@ midiNextByte:	jsr readByte
 		jsr updateCrc
 		pla
 		ldx ramIndex
-		sta __BLOCK_BUFFER_START__,x
+		sta __BLOCK_BUFFER_LOAD__,x
 		inc ramIndex
 		lda ramIndex
 		cmp cmdLength

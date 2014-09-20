@@ -9,8 +9,8 @@
 #include "midi.h"
 #include "regs.h"
 
-#define BACKGROUND_COLOR 5
-#define TEXT_COLOR 0
+#define BACKGROUND_COLOR 0
+#define TEXT_COLOR 5
 
 uint8_t waveform = 0;
 

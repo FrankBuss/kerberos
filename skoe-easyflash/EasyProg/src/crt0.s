@@ -77,7 +77,6 @@ L1:     lda sp,x
 
 IRQStub:
         cld             ; Just to be sure
-        jsr callirq     ; Call the functions
         jmp IRQInd      ; Jump to the saved IRQ vector
 
 ; ------------------------------------------------------------------------

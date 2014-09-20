@@ -1,6 +1,6 @@
 .importzp       tmp1, tmp2
 
-.import         __BLOCK_BUFFER_START__
+.import         __BLOCK_BUFFER_LOAD__
 
 .include "regs.inc"
 
@@ -107,7 +107,7 @@ _flashWrite256Block:
 		sta blwDest
 		stx blwDest+1
 		ldy #0
-block2:		lda __BLOCK_BUFFER_START__,y
+block2:		lda __BLOCK_BUFFER_LOAD__,y
 		cmp #$ff
 		; nothing to be done if $ff
 		beq blockEnd

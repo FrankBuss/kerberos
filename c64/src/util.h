@@ -27,8 +27,8 @@ void __fastcall__ flashWrite256Block(uint8_t* address);
 uint16_t __fastcall__ flashReadId(void);
 uint8_t __fastcall__ fastCompare256(uint8_t* address);
 
-extern uint8_t _BLOCK_BUFFER_START__;
-#define g_blockBuffer (&_BLOCK_BUFFER_START__)
+extern uint8_t _BLOCK_BUFFER_LOAD__;
+#define g_blockBuffer (&_BLOCK_BUFFER_LOAD__)
 
 extern uint8_t _CART128_LOAD__;
 #define cart128Load (&_CART128_LOAD__)

@@ -48,7 +48,7 @@
 #include "sprites.h"
 #include "usbtest.h"
 #include "util.h"
-#include "../../c64/src/regs.h"
+#include "../../../c64/src/regs.h"
 
 #undef SHOW_HEAP_FREE
 

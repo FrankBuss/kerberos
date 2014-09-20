@@ -7,8 +7,8 @@
 #define FLASH_BANKS 256
 
 // menu colors
-#define BACKGROUND_COLOR 5
-#define TEXT_COLOR 0
+#define BACKGROUND_COLOR 0
+#define TEXT_COLOR 15
 
 // back key
 #define LEFT_ARROW_KEY 0x5f

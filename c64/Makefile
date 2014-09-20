@@ -1,5 +1,4 @@
 menu_obj :=
-menu_obj += obj/crt0.o
 menu_obj += obj/util.o
 menu_obj += obj/util_asm.o
 menu_obj += obj/midi.o
@@ -8,7 +7,6 @@ menu_obj += obj/main_menu.o
 menu_obj += obj/test_menu.o
 
 synthesizer_obj :=
-synthesizer_obj += obj/crt0.o
 synthesizer_obj += obj/util.o
 synthesizer_obj += obj/util_asm.o
 synthesizer_obj += obj/midi.o
@@ -33,7 +31,7 @@ all: menu.bin synthesizer.prg
 headers := $(foreach dir, $(inc), $(wildcard $(dir)/*.h))
 
 obj/%.s: src/%.c $(headers) | obj
-	cc65 -t c64 -T -O --static-locals $(INCLUDE) $(DEFINE) -o $@ $<
+	cc65 -t c64 -T -O $(INCLUDE) $(DEFINE) -o $@ $<
 
 ###############################################################################
 obj/%.o: obj/%.s | obj
