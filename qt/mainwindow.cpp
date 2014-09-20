@@ -8,8 +8,13 @@
 #include <QMessageBox>
 #include <vector>
 #include <map>
+#include <initializer_list>
 #include "mainwindow.h"
 #include "RtMidi.h"
+#include "../c64/src/midi_commands.h"
+
+#define NEWLINE "\x0d\x0a"
+
 using namespace std;
 
 const char* g_filename = "filename";
@@ -22,12 +27,90 @@ int g_lastByte;
 
 QEvent::Type g_midiMessageEventType = (QEvent::Type) QEvent::registerEventType();
 
-void midiCallback( double /*deltatime*/,
-                   vector< unsigned char > *message,
-                   void* userData )
+static uint8_t g_crc;
+
+void crc8Init()
 {
-    MainWindow* instance = static_cast<MainWindow*>(userData);
-    QApplication::postEvent(instance, new MidiMessageEvent(*message));
+    g_crc = 0xff;
+}
+
+uint8_t crc8Update(uint8_t data)
+{
+    static const uint8_t crcTable[256] = {
+        0x00, 0x5e, 0xbc, 0xe2, 0x61, 0x3f, 0xdd, 0x83,
+        0xc2, 0x9c, 0x7e, 0x20, 0xa3, 0xfd, 0x1f, 0x41,
+        0x9d, 0xc3, 0x21, 0x7f, 0xfc, 0xa2, 0x40, 0x1e,
+        0x5f, 0x01, 0xe3, 0xbd, 0x3e, 0x60, 0x82, 0xdc,
+        0x23, 0x7d, 0x9f, 0xc1, 0x42, 0x1c, 0xfe, 0xa0,
+        0xe1, 0xbf, 0x5d, 0x03, 0x80, 0xde, 0x3c, 0x62,
+        0xbe, 0xe0, 0x02, 0x5c, 0xdf, 0x81, 0x63, 0x3d,
+        0x7c, 0x22, 0xc0, 0x9e, 0x1d, 0x43, 0xa1, 0xff,
+        0x46, 0x18, 0xfa, 0xa4, 0x27, 0x79, 0x9b, 0xc5,
+        0x84, 0xda, 0x38, 0x66, 0xe5, 0xbb, 0x59, 0x07,
+        0xdb, 0x85, 0x67, 0x39, 0xba, 0xe4, 0x06, 0x58,
+        0x19, 0x47, 0xa5, 0xfb, 0x78, 0x26, 0xc4, 0x9a,
+        0x65, 0x3b, 0xd9, 0x87, 0x04, 0x5a, 0xb8, 0xe6,
+        0xa7, 0xf9, 0x1b, 0x45, 0xc6, 0x98, 0x7a, 0x24,
+        0xf8, 0xa6, 0x44, 0x1a, 0x99, 0xc7, 0x25, 0x7b,
+        0x3a, 0x64, 0x86, 0xd8, 0x5b, 0x05, 0xe7, 0xb9,
+        0x8c, 0xd2, 0x30, 0x6e, 0xed, 0xb3, 0x51, 0x0f,
+        0x4e, 0x10, 0xf2, 0xac, 0x2f, 0x71, 0x93, 0xcd,
+        0x11, 0x4f, 0xad, 0xf3, 0x70, 0x2e, 0xcc, 0x92,
+        0xd3, 0x8d, 0x6f, 0x31, 0xb2, 0xec, 0x0e, 0x50,
+        0xaf, 0xf1, 0x13, 0x4d, 0xce, 0x90, 0x72, 0x2c,
+        0x6d, 0x33, 0xd1, 0x8f, 0x0c, 0x52, 0xb0, 0xee,
+        0x32, 0x6c, 0x8e, 0xd0, 0x53, 0x0d, 0xef, 0xb1,
+        0xf0, 0xae, 0x4c, 0x12, 0x91, 0xcf, 0x2d, 0x73,
+        0xca, 0x94, 0x76, 0x28, 0xab, 0xf5, 0x17, 0x49,
+        0x08, 0x56, 0xb4, 0xea, 0x69, 0x37, 0xd5, 0x8b,
+        0x57, 0x09, 0xeb, 0xb5, 0x36, 0x68, 0x8a, 0xd4,
+        0x95, 0xcb, 0x29, 0x77, 0xf4, 0xaa, 0x48, 0x16,
+        0xe9, 0xb7, 0x55, 0x0b, 0x88, 0xd6, 0x34, 0x6a,
+        0x2b, 0x75, 0x97, 0xc9, 0x4a, 0x14, 0xf6, 0xa8,
+        0x74, 0x2a, 0xc8, 0x96, 0x15, 0x4b, 0xa9, 0xf7,
+        0xb6, 0xe8, 0x0a, 0x54, 0xd7, 0x89, 0x6b, 0x35,
+    };
+    g_crc = crcTable[data ^ g_crc];
+    return g_crc;
+}
+
+uint8_t ascii2petscii(uint8_t ascii)
+{
+    static const uint8_t table[256] = {
+        0, 1, 2, 3, 4, 5, 6, 7,
+        8, 9, 10, 11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20, 21, 22, 23,
+        24, 25, 26, 27, 28, 29, 30, 31,
+        32, 33, 34, 35, 36, 37, 38, 39,
+        40, 41, 42, 43, 44, 45, 46, 47,
+        48, 49, 50, 51, 52, 53, 54, 55,
+        56, 57, 58, 59, 60, 61, 62, 63,
+        64, 97, 98, 99, 100, 101, 102, 103,
+        104, 105, 106, 107, 108, 109, 110, 111,
+        112, 113, 114, 115, 116, 117, 118, 119,
+        120, 121, 122, 91, 92, 93, 94, 95,
+        96, 65, 66, 67, 68, 69, 70, 71,
+        72, 73, 74, 75, 76, 77, 78, 79,
+        80, 81, 82, 83, 84, 85, 86, 87,
+        88, 89, 90, 123, 124, 125, 126, 127,
+        128, 129, 130, 131, 132, 133, 134, 135,
+        136, 137, 138, 139, 140, 141, 142, 143,
+        144, 145, 146, 147, 148, 149, 150, 151,
+        152, 153, 154, 155, 156, 157, 158, 159,
+        160, 161, 162, 163, 164, 165, 166, 167,
+        168, 169, 170, 171, 172, 173, 174, 175,
+        176, 177, 178, 179, 180, 181, 182, 183,
+        184, 185, 186, 187, 188, 189, 190, 191,
+        192, 193, 194, 195, 196, 197, 198, 199,
+        200, 201, 202, 203, 204, 205, 206, 207,
+        208, 209, 210, 211, 212, 213, 214, 215,
+        216, 217, 218, 219, 220, 221, 222, 223,
+        224, 225, 226, 227, 228, 229, 230, 231,
+        232, 233, 234, 235, 236, 237, 238, 239,
+        240, 241, 242, 243, 244, 245, 246, 247,
+        248, 249, 250, 251, 252, 253, 254, 255
+    };
+    return table[ascii];
 }
 
 // data transfers encoded in note-off messages:
@@ -38,19 +121,14 @@ void midiCallback( double /*deltatime*/,
 // bit 0: bit 7 of second data byte (if sent)
 //
 // start of data transfer, with two data bytes (0x8c)
-// first byte: type of transfer:
-// 0x01 or 0x02: file transfer from PC to C64: 0x01: start as PRG, 0x02: write to flash
-//   filename string in ASCII, zero terminated
-//   2 bytes program length (LSB first, without the first two bytes of the PRG for the start address)
-//   4 bytes destination address (LSB first, flash addresses start at 0)
-//   data
-//   2 bytes CRC16 checksum (LSB first)
-// second byte: unused
+// first byte: tag ID
+// second byte: length
+// last byte in the next data messages: CRC8 checksum
 
 static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
 {
     try {
-        vector<unsigned char> message;
+        ByteArray message;
         message.push_back(0x80 | channelBits);
         message.push_back(note);
         message.push_back(velocity);
@@ -60,13 +138,7 @@ static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
     }
 }
 
-static void midiStartTransfer(uint8_t type)
-{
-    g_lastByte = -1;
-    sendNoteOff(0xc, type, 0);
-}
-
-static void midiSendBytes(int b1, int b2)
+static void midiSendBytesWithFlags(int b1, int b2, int flags)
 {
     int channel = 0;
     if (b1 & 0x80) {
@@ -82,7 +154,18 @@ static void midiSendBytes(int b1, int b2)
     } else {
         b2 = 0;
     }
-    sendNoteOff(channel, b1, b2);
+    sendNoteOff(channel | flags, b1, b2);
+}
+
+static void midiStartTransfer(uint8_t tag, uint8_t length)
+{
+    g_lastByte = -1;
+    midiSendBytesWithFlags(tag, length, 1 << 3);
+}
+
+static void midiSendBytes(int b1, int b2)
+{
+    midiSendBytesWithFlags(b1, b2, 0);
 }
 
 static void midiSendByte(uint8_t byte)
@@ -102,66 +185,65 @@ static void midiEndTransfer()
     }
 }
 
-static void midiSendWord(uint16_t word)
+static void midiSendCommand(uint8_t tag, ByteArray data)
 {
-    midiSendByte(word & 0xff);
-    midiSendByte((word >> 8) & 0xff);
-}
-
-static void midiSendDWord(uint32_t word)
-{
-    midiSendByte(word & 0xff);
-    midiSendByte((word >> 8) & 0xff);
-    midiSendByte((word >> 16) & 0xff);
-    midiSendByte((word >> 24) & 0xff);
-}
-
-// CRC16, Modbus polynomial and initial value
-uint16_t crc16(uint8_t* data, int length)
-{
-    static const uint16_t crcTable[] = {
-        0X0000, 0XC0C1, 0XC181, 0X0140, 0XC301, 0X03C0, 0X0280, 0XC241,
-        0XC601, 0X06C0, 0X0780, 0XC741, 0X0500, 0XC5C1, 0XC481, 0X0440,
-        0XCC01, 0X0CC0, 0X0D80, 0XCD41, 0X0F00, 0XCFC1, 0XCE81, 0X0E40,
-        0X0A00, 0XCAC1, 0XCB81, 0X0B40, 0XC901, 0X09C0, 0X0880, 0XC841,
-        0XD801, 0X18C0, 0X1980, 0XD941, 0X1B00, 0XDBC1, 0XDA81, 0X1A40,
-        0X1E00, 0XDEC1, 0XDF81, 0X1F40, 0XDD01, 0X1DC0, 0X1C80, 0XDC41,
-        0X1400, 0XD4C1, 0XD581, 0X1540, 0XD701, 0X17C0, 0X1680, 0XD641,
-        0XD201, 0X12C0, 0X1380, 0XD341, 0X1100, 0XD1C1, 0XD081, 0X1040,
-        0XF001, 0X30C0, 0X3180, 0XF141, 0X3300, 0XF3C1, 0XF281, 0X3240,
-        0X3600, 0XF6C1, 0XF781, 0X3740, 0XF501, 0X35C0, 0X3480, 0XF441,
-        0X3C00, 0XFCC1, 0XFD81, 0X3D40, 0XFF01, 0X3FC0, 0X3E80, 0XFE41,
-        0XFA01, 0X3AC0, 0X3B80, 0XFB41, 0X3900, 0XF9C1, 0XF881, 0X3840,
-        0X2800, 0XE8C1, 0XE981, 0X2940, 0XEB01, 0X2BC0, 0X2A80, 0XEA41,
-        0XEE01, 0X2EC0, 0X2F80, 0XEF41, 0X2D00, 0XEDC1, 0XEC81, 0X2C40,
-        0XE401, 0X24C0, 0X2580, 0XE541, 0X2700, 0XE7C1, 0XE681, 0X2640,
-        0X2200, 0XE2C1, 0XE381, 0X2340, 0XE101, 0X21C0, 0X2080, 0XE041,
-        0XA001, 0X60C0, 0X6180, 0XA141, 0X6300, 0XA3C1, 0XA281, 0X6240,
-        0X6600, 0XA6C1, 0XA781, 0X6740, 0XA501, 0X65C0, 0X6480, 0XA441,
-        0X6C00, 0XACC1, 0XAD81, 0X6D40, 0XAF01, 0X6FC0, 0X6E80, 0XAE41,
-        0XAA01, 0X6AC0, 0X6B80, 0XAB41, 0X6900, 0XA9C1, 0XA881, 0X6840,
-        0X7800, 0XB8C1, 0XB981, 0X7940, 0XBB01, 0X7BC0, 0X7A80, 0XBA41,
-        0XBE01, 0X7EC0, 0X7F80, 0XBF41, 0X7D00, 0XBDC1, 0XBC81, 0X7C40,
-        0XB401, 0X74C0, 0X7580, 0XB541, 0X7700, 0XB7C1, 0XB681, 0X7640,
-        0X7200, 0XB2C1, 0XB381, 0X7340, 0XB101, 0X71C0, 0X7080, 0XB041,
-        0X5000, 0X90C1, 0X9181, 0X5140, 0X9301, 0X53C0, 0X5280, 0X9241,
-        0X9601, 0X56C0, 0X5780, 0X9741, 0X5500, 0X95C1, 0X9481, 0X5440,
-        0X9C01, 0X5CC0, 0X5D80, 0X9D41, 0X5F00, 0X9FC1, 0X9E81, 0X5E40,
-        0X5A00, 0X9AC1, 0X9B81, 0X5B40, 0X9901, 0X59C0, 0X5880, 0X9841,
-        0X8801, 0X48C0, 0X4980, 0X8941, 0X4B00, 0X8BC1, 0X8A81, 0X4A40,
-        0X4E00, 0X8EC1, 0X8F81, 0X4F40, 0X8D01, 0X4DC0, 0X4C80, 0X8C41,
-        0X4400, 0X84C1, 0X8581, 0X4540, 0X8701, 0X47C0, 0X4680, 0X8641,
-        0X8201, 0X42C0, 0X4380, 0X8341, 0X4100, 0X81C1, 0X8081, 0X4040 };
-
-    uint8_t temp;
-    uint16_t crcWord = 0xFFFF;
-
-    while (length--) {
-        temp = *data++ ^ crcWord;
-        crcWord >>= 8;
-        crcWord ^= crcTable[temp];
+    // start file transfer
+    size_t length = data.size();
+    if (length <= 1) {
+        tag |= 0x80;
+        if (length == 1) {
+            length = data[0];
+            data.clear();
+        }
+    } else {
+        length--;
     }
-    return crcWord;
+    midiStartTransfer(tag, length);
+
+    // init checksum
+    crc8Init();
+    crc8Update(tag);
+    crc8Update(length);
+
+    // send data
+    for (size_t i = 0; i < data.size(); i++) {
+        midiSendByte(data[i]);
+        crc8Update(data[i]);
+    }
+
+    // send checksum
+    midiSendByte(g_crc);
+
+    // end file transfer
+    midiEndTransfer();
+}
+
+template <class T>
+static void midiSendCommand(uint8_t tag, initializer_list<T> list)
+{
+    ByteArray array;
+    for (auto elem : list) {
+        array.push_back(elem);
+    }
+    midiSendCommand(tag, array);
+}
+
+static void midiSendWordCommand(uint8_t tag, uint16_t word)
+{
+    midiSendCommand(tag, { word & 0xff, word >> 8 });
+}
+
+static void midiSendCommand(uint8_t tag)
+{
+    midiSendCommand(tag, { 0 });
+}
+
+void midiCallback( double /*deltatime*/,
+                   ByteArray* message,
+                   void* userData )
+{
+    MainWindow* instance = static_cast<MainWindow*>(userData);
+    QApplication::postEvent(instance, new MidiMessageEvent(*message));
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -233,10 +315,122 @@ MainWindow::~MainWindow() {
 #define STATUS_NOTEOFF    0x80
 #define STATUS_NOTEON     0x90
 
+void addString(ByteArray& data, QString string)
+{
+    for (int i = 0; i < string.size(); i++) {
+        data.push_back(ascii2petscii(string[i].toLatin1()));
+    }
+    data.push_back(0);
+}
+
+static void midiSendPrintCommand(QString string)
+{
+    ByteArray data;
+    addString(data, string);
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+}
+
+static void midiSendNopCommand()
+{
+    ByteArray data;
+    for (int j = 0; j < 256; j++) data.push_back(0);
+    midiSendCommand(MIDI_COMMAND_NOP, data);
+}
+
 void MainWindow::onNoteOn()
 {
+    midiSendCommand(MIDI_COMMAND_START_SLOT_PROGRAM, { 2 });
+    return;
+
+    {
+        int i = 0;
+        while (1) {
+    ByteArray data;
+    addString(data, QString("").sprintf("Hello World! %i", i));
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    ByteArray data2;
+    data2.push_back(15);
+    midiSendCommand(MIDI_COMMAND_GOTOX, data2);
+    i++;
+    ByteArray data3;
+    for (int j = 0; j < 256; j++) data3.push_back(0);
+    midiSendCommand(MIDI_COMMAND_NOP, data3);
+    }
+    }
+#if 0
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "Hello! World!\r\n");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+#endif
+
+#if 0
+    {
+    ByteArray data;
+    addString(data, "12");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+
+    {
+    ByteArray data;
+    addString(data, "1");
+    midiSendCommand(MIDI_COMMAND_PRINT, data);
+    }
+#endif
+
+    return;
+
     try {
-        vector<unsigned char> message;
+        ByteArray message;
         unsigned char chan = 0;
 
         int midiNote = 60;
@@ -255,7 +449,7 @@ void MainWindow::onNoteOn()
 void MainWindow::onNoteOff()
 {
     try {
-        vector<unsigned char> message;
+        ByteArray message;
         unsigned char chan = 0;
 
         int midiNote = 60;
@@ -290,36 +484,6 @@ void MainWindow::onSelectFile()
     }
 }
 
-static void uploadFile(QString filename, uint8_t type, uint32_t startAddress, QByteArray data)
-{
-    // start file transfer
-    midiStartTransfer(type);
-
-    // send name
-    for (int i = 0; i < filename.size(); i++) {
-        midiSendByte(filename[i].toAscii());
-    }
-    midiSendByte(0);
-
-    // send size
-    midiSendWord(data.size());
-
-    // send start address
-    midiSendDWord(startAddress);
-
-    // send bytes
-    for (int i = 0; i < data.size(); i++) {
-        midiSendByte(data[i]);
-    }
-
-    // send checksum
-    uint16_t crc = crc16((uint8_t*) data.data(), data.size());
-    midiSendWord(crc);
-
-    // end file transfer
-    midiEndTransfer();
-}
-
 void MainWindow::onUploadFile()
 {
     // read file
@@ -333,8 +497,12 @@ void MainWindow::onUploadFile()
     }
     QByteArray data = file.readAll();
     file.close();
-    if (data.size() < 2) {
-        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too small, min 2 bytes"));
+    if (data.size() < 3) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too small, min 3 bytes"));
+    }
+    if (data.size() > 63486) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 63486 bytes"));
+        return;
     }
 
     // if save to flash is checked, then prepend slot data and change address
@@ -354,8 +522,10 @@ void MainWindow::onUploadFile()
             header.append(0x42);
 
             // filename
+            int nameSize = name.size();
+            if (nameSize > 30) nameSize = 30;
             for (int i = 0; i < name.size(); i++) {
-                header.append(name[i].toAscii());
+                header.append(name[i].toLatin1());
             }
 
             // fill filename with zeros
@@ -364,7 +534,142 @@ void MainWindow::onUploadFile()
             }
 
             // CRC16 checksum
-            uint16_t crc = crc16((uint8_t*) data.data(), data.size());
+            uint16_t crc = 0;
+            header.append(crc & 0xff);
+            header.append(crc >> 8);
+
+            // PRG length
+            int l = data.length() - 2;
+            header.append(l & 0xff);
+            header.append((l >> 8) & 0xff);
+
+            // start included in data
+
+            // calculate flash start address
+            startAddress = slot * 0x10000;
+
+            // prepend header
+            data.prepend(header);
+        } else {
+            if (!filename.toLower().endsWith(".bin")) {
+                QMessageBox::warning(NULL, tr("Filetransfer"), tr(".bin-file required for menu update"));
+                return;
+            }
+
+            // menu update
+            startAddress = 0;
+        }
+
+        // flash
+        midiSendPrintCommand("flashing " + name.left(20) + "..." + NEWLINE);
+        midiSendNopCommand();
+        int full = data.size();
+        int transferred = 0;
+        int oldPercent = -1;
+        while (data.size() > 0) {
+            int c64Address = (startAddress & 0x1fff) | 0x8000;
+            midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, c64Address);
+            midiSendCommand(MIDI_COMMAND_SET_FLASH_BANK, { startAddress >> 13 });
+            if ((c64Address & 0x0fff) == 0) {
+                midiSendNopCommand();
+                midiSendCommand(MIDI_COMMAND_ERASE_FLASH_SECTOR);
+                midiSendNopCommand();
+            }
+            int size = data.size();
+            if (size > 256) size = 256;
+            ByteArray block;
+            for (int j = 0; j < size; j++) block.push_back(data[j]);
+            while (block.size() < 256) block.push_back(0xff);
+            midiSendCommand(MIDI_COMMAND_WRITE_FLASH, block);
+            data.remove(0, size);
+            startAddress += 0x100;
+            transferred += size;
+            int percent = transferred * 100 / full;
+            if (percent > 100) percent = 100;
+            if (percent != oldPercent) {
+                midiSendNopCommand();
+                midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+                midiSendPrintCommand(QString("").sprintf("%i%%", percent));
+                oldPercent = percent;
+                midiSendNopCommand();
+            }
+        }
+
+        midiSendNopCommand();
+        midiSendPrintCommand(NEWLINE);
+        midiSendPrintCommand(QString("flash done") + NEWLINE);
+        midiSendCommand(MIDI_COMMAND_EXIT);
+    } else {
+
+        // save size and address in first SRAM bank
+        midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, 0xdf00);
+        midiSendWordCommand(MIDI_COMMAND_SET_RAM_BANK, 0);
+        int size = data.size() - 2;
+        midiSendCommand(MIDI_COMMAND_WRITE_RAM, { uint8_t(size & 0xff), uint8_t(size >> 8), data[0], data[1] });
+
+        // transfer program to SRAM, starting at second bank
+        midiSendNopCommand();
+        midiSendPrintCommand("receiving " + name.left(20) + "..." + NEWLINE);
+        midiSendNopCommand();
+        midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, 0xdf00);
+        data.remove(0, 2);
+        int bank = 1;
+        int full = data.size();
+        int transferred = 0;
+        int oldPercent = -1;
+        while (data.size() > 0) {
+            midiSendWordCommand(MIDI_COMMAND_SET_RAM_BANK, bank);
+            int size = data.size();
+            if (size > 256) size = 256;
+            ByteArray block;
+            for (int j = 0; j < size; j++) block.push_back(data[j]);
+            midiSendCommand(MIDI_COMMAND_WRITE_RAM, block);
+            data.remove(0, size);
+            bank++;
+            transferred += size;
+            int percent = transferred * 100 / full;
+            if (percent != oldPercent) {
+                midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+                midiSendPrintCommand(QString("").sprintf("%i%%", percent));
+                oldPercent = percent;
+            }
+        }
+
+        // start program
+        midiSendPrintCommand(NEWLINE);
+        midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
+    }
+    return;
+
+
+    // if save to flash is checked, then prepend slot data and change address
+    if (saveRadioButton->isChecked()) {
+        int slot = slotSpinBox->value();
+
+        // create slot header, if slot is not 0 = menu
+        if (slot) {
+            if (!filename.toLower().endsWith(".prg")) {
+                QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for slot save"));
+                return;
+            }
+
+            QByteArray header;
+
+            // magic byte
+            header.append(0x42);
+
+            // filename
+            for (int i = 0; i < name.size(); i++) {
+                header.append(name[i].toLatin1());
+            }
+
+            // fill filename with zeros
+            while (header.length() < 250) {
+                header.append(char(0));
+            }
+
+            // CRC16 checksum
+            uint16_t crc = 0;
             header.append(crc & 0xff);
             header.append(crc >> 8);
 
@@ -395,7 +700,7 @@ void MainWindow::onUploadFile()
             // menu update
             startAddress = 0;
         }
-        uploadFile(name, 2, startAddress, data);
+//        uploadFile(name, 2, startAddress, data);
     } else {
         if (!filename.toLower().endsWith(".prg")) {
             QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for program run"));
@@ -409,7 +714,7 @@ void MainWindow::onUploadFile()
         data.remove(0, 2);
 
         // upload and start
-        uploadFile(name, 1, startAddress, data);
+//        uploadFile(name, 1, startAddress, data);
     }
 }
 
@@ -478,7 +783,7 @@ void MainWindow::customEvent(QEvent *event)
     event->accept();
 }
 
-void MainWindow::timerEvent(QTimerEvent *event)
+void MainWindow::timerEvent(QTimerEvent*)
 {
     static int state = 0;
     if (m_testSequenceRunning) {

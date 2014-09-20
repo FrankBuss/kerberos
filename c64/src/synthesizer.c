@@ -9,9 +9,8 @@
 #include "midi.h"
 #include "regs.h"
 
-#define BACKGROUND_COLOR 0
-#define TEXT_COLOR 14
-#define CAPTION_COLOR 1
+#define BACKGROUND_COLOR 5
+#define TEXT_COLOR 0
 
 uint8_t waveform = 0;
 
@@ -72,7 +71,6 @@ int main(void)
 	bordercolor(BACKGROUND_COLOR);
 	textcolor(TEXT_COLOR);
 	gotoxy(0, 0);
-	textcolor(1);
 
 	// test for Kerberos MIDI interface
 	if (!midiIrqNmiTest()) {

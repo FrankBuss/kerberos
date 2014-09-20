@@ -14,7 +14,7 @@ static void testRam()
 {
 	uint16_t i;
 
-	clrscr();
+	showTitle("RAM tests");
 	cputs("RAM 0xff test...\r\n");
 	memset(g_blockBuffer, 0xff, 256);
 	for (i = 0; i < 512; i++) {
@@ -31,7 +31,7 @@ static void testRam()
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
-		if (memcmp(g_ram, g_blockBuffer, 256)) {
+		if (fastCompare256(g_ram)) {
 			gotox(0);
 			cprintf("RAM error, bank: %i\r\n", i);
 			anyKey();
@@ -58,7 +58,7 @@ static void testRam()
 		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
 		rand256Block();
-		if (memcmp(g_ram, g_blockBuffer, 256)) {
+		if (fastCompare256(g_ram)) {
 			gotox(0);
 			cprintf("RAM error, bank: %i\r\n", i);
 			anyKey();
@@ -83,7 +83,7 @@ static void testRam()
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 9);
 		ramSetBank(i);
-		if (memcmp(g_ram, g_blockBuffer, 256)) {
+		if (fastCompare256(g_ram)) {
 			gotox(0);
 			cprintf("RAM error, bank: %i\r\n", i);
 			anyKey();
@@ -101,12 +101,15 @@ static void testFlash()
 	uint16_t i;
 	uint8_t j;
 	uint8_t* adr;
-	uint16_t id = flashReadId();
+	uint16_t id;
 	uint16_t firstBank = 0;
 	uint16_t lastBank = 0;
+	disableInterrupts();
+	id = flashReadId();
+	enableInterrupts();
 
 	while (1) {
-		clrscr();
+		showTitle("flash test");
 		cprintf("flash id: 0x%04x\r\n", id);
 		if (id != 0xbfc8) {
 			cputs("wrong flash id\r\n");
@@ -137,6 +140,7 @@ static void testFlash()
 		if (lastBank) break;
 	}
 
+	disableInterrupts();
 	cputs("flash 0 test...\r\n");
 	memset(g_blockBuffer, 0, 256);
 	for (i = firstBank; i < lastBank; i++) {
@@ -161,10 +165,10 @@ static void testFlash()
 	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
-		flashSetBank(i);
+		FLASH_ADDRESS_EXTENSION = i;
 		adr = (uint8_t*) 0x8000;
 		for (j = 0; j < 32; j++) {
-			if (flashCompare256Block(adr)) {
+			if (fastCompare256(adr)) {
 				gotox(0);
 				cprintf("flash error, bank: %i\r\n", i);
 				anyKey();
@@ -202,11 +206,12 @@ static void testFlash()
 	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
-		flashSetBank(i);
+		FLASH_ADDRESS_EXTENSION = i;
+		adr = (uint8_t*) 0x8000;
 		adr = (uint8_t*) 0x8000;
 		for (j = 0; j < 32; j++) {
 			rand256Block();
-			if (flashCompare256Block(adr)) {
+			if (fastCompare256(adr)) {
 				gotox(0);
 				cprintf("flash error, bank: %i\r\n", i);
 				anyKey();
@@ -232,10 +237,10 @@ static void testFlash()
 	for (i = firstBank; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
-		flashSetBank(i);
+		FLASH_ADDRESS_EXTENSION = i;
 		adr = (uint8_t*) 0x8000;
 		for (j = 0; j < 32; j++) {
-			if (flashCompare256Block(adr)) {
+			if (fastCompare256(adr)) {
 				gotox(0);
 				cprintf("flash error, bank: %i\r\n", i);
 				anyKey();
@@ -255,7 +260,7 @@ static void testMidi()
 	uint8_t midiThruOut = 0;
 	uint8_t midiThruIn = 0;
 	uint8_t config = 0;
-	clrscr();
+	showTitle("MIDI menu");
 	if (!midiIrqNmiTest()) {
 		cputs("MIDI IRQ not working\r\n");
 		anyKey();
@@ -263,7 +268,6 @@ static void testMidi()
 	}
 	midiInit();
 	
-	cputs("MIDI menu\r\n\r\n");
 	cputs("n: send note on\r\n");
 	cputs("f: send note off\r\n");
 	cputs("i: MIDI thru in setting\r\n");
@@ -320,7 +324,7 @@ static uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
 	uint8_t* adr = (uint8_t*) (bank << 8);
 	ramSetBank(bank);
 	memcpy(g_blockBuffer, g_ram, 256);
-	if (memcmp(adr, g_blockBuffer, 256)) {
+	if (fastCompare256(adr)) {
 		// standard mode
 		CART_CONFIG = 0;
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
@@ -340,7 +344,7 @@ static void testRamAsRom()
 	uint16_t i;
 
 	disableInterrupts();
-	clrscr();
+	showTitle("RAM as ROM tests");
 	cputs("write random data in RAM...\r\n");
 	
 	// fill external RAM for ROM hack test
@@ -448,9 +452,7 @@ static void c128Test()
 	uint16_t size = ((uint16_t) cart128EndPtr) - ((uint16_t) start);
 	uint16_t i;
 	
-	clrscr();
-	
-	cputs("C128 test...\r\n");
+	showTitle("C128 test");
 
 	// clear id for the two autostart ROMs in RAM
 	memset(g_blockBuffer, 0xff, 256);
@@ -488,8 +490,7 @@ void testMenu(void)
 		// /GAME high, /EXROM low
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 		
-		clrscr();
-		cputs("Test Menu\r\n\r\n");
+		showTitle("test menu");
 		cputs("r: ram test\r\n");
 		cputs("f: flash test\r\n");
 		cputs("m: MIDI test\r\n");

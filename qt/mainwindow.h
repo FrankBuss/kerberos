@@ -6,9 +6,12 @@
 #include <QMutex>
 #include <QMainWindow>
 #include <vector>
+#include <stdint.h>
 #include "ui_mainwindowform.h"
 
 using namespace std;
+
+typedef vector<uint8_t> ByteArray;
 
 // Main Window
 class MainWindow : public QMainWindow, Ui_MainWindowForm
@@ -48,11 +51,11 @@ extern QEvent::Type g_midiMessageEventType;
 class MidiMessageEvent : public QEvent
 {
 public:
-    MidiMessageEvent(vector< unsigned char > message) : QEvent(g_midiMessageEventType), m_message(message) {}
-    vector< unsigned char > getMessage() { return m_message; }
+    MidiMessageEvent(ByteArray message) : QEvent(g_midiMessageEventType), m_message(message) {}
+    ByteArray getMessage() { return m_message; }
 
 private:
-    vector< unsigned char > m_message;
+    ByteArray m_message;
 };
 
 

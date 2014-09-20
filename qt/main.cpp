@@ -1,6 +1,6 @@
 #include <windows.h>
 #include <QThread>
-#include <QtGui/QApplication>
+#include <QApplication>
 #include <windows.h>
 #include <conio.h>
 #include <stdio.h>

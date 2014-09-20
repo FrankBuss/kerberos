@@ -1,4 +1,5 @@
-QT       += core gui
+QT += core gui widgets
+QMAKE_CXXFLAGS += -std=c++11
 
 TARGET = midi
 TEMPLATE = app

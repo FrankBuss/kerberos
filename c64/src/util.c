@@ -21,6 +21,8 @@ void ramSetBank(uint16_t bank)
 
 void anyKey()
 {
+	enableInterrupts();
+	
 	// clear keyboard buffer
 	while (kbhit()) cgetc();
 	

@@ -7,9 +7,8 @@
 #define FLASH_BANKS 256
 
 // menu colors
-#define BACKGROUND_COLOR 0
-#define TEXT_COLOR 14
-#define CAPTION_COLOR 1
+#define BACKGROUND_COLOR 5
+#define TEXT_COLOR 0
 
 // back key
 #define LEFT_ARROW_KEY 0x5f
@@ -20,6 +19,8 @@ extern uint8_t g_isC128;
 
 // functions
 void testMenu(void);
+
+void showTitle(char* subtitle);
 
 
 #endif
