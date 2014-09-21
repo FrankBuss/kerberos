@@ -34,7 +34,7 @@ static void startProgramInSlot(uint8_t slot)
 	adr = (uint8_t*) 0x8000;
 	if (adr[0] == 0x42 || 1) {
 		cprintf("program size: %i\r\n", adr[0xfc] | (adr[0xfd] << 8));
-		cprintf("program start: 0x%04x\r\n", adr[0xfe] | (adr[0xff] << 8));
+		cprintf("start program: 0x%04x\r\n", adr[0xfe] | (adr[0xff] << 8));
 		cputs("starting program\r\n");
 		blocks = adr[0xfd] + 1;
 		ramSetBank(0);
@@ -67,6 +67,7 @@ static void startProgramInSlot(uint8_t slot)
 
 void receiveMidiCommands(void)
 {
+	static uint8_t redrawScreen;
 	static uint8_t b;
 	static uint8_t b0;
 	static uint8_t b1;
@@ -75,107 +76,120 @@ void receiveMidiCommands(void)
 	static uint8_t* adr;
 	static uint8_t receivedBytes;
 	static uint8_t flashBank;
-	showTitle("PC/Mac link");
-	cputs("\x1f: back\r\n");
+	static uint8_t startX;
+	static uint8_t startY;
 	midiInit();
-	
+	showTitle("PC/Mac link");
+	cputs("\x1f: back\r\n\r\n");
+	startX = wherex();
+	startY = wherey();
+	fastScreenBackup();
+
 	for (;;) {
-		receivedBytes = 0;
-		enableInterrupts();
-		for (;;) {
-			if (kbhit()) {
-				cgetc();
-				return;
-			} else if (midiByteReceived()) {
-				b = midiReadByte();
-				if ((b & 0xfc) == 0x8c) {
-					receivedBytes = 0;
-				}
-				if (receivedBytes == 2) {
-					if ((b0 & 0xfc) == 0x8c) {
-						tag = b1;
-						length = b;
-						if (b0 & 2) tag |= 0x80;
-						if (b0 & 1) length |= 0x80;
-						break;
-					}
-				}
-				b0 = b1;
-				b1 = b;
-				receivedBytes++;
-			}
-		}
-		//cprintf("tag: %02x, length: %02x\r\n", tag, length);
-		
-		// read data
 		disableInterrupts();
-		if (midiReadCommand(tag, length)) {
-			cputs("\r\nchecksum error!\r\n");
-			anyKey();
-			return;
-		}
-		//cprintf("read ok\r\n");
+		fastScreenRestore();
+		gotoxy(startX, startY);
+		redrawScreen = 0;
 		
-		// evaluate command
-		switch (tag & 0x7f) {
-			case MIDI_COMMAND_SET_ADDRESS:
-				adr = (uint8_t*) (g_blockBuffer[0] | (g_blockBuffer[1] << 8));
-				break;
-				
-			case MIDI_COMMAND_SET_RAM_BANK:
-				ramSetBank(g_blockBuffer[0] | (g_blockBuffer[1] << 8));
-				break;
-				
-			case MIDI_COMMAND_SET_FLASH_BANK:
-				flashBank = g_blockBuffer[0];
-				flashSetBank(flashBank);
-				break;
-				
-			case MIDI_COMMAND_ERASE_FLASH_SECTOR:
-				flashEraseSector(adr);
-				break;
-
-			case MIDI_COMMAND_WRITE_FLASH:
-				flashWrite256Block(adr);
-				FLASH_ADDRESS_EXTENSION = flashBank;
-				if (fastCompare256(adr)) {
-					cputs("\r\nflash write error!\r\n");
-					anyKey();
+		for (;;) {
+			receivedBytes = 0;
+			enableInterrupts();
+			for (;;) {
+				if (kbhit()) {
+					cgetc();
 					return;
+				} else if (midiByteReceived()) {
+					b = midiReadByte();
+					if ((b & 0xfc) == 0x8c) {
+						receivedBytes = 0;
+					}
+					if (receivedBytes == 2) {
+						if ((b0 & 0xfc) == 0x8c) {
+							tag = b1;
+							length = b;
+							if (b0 & 2) tag |= 0x80;
+							if (b0 & 1) length |= 0x80;
+							break;
+						}
+					}
+					b0 = b1;
+					b1 = b;
+					receivedBytes++;
 				}
-				break;
-
-			case MIDI_COMMAND_WRITE_RAM:
-				memcpy(adr, g_blockBuffer, length + 1);
-				break;
+			}
+			//cprintf("tag: %02x, length: %02x\r\n", tag, length);
 			
-			case MIDI_COMMAND_CLEAR_SCREEN:
-				clrscr();
-				break;
-			
-			case MIDI_COMMAND_PRINT:
-				cputs(g_blockBuffer);
-				break;
-			
-			case MIDI_COMMAND_GOTOX:
-				gotox(g_blockBuffer[0]);
-				break;
-			
-			case MIDI_COMMAND_START_SLOT_PROGRAM:
-				startProgramInSlot(g_blockBuffer[0]);
-				break;
-
-			case MIDI_COMMAND_EXIT:
+			// read data
+			disableInterrupts();
+			if (midiReadCommand(tag, length)) {
+				cputs("\r\nchecksum error!\r\n");
 				anyKey();
 				return;
-
-			case MIDI_COMMAND_START_SRAM_PROGRAM:
-				ramSetBank(0);
-				cprintf("program size: %i\r\n", g_ram[0] | (g_ram[1] << 8));
-				cprintf("program start: 0x%04x\r\n", g_ram[2] | (g_ram[3] << 8));
-				cputs("starting program\r\n");
-				startProgram();
-				return;
+			}
+			//cprintf("read ok\r\n");
+			
+			// evaluate command
+			switch (tag & 0x7f) {
+				case MIDI_COMMAND_SET_ADDRESS:
+					adr = (uint8_t*) (g_blockBuffer[0] | (g_blockBuffer[1] << 8));
+					break;
+					
+				case MIDI_COMMAND_SET_RAM_BANK:
+					ramSetBank(g_blockBuffer[0] | (g_blockBuffer[1] << 8));
+					break;
+					
+				case MIDI_COMMAND_SET_FLASH_BANK:
+					flashBank = g_blockBuffer[0];
+					flashSetBank(flashBank);
+					break;
+					
+				case MIDI_COMMAND_ERASE_FLASH_SECTOR:
+					flashEraseSector(adr);
+					break;
+	
+				case MIDI_COMMAND_WRITE_FLASH:
+					flashWrite256Block(adr);
+					FLASH_ADDRESS_EXTENSION = flashBank;
+					if (fastCompare256(adr)) {
+						cputs("\r\nflash write error!\r\n");
+						anyKey();
+						return;
+					}
+					break;
+	
+				case MIDI_COMMAND_WRITE_RAM:
+					memcpy(adr, g_blockBuffer, length + 1);
+					break;
+				
+				case MIDI_COMMAND_REDRAW_SCREEN:
+					redrawScreen = 1;
+					break;
+				
+				case MIDI_COMMAND_PRINT:
+					cputs(g_blockBuffer);
+					break;
+				
+				case MIDI_COMMAND_GOTOX:
+					gotox(g_blockBuffer[0]);
+					break;
+				
+				case MIDI_COMMAND_START_SLOT_PROGRAM:
+					startProgramInSlot(g_blockBuffer[0]);
+					break;
+	
+				case MIDI_COMMAND_EXIT:
+					anyKey();
+					return;
+	
+				case MIDI_COMMAND_START_SRAM_PROGRAM:
+					ramSetBank(0);
+					cprintf("program size: %i\r\n", g_ram[0] | (g_ram[1] << 8));
+					cprintf("start program: 0x%04x\r\n", g_ram[2] | (g_ram[3] << 8));
+					cputs("starting program\r\n");
+					startProgram();
+					return;
+			}
+			if (redrawScreen) break;
 		}
 	}
 }
@@ -251,7 +265,7 @@ void toBasic()
 void showTitle(char* subtitle)
 {
 	clrscr();
-	cputs("Kerberos Menu V0.7 - ");
+	cputs("Kerberos Menu V0.8 - ");
 	cputs(subtitle);
 	cputs("\r\n\r\n");
 }
@@ -278,9 +292,9 @@ int main(void)
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 		
 		showTitle("main menu");
-		cputs("e: EasyFlash start\r\n");
+		cputs("s: start program\r\n");
 		cputs("c: connect to PC/Mac over MIDI\r\n");
-		cputs("p: program start\r\n");
+		cputs("e: EasyFlash start\r\n");
 		cputs("b: back to BASIC\r\n");
 		cputs("t: tests\r\n");
 		cputs("\r\n");
@@ -293,7 +307,7 @@ int main(void)
 			case 'c':
 				receiveMidiCommands();
 				break;
-			case 'p':
+			case 's':
 				menuStartProgramInSlot();
 				break;
 			case 'b':

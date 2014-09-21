@@ -26,6 +26,8 @@ void __fastcall__ flashEraseSector(uint8_t* address);
 void __fastcall__ flashWrite256Block(uint8_t* address);
 uint16_t __fastcall__ flashReadId(void);
 uint8_t __fastcall__ fastCompare256(uint8_t* address);
+void __fastcall__ fastScreenBackup(void);
+void __fastcall__ fastScreenRestore(void);
 
 extern uint8_t _BLOCK_BUFFER_LOAD__;
 #define g_blockBuffer (&_BLOCK_BUFFER_LOAD__)

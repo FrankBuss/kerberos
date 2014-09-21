@@ -28,13 +28,26 @@ protected:
 
 private slots:
     void onSelectFile();
-    void onUploadFile();
     void onNoteOn();
     void onNoteOff();
+    void onDiskTools();
     void onStartTestSequence();
     void onStopTestSequence();
     void onSelectMidiOutInterfaceName(QString name);
     void onSelectMidiInInterfaceName(QString name);
+    void onClear();
+    void onFlashPrg();
+    void onFlashAndRunPrg();
+    void onFlashEasyFlashCrt();
+    void onFlashBasicBin();
+    void onFlashKernalBin();
+    void onFlashMenuBin();
+    void onUploadAndRunPrg();
+    void onUploadBasicToRam();
+    void onUploadKernalToRam();
+    void onRunPrgFromSlot();
+    void onRunEasyFlash();
+    void onBackToBasic();
 
 private:
     QString getFilename();
@@ -43,6 +56,10 @@ private:
     QString getMidiInInterfaceName();
     void setMidiOutInterfaceName(QString name);
     void setMidiInInterfaceName(QString name);
+
+    QByteArray readFile(QString& name);
+    bool flashPrg();
+
     bool m_testSequenceRunning;
 };
 

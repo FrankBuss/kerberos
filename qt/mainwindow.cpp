@@ -10,6 +10,7 @@
 #include <map>
 #include <initializer_list>
 #include "mainwindow.h"
+#include "disktoolswindow.h"
 #include "RtMidi.h"
 #include "../c64/src/midi_commands.h"
 
@@ -251,17 +252,29 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     m_testSequenceRunning = false;
     setupUi(this);
-    statusBar()->setVisible(false);
     startTimer(100);
 
-    QObject::connect(selectFileButton, SIGNAL(clicked()), this, SLOT(onSelectFile()));
-    QObject::connect(uploadFileButton, SIGNAL(clicked()), this, SLOT(onUploadFile()));
-    QObject::connect(noteOnButton, SIGNAL(clicked()), this, SLOT(onNoteOn()));
-    QObject::connect(noteOffButton, SIGNAL(clicked()), this, SLOT(onNoteOff()));
-    QObject::connect(startTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStartTestSequence()));
-    QObject::connect(stopTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStopTestSequence()));
-    QObject::connect(midiInInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiInInterfaceName(QString)));
-    QObject::connect(midiOutInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiOutInterfaceName(QString)));
+    connect(selectFileButton, SIGNAL(clicked()), this, SLOT(onSelectFile()));
+    connect(noteOnButton, SIGNAL(clicked()), this, SLOT(onNoteOn()));
+    connect(noteOffButton, SIGNAL(clicked()), this, SLOT(onNoteOff()));
+    connect(startTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStartTestSequence()));
+    connect(stopTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStopTestSequence()));
+    connect(midiInInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiInInterfaceName(QString)));
+    connect(midiOutInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiOutInterfaceName(QString)));
+    connect(diskToolsButton, SIGNAL(clicked()), this, SLOT(onDiskTools()));
+    connect(clearButton, SIGNAL(clicked()), this, SLOT(onClear()));
+    connect(flashPrgButton, SIGNAL(clicked()), this, SLOT(onFlashPrg()));
+    connect(flashAndRunPrgButton, SIGNAL(clicked()), this, SLOT(onFlashAndRunPrg()));
+    connect(flashEasyFlashCrtButton, SIGNAL(clicked()), this, SLOT(onFlashEasyFlashCrt()));
+    connect(flashBasicBinButton, SIGNAL(clicked()), this, SLOT(onFlashBasicBin()));
+    connect(flashKernalBinButton, SIGNAL(clicked()), this, SLOT(onFlashKernalBin()));
+    connect(flashMenuBinButton, SIGNAL(clicked()), this, SLOT(onFlashMenuBin()));
+    connect(uploadAndRunPrgButton, SIGNAL(clicked()), this, SLOT(onUploadAndRunPrg()));
+    connect(uploadBasicToRamButton, SIGNAL(clicked()), this, SLOT(onUploadBasicToRam()));
+    connect(uploadKernalToRamButton, SIGNAL(clicked()), this, SLOT(onUploadKernalToRam()));
+    connect(runPrgFromSlotButton, SIGNAL(clicked()), this, SLOT(onRunPrgFromSlot()));
+    connect(runEasyFlashButton, SIGNAL(clicked()), this, SLOT(onRunEasyFlash()));
+    connect(backToBasicButton, SIGNAL(clicked()), this, SLOT(onBackToBasic()));
 
     fileEdit->setText(getFilename());
 
@@ -339,96 +352,6 @@ static void midiSendNopCommand()
 
 void MainWindow::onNoteOn()
 {
-    midiSendCommand(MIDI_COMMAND_START_SLOT_PROGRAM, { 2 });
-    return;
-
-    {
-        int i = 0;
-        while (1) {
-    ByteArray data;
-    addString(data, QString("").sprintf("Hello World! %i", i));
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    ByteArray data2;
-    data2.push_back(15);
-    midiSendCommand(MIDI_COMMAND_GOTOX, data2);
-    i++;
-    ByteArray data3;
-    for (int j = 0; j < 256; j++) data3.push_back(0);
-    midiSendCommand(MIDI_COMMAND_NOP, data3);
-    }
-    }
-#if 0
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "Hello! World!\r\n");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-#endif
-
-#if 0
-    {
-    ByteArray data;
-    addString(data, "12");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-
-    {
-    ByteArray data;
-    addString(data, "1");
-    midiSendCommand(MIDI_COMMAND_PRINT, data);
-    }
-#endif
-
-    return;
-
     try {
         ByteArray message;
         unsigned char chan = 0;
@@ -477,245 +400,83 @@ void MainWindow::onStopTestSequence()
 
 void MainWindow::onSelectFile()
 {
-    QString filename = QFileDialog::getOpenFileName(this, tr("Open PRG"), getFilename(), tr("C64 PRG files (*.prg)"));
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open PRG"), getFilename(), tr("C64 files (*.prg *.bin *.crt)"));
     if (filename.size() > 0) {
         fileEdit->setText(filename);
         setFilename(filename);
     }
 }
 
-void MainWindow::onUploadFile()
+static void flashFile(QString name, QByteArray data, int startAddress)
 {
-    // read file
-    uint32_t startAddress = 0;
-    QString filename = fileEdit->text();
-    QFile file(filename);
-    QString name = QFileInfo(file).fileName();
-    if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file open error"));
-        return;
-    }
-    QByteArray data = file.readAll();
-    file.close();
-    if (data.size() < 3) {
-        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too small, min 3 bytes"));
-    }
-    if (data.size() > 63486) {
-        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 63486 bytes"));
-        return;
-    }
-
-    // if save to flash is checked, then prepend slot data and change address
-    if (saveRadioButton->isChecked()) {
-        int slot = slotSpinBox->value();
-
-        // create slot header, if slot is not 0 = menu
-        if (slot) {
-            if (!filename.toLower().endsWith(".prg")) {
-                QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for slot save"));
-                return;
-            }
-
-            QByteArray header;
-
-            // magic byte
-            header.append(0x42);
-
-            // filename
-            int nameSize = name.size();
-            if (nameSize > 30) nameSize = 30;
-            for (int i = 0; i < name.size(); i++) {
-                header.append(name[i].toLatin1());
-            }
-
-            // fill filename with zeros
-            while (header.length() < 250) {
-                header.append(char(0));
-            }
-
-            // CRC16 checksum
-            uint16_t crc = 0;
-            header.append(crc & 0xff);
-            header.append(crc >> 8);
-
-            // PRG length
-            int l = data.length() - 2;
-            header.append(l & 0xff);
-            header.append((l >> 8) & 0xff);
-
-            // start included in data
-
-            // calculate flash start address
-            startAddress = slot * 0x10000;
-
-            // prepend header
-            data.prepend(header);
-        } else {
-            if (!filename.toLower().endsWith(".bin")) {
-                QMessageBox::warning(NULL, tr("Filetransfer"), tr(".bin-file required for menu update"));
-                return;
-            }
-
-            // menu update
-            startAddress = 0;
+    midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
+    midiSendNopCommand();
+    midiSendPrintCommand("flashing " + name.left(20) + "..." + NEWLINE);
+    midiSendNopCommand();
+    int full = data.size();
+    int transferred = 0;
+    int oldPercent = -1;
+    while (data.size() > 0) {
+        int c64Address = (startAddress & 0x1fff) | 0x8000;
+        midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, c64Address);
+        midiSendCommand(MIDI_COMMAND_SET_FLASH_BANK, { startAddress >> 13 });
+        if ((c64Address & 0x0fff) == 0) {
+            midiSendCommand(MIDI_COMMAND_ERASE_FLASH_SECTOR);
+            midiSendNopCommand();
         }
-
-        // flash
-        midiSendPrintCommand("flashing " + name.left(20) + "..." + NEWLINE);
-        midiSendNopCommand();
-        int full = data.size();
-        int transferred = 0;
-        int oldPercent = -1;
-        while (data.size() > 0) {
-            int c64Address = (startAddress & 0x1fff) | 0x8000;
-            midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, c64Address);
-            midiSendCommand(MIDI_COMMAND_SET_FLASH_BANK, { startAddress >> 13 });
-            if ((c64Address & 0x0fff) == 0) {
-                midiSendNopCommand();
-                midiSendCommand(MIDI_COMMAND_ERASE_FLASH_SECTOR);
-                midiSendNopCommand();
-            }
-            int size = data.size();
-            if (size > 256) size = 256;
-            ByteArray block;
-            for (int j = 0; j < size; j++) block.push_back(data[j]);
-            while (block.size() < 256) block.push_back(0xff);
-            midiSendCommand(MIDI_COMMAND_WRITE_FLASH, block);
-            data.remove(0, size);
-            startAddress += 0x100;
-            transferred += size;
-            int percent = transferred * 100 / full;
-            if (percent > 100) percent = 100;
-            if (percent != oldPercent) {
-                midiSendNopCommand();
-                midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
-                midiSendPrintCommand(QString("").sprintf("%i%%", percent));
-                oldPercent = percent;
-                midiSendNopCommand();
-            }
+        int size = data.size();
+        if (size > 256) size = 256;
+        ByteArray block;
+        for (int j = 0; j < size; j++) block.push_back(data[j]);
+        while (block.size() < 256) block.push_back(0xff);
+        midiSendCommand(MIDI_COMMAND_WRITE_FLASH, block);
+        data.remove(0, size);
+        startAddress += 0x100;
+        transferred += size;
+        int percent = transferred * 100 / full;
+        if (percent > 100) percent = 100;
+        if (percent != oldPercent) {
+            midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+            midiSendPrintCommand(QString("").sprintf("%i%%", percent));
+            oldPercent = percent;
+            midiSendNopCommand();
         }
-
-        midiSendNopCommand();
-        midiSendPrintCommand(NEWLINE);
-        midiSendPrintCommand(QString("flash done") + NEWLINE);
-        midiSendCommand(MIDI_COMMAND_EXIT);
-    } else {
-
-        // save size and address in first SRAM bank
-        midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, 0xdf00);
-        midiSendWordCommand(MIDI_COMMAND_SET_RAM_BANK, 0);
-        int size = data.size() - 2;
-        midiSendCommand(MIDI_COMMAND_WRITE_RAM, { uint8_t(size & 0xff), uint8_t(size >> 8), data[0], data[1] });
-
-        // transfer program to SRAM, starting at second bank
-        midiSendNopCommand();
-        midiSendPrintCommand("receiving " + name.left(20) + "..." + NEWLINE);
-        midiSendNopCommand();
-        midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, 0xdf00);
-        data.remove(0, 2);
-        int bank = 1;
-        int full = data.size();
-        int transferred = 0;
-        int oldPercent = -1;
-        while (data.size() > 0) {
-            midiSendWordCommand(MIDI_COMMAND_SET_RAM_BANK, bank);
-            int size = data.size();
-            if (size > 256) size = 256;
-            ByteArray block;
-            for (int j = 0; j < size; j++) block.push_back(data[j]);
-            midiSendCommand(MIDI_COMMAND_WRITE_RAM, block);
-            data.remove(0, size);
-            bank++;
-            transferred += size;
-            int percent = transferred * 100 / full;
-            if (percent != oldPercent) {
-                midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
-                midiSendPrintCommand(QString("").sprintf("%i%%", percent));
-                oldPercent = percent;
-            }
-        }
-
-        // start program
-        midiSendPrintCommand(NEWLINE);
-        midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
     }
-    return;
 
+    midiSendNopCommand();
+    midiSendPrintCommand(NEWLINE);
+    midiSendPrintCommand(QString("flash done") + NEWLINE);
+}
 
-    // if save to flash is checked, then prepend slot data and change address
-    if (saveRadioButton->isChecked()) {
-        int slot = slotSpinBox->value();
-
-        // create slot header, if slot is not 0 = menu
-        if (slot) {
-            if (!filename.toLower().endsWith(".prg")) {
-                QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for slot save"));
-                return;
-            }
-
-            QByteArray header;
-
-            // magic byte
-            header.append(0x42);
-
-            // filename
-            for (int i = 0; i < name.size(); i++) {
-                header.append(name[i].toLatin1());
-            }
-
-            // fill filename with zeros
-            while (header.length() < 250) {
-                header.append(char(0));
-            }
-
-            // CRC16 checksum
-            uint16_t crc = 0;
-            header.append(crc & 0xff);
-            header.append(crc >> 8);
-
-            // PRG length
-            int l = data.length() - 2;
-            header.append(l & 0xff);
-            header.append((l >> 8) & 0xff);
-
-            // start included in data
-
-            // calculate flash start address
-            startAddress = slot * 0x10000;
-
-            // prepend header
-            data.prepend(header);
-
-            if (data.size() > 63486) {
-                QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 63486 bytes"));
-                return;
-            }
-
-        } else {
-            if (!filename.toLower().endsWith(".bin")) {
-                QMessageBox::warning(NULL, tr("Filetransfer"), tr(".bin-file required for menu update"));
-                return;
-            }
-
-            // menu update
-            startAddress = 0;
+static void sramUpload(QString name, QByteArray data, int startBank)
+{
+    midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
+    midiSendNopCommand();
+    midiSendPrintCommand("receiving " + name.left(20) + "..." + NEWLINE);
+    midiSendNopCommand();
+    midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, 0xdf00);
+    int bank = startBank;
+    int full = data.size();
+    int transferred = 0;
+    int oldPercent = -1;
+    while (data.size() > 0) {
+        midiSendWordCommand(MIDI_COMMAND_SET_RAM_BANK, bank);
+        int size = data.size();
+        if (size > 256) size = 256;
+        ByteArray block;
+        for (int j = 0; j < size; j++) block.push_back(data[j]);
+        midiSendCommand(MIDI_COMMAND_WRITE_RAM, block);
+        data.remove(0, size);
+        bank++;
+        transferred += size;
+        int percent = transferred * 100 / full;
+        if (percent != oldPercent) {
+            midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+            midiSendPrintCommand(QString("").sprintf("%i%%", percent));
+            oldPercent = percent;
         }
-//        uploadFile(name, 2, startAddress, data);
-    } else {
-        if (!filename.toLower().endsWith(".prg")) {
-            QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for program run"));
-            return;
-        }
-
-        // get start address
-        startAddress = data[0] | (data[1] << 8);
-
-        // remove from program data
-        data.remove(0, 2);
-
-        // upload and start
-//        uploadFile(name, 1, startAddress, data);
     }
+    midiSendPrintCommand(NEWLINE);
 }
 
 QString MainWindow::getFilename()
@@ -801,4 +562,184 @@ void MainWindow::timerEvent(QTimerEvent*)
                 break;
         }
     }
+}
+
+void MainWindow::onDiskTools()
+{
+    DiskToolsWindow w(this);
+    w.exec();
+}
+
+void MainWindow::onClear()
+{
+    midiInDataTextEdit->clear();
+}
+
+QByteArray MainWindow::readFile(QString& name)
+{
+    // read file
+    QString filename = fileEdit->text();
+    QFile file(filename);
+    name = QFileInfo(file).fileName();
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file open error"));
+        return QByteArray();
+    }
+    QByteArray data = file.readAll();
+    file.close();
+    if (data.size() < 3) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too small, min 3 bytes"));
+    }
+    return data;
+}
+
+bool MainWindow::flashPrg()
+{
+    QString name;
+    QByteArray data = readFile(name);
+    if (data.size() == 0) return false;
+    if (data.size() > 63486) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 63486 bytes"));
+        return false;
+    }
+
+    // prepend slot data and change address
+    int slot = prgSlotSpinBox->value();
+    if (!name.toLower().endsWith(".prg")) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for slot save"));
+        return false;
+    }
+
+    QByteArray header;
+
+    // magic byte
+    header.append(0x42);
+
+    // filename
+    int nameSize = name.size();
+    if (nameSize > 30) nameSize = 30;
+    for (int i = 0; i < name.size(); i++) {
+        header.append(name[i].toLatin1());
+    }
+
+    // fill filename with zeros
+    while (header.length() < 250) {
+        header.append(char(0));
+    }
+
+    // CRC16 checksum
+    uint16_t crc = 0;
+    header.append(crc & 0xff);
+    header.append(crc >> 8);
+
+    // PRG length
+    int l = data.length() - 2;
+    header.append(l & 0xff);
+    header.append((l >> 8) & 0xff);
+
+    // start included in data
+
+    // calculate flash start address
+    int startAddress = slot * 0x10000;
+
+    // prepend header
+    data.prepend(header);
+
+    // flash data
+    flashFile(name, data, startAddress);
+    return true;
+}
+
+void MainWindow::onFlashPrg()
+{
+    flashPrg();
+}
+
+void MainWindow::onFlashAndRunPrg()
+{
+    if (flashPrg()) {
+
+    }
+}
+
+void MainWindow::onFlashEasyFlashCrt()
+{
+}
+
+void MainWindow::onFlashBasicBin()
+{
+}
+
+void MainWindow::onFlashKernalBin()
+{
+}
+
+void MainWindow::onFlashMenuBin()
+{
+    QString name;
+    QByteArray data = readFile(name);
+    if (!name.toLower().endsWith(".bin")) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr(".bin-file required for menu update"));
+        return;
+    }
+    if (data.size() == 0) return;
+    if (data.size() > 32768) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr("wrong file size"));
+        return;
+    }
+    flashFile(name, data, 0);
+}
+
+void MainWindow::onUploadAndRunPrg()
+{
+    QString name;
+    QByteArray data = readFile(name);
+    if (!name.toLower().endsWith(".prg")) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr(".prg-file required for PRG run"));
+        return;
+    }
+    if (data.size() == 0) return;
+    if (data.size() > 63486) {
+        QMessageBox::warning(NULL, tr("Filetransfer"), tr("file size too big, max 63486 bytes"));
+        return;
+    }
+
+    // save size and address in first SRAM bank
+    QByteArray header;
+    int size = data.size() - 2;
+    header.append(uint8_t(size & 0xff));
+    header.append(uint8_t(size >> 8));
+    header.append(data[0]);
+    header.append(data[1]);
+    while (header.size() < 256) header.append(char(0));
+
+    // program starts at second bank in SRAM
+    data.remove(0, 2);
+    data.prepend(header);
+
+    // transfer data
+    sramUpload(name, data, 0);
+
+    // start program
+    midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
+}
+
+void MainWindow::onUploadBasicToRam()
+{
+}
+
+void MainWindow::onUploadKernalToRam()
+{
+}
+
+void MainWindow::onRunPrgFromSlot()
+{
+}
+
+void MainWindow::onRunEasyFlash()
+{
+}
+
+void MainWindow::onBackToBasic()
+{
 }

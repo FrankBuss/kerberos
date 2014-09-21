@@ -169,8 +169,82 @@ crc8Table:
 		.byte $74, $2a, $c8, $96, $15, $4b, $a9, $f7
 		.byte $b6, $e8, $0a, $54, $d7, $89, $6b, $35
 
+buffer:		.res $0800
 
 .segment "CODE"
+
+
+; =============================================================================
+;
+; backup screen and color RAM to buffer
+;
+; void __fastcall__ fastScreenBackup(void);
+;
+; parameters:
+;       -
+;
+; return:
+;       -
+;
+; =============================================================================
+.export _fastScreenBackup
+_fastScreenBackup:
+		ldx #0
+backup:		lda $0400,x
+		sta buffer,x
+		lda $0500,x
+		sta buffer+$0100,x
+		lda $0600,x
+		sta buffer+$0200,x
+		lda $0700-40,x		; TODO: remove when MIDI debug removed
+		sta buffer+$0300,x
+		lda $d800,x
+		sta buffer+$0400,x
+		lda $d900,x
+		sta buffer+$0500,x
+		lda $da00,x
+		sta buffer+$0600,x
+		lda $db00-40,x		; TODO: remove when MIDI debug removed
+		sta buffer+$0700,x
+		dex
+		bne backup
+		rts
+
+; =============================================================================
+;
+; restore screen and color RAM from buffer
+;
+; void __fastcall__ fastScreenRestore(void);
+;
+; parameters:
+;       -
+;
+; return:
+;       -
+;
+; =============================================================================
+.export _fastScreenRestore
+_fastScreenRestore:
+		ldx #0
+restore:	lda buffer,x
+		sta $0400,x
+		lda buffer+$0100,x
+		sta $0500,x
+		lda buffer+$0200,x
+		sta $0600,x
+		lda buffer+$0300,x
+		sta $0700-40,x		; TODO: remove when MIDI debug removed
+		lda buffer+$0400,x
+		sta $d800,x
+		lda buffer+$0500,x
+		sta $d900,x
+		lda buffer+$0600,x
+		sta $da00,x
+		lda buffer+$0700,x
+		sta $db00-40,x		; TODO: remove when MIDI debug removed
+		dex
+		bne restore
+		rts
 
 
 ; =============================================================================

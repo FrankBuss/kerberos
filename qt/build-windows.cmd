@@ -1,4 +1,6 @@
-call "c:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\qtenv2.bat"
+pushd %CD%
+call "C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\qtenv2.bat"
+popd
 
 del makefile
 del makefile.*
@@ -6,10 +8,13 @@ qmake.exe midi.pro -r -spec win32-g++ "CONFIG+=release"
 mingw32-make clean
 mingw32-make
 
-del /s /q windows-export\*.*
+rmdir /s /q windows-export
 mkdir windows-export
 copy release\midi.exe windows-export
-copy C:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\mingwm10.dll windows-export
-copy C:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\QtCore4.dll windows-export
-copy C:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\QtGui4.dll windows-export
-copy C:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\libgcc_s_dw2-1.dll windows-export
+copy C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\Qt5Core.dll windows-export
+copy C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\Qt5Gui.dll windows-export
+copy C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\Qt5Widgets.dll windows-export
+copy C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\libgcc_s_dw2-1.dll windows-export
+copy "C:\Qt\Qt5.3.2\Tools\mingw482_32\bin\libstdc++-6.dll" windows-export
+copy C:\Qt\Qt5.3.2\Tools\mingw482_32\bin\libwinpthread-1.dll windows-export
+copy C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\icu*.dll windows-export

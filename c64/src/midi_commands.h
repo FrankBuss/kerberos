@@ -20,7 +20,7 @@
 #define MIDI_COMMAND_WRITE_RAM 0x06
 
 // no data
-#define MIDI_COMMAND_CLEAR_SCREEN 0x07
+#define MIDI_COMMAND_REDRAW_SCREEN 0x07
 
 // data: ASCIIZ text which is printed
 #define MIDI_COMMAND_PRINT 0x08
