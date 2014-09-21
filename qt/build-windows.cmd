@@ -4,13 +4,13 @@ popd
 
 del makefile
 del makefile.*
-qmake.exe midi.pro -r -spec win32-g++ "CONFIG+=release"
+qmake.exe kerberos.pro -r -spec win32-g++ "CONFIG+=release"
 mingw32-make clean
 mingw32-make
 
 rmdir /s /q windows-export
 mkdir windows-export
-copy release\midi.exe windows-export
+copy release\kerberos.exe windows-export
 copy C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\Qt5Core.dll windows-export
 copy C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\Qt5Gui.dll windows-export
 copy C:\Qt\Qt5.3.2\5.3\mingw482_32\bin\Qt5Widgets.dll windows-export
