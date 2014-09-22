@@ -200,7 +200,7 @@ begin
             else
                 if reset_running = '1' then
                     -- reset counter mode
-                    if counter = 5 then
+                    if counter = 12 then
                         reset <= 'Z';
                     end if;
                     if counter = 23 then
@@ -412,6 +412,12 @@ begin
 
                 -- set default for exrom and game with rising edge of s02
                 if s02 = '1' and prev_s02 = '0' then
+                    exrom <= cart_control(CART_CONTROL_EXROM);
+                    game <= cart_control(CART_CONTROL_GAME);
+                end if;
+                
+                -- and set default for VIC, if KERNAL or BASIC hack is active
+                if s02 = '0' and (cart_config(CART_CONFIG_BASIC_HACK) = '1' or cart_config(CART_CONFIG_KERNAL_HACK) = '1') then
                     exrom <= cart_control(CART_CONTROL_EXROM);
                     game <= cart_control(CART_CONTROL_GAME);
                 end if;
