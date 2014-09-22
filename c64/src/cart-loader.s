@@ -25,6 +25,9 @@ copy:		lda __LOADER_LOAD__,x
 		
 		; load program from ROM and start it
 		jmp loaderStart
+
+.segment "ID"
+		.byte 75, 69, 82, 66, 69, 82, 79, 83, 32, 77, 69, 78, 85, 32, 73, 68
 		
 .segment "LOADER"
 

@@ -21,3 +21,5 @@ FORMS    += disktoolswindowform.ui
 win32:DEFINES += __WINDOWS_MM__
 win32:LIBS += -lwinmm
 win32:LIBS += -lws2_32
+
+RESOURCES = application.qrc

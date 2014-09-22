@@ -10,59 +10,112 @@
 #include "regs.h"
 #include "menu.h"
 #include "midi_commands.h"
+#include "kerberos.h"
 
 uint8_t* g_ram = (uint8_t*) 0xdf00;
 uint8_t g_isC128 = 0;
+const char g_kerberosPrgSlotId[16] = KERBEROS_PRG_SLOT_ID;
+
+static uint8_t isValidSlotId()
+{
+	return memcmp(g_kerberosPrgSlotId, (uint8_t*) 0x8000, 16) == 0;
+}
+
+static void copyRomReplacement(uint8_t* dst, uint8_t* src)
+{
+	uint8_t i;
+	uint16_t ramBank;
+	uint8_t* adr = (uint8_t*) 0x8000;
+	FLASH_ADDRESS_EXTENSION = ((uint16_t) src) >> 13;
+	ramBank = ((uint16_t) dst) >> 8;
+	for (i = 0; i < 32; i++) {
+		ramSetBank(ramBank);
+		memcpy(g_ram, adr, 0x100);
+		adr += 0x100;
+		ramBank++;
+	}
+}
+
+static void startProgramInSram(void)
+{
+	static uint8_t controlByte;
+	static uint8_t i;
+	clrscr();
+	ramSetBank(256);
+	controlByte = g_ram[0x30];
+	for (i = 0; i < 32; i++) {
+		uint8_t b = g_ram[i + 0x10];
+		if (b == 0) break;
+		cputc(ascii2petscii(b));
+	}
+	cprintf("\r\n\r\nload address: 0x%04x\r\n", g_ram[0x40] | (g_ram[0x41] << 8));
+	cprintf("start address: 0x%04x\r\n", g_ram[0x42] | (g_ram[0x43] << 8));
+	cprintf("length: %i\r\n", g_ram[0x44] | (g_ram[0x45] << 8));
+	cprintf("MIDI_ADDRESS: %02x\r\n", g_ram[((uint16_t)(&MIDI_ADDRESS)) - 0xde00]);
+	cprintf("MIDI_CONFIG: %02x\r\n", g_ram[((uint16_t)(&MIDI_CONFIG)) - 0xde00]);
+	cprintf("CART_CONTROL: %02x\r\n", g_ram[((uint16_t)(&CART_CONTROL)) - 0xde00]);
+	cprintf("CART_CONFIG: %02xi\r\n", g_ram[((uint16_t)(&CART_CONFIG)) - 0xde00]);
+	cprintf("FLASH_ADDRESS_EXTENSION: %02x\r\n", g_ram[((uint16_t)(&FLASH_ADDRESS_EXTENSION)) - 0xde00]);
+	cprintf("RAM_ADDRESS_EXTENSION: %02x\r\n", g_ram[((uint16_t)(&RAM_ADDRESS_EXTENSION)) - 0xde00]);
+	cprintf("ADDRESS_EXTENSION2: %02x\r\n", g_ram[((uint16_t)(&ADDRESS_EXTENSION2)) - 0xde00]);
+	cputs("starting program...\r\n");
+
+	// copy BASIC replacement
+	if (controlByte & 2) copyRomReplacement((uint8_t*) 0xa000, (uint8_t*) 0xa000);
+
+	// copy KERNAL replacement
+	if (controlByte & 4) copyRomReplacement((uint8_t*) 0xe000, (uint8_t*) 0xe000);
+	
+	// reset and start program in assembler
+	startProgram();
+
+	ramSetBank(257);
+	for (i = 0; i < 10; i++) {
+		if ((i&0x7)==0)cputs("\r\n");
+//		cprintf("%02x ", g_ram[i]);
+		cprintf("%02x ", ((uint8_t*)0x1000)[i]);
+	}
+	while(1);
+}
 
 static void startProgramInSlot(uint8_t slot)
 {
 	static uint8_t* adr;
 	static uint8_t i;
 	static uint8_t blocks;
-	static uint8_t ramBank;
+	static uint16_t ramBank;
 	static uint8_t flashBank;
 	
 	// clear MIDI interrupts
 	midiIrqNmiTest();
 
-	disableInterrupts();
-
 	// enable ROM at $8000	
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW;
 	
-	FLASH_ADDRESS_EXTENSION = slot * 8;
-	adr = (uint8_t*) 0x8000;
-	if (adr[0] == 0x42 || 1) {
-		cprintf("program size: %i\r\n", adr[0xfc] | (adr[0xfd] << 8));
-		cprintf("start program: 0x%04x\r\n", adr[0xfe] | (adr[0xff] << 8));
-		cputs("starting program\r\n");
-		blocks = adr[0xfd] + 1;
-		ramSetBank(0);
-		g_ram[0] = adr[0xfc];
-		g_ram[1] = adr[0xfd];
-		g_ram[2] = adr[0xfe];
-		g_ram[3] = adr[0xff];
-		ramBank = 1;
-		flashBank = slot * 8;
-		adr += 256;
-		for (i = 0; i < blocks; i++) {
-			ramSetBank(ramBank);
-			FLASH_ADDRESS_EXTENSION = flashBank;
-			memcpy(g_ram, adr, 256);
-			adr += 256;
-			if (adr == (uint8_t*) 0xa000) {
-				adr = (uint8_t*) 0x8000;
-				flashBank++;
-			}
-			ramBank++;
-		}
-		startProgram();
-	}
+	// check for valid slot ID
+	flashBank = (slot + 6) * 8;
+	FLASH_ADDRESS_EXTENSION = flashBank;
+	if (!isValidSlotId()) return;
 
-	// disable ROM at $8000	
-	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+	// copy header and PRG from flash to SRAM
+	disableInterrupts();
+	adr = (uint8_t*) 0x8000;
+	cputs("loading program...\r\n");
+	blocks = adr[0x45] + 2;
+	ramBank = 256;
+	for (i = 0; i < blocks; i++) {
+		ramSetBank(ramBank);
+		FLASH_ADDRESS_EXTENSION = flashBank;
+		memcpy(g_ram, adr, 256);
+		adr += 256;
+		if (adr == (uint8_t*) 0xa000) {
+			adr = (uint8_t*) 0x8000;
+			flashBank++;
+		}
+		ramBank++;
+	}
 	
-	enableInterrupts();
+	startProgramInSram();
 }
 
 void receiveMidiCommands(void)
@@ -152,11 +205,22 @@ void receiveMidiCommands(void)
 					FLASH_ADDRESS_EXTENSION = flashBank;
 					if (fastCompare256(adr)) {
 						cputs("\r\nflash write error!\r\n");
+						cprintf("flash bank: %i\r\n", flashBank);
 						anyKey();
 						return;
 					}
 					break;
-	
+					
+				case MIDI_COMMAND_COMPARE_FLASH:
+					FLASH_ADDRESS_EXTENSION = flashBank;
+					if (fastCompare256(adr)) {
+						cputs("\r\nflash compare error!\r\n");
+						cprintf("flash bank: %i\r\n", flashBank);
+						anyKey();
+						return;
+					}
+					break;
+
 				case MIDI_COMMAND_WRITE_RAM:
 					memcpy(adr, g_blockBuffer, length + 1);
 					break;
@@ -177,16 +241,9 @@ void receiveMidiCommands(void)
 					startProgramInSlot(g_blockBuffer[0]);
 					break;
 	
-				case MIDI_COMMAND_EXIT:
-					anyKey();
-					return;
-	
 				case MIDI_COMMAND_START_SRAM_PROGRAM:
 					ramSetBank(0);
-					cprintf("program size: %i\r\n", g_ram[0] | (g_ram[1] << 8));
-					cprintf("start program: 0x%04x\r\n", g_ram[2] | (g_ram[3] << 8));
-					cputs("starting program\r\n");
-					startProgram();
+					startProgramInSram();
 					return;
 			}
 			if (redrawScreen) break;
@@ -194,34 +251,31 @@ void receiveMidiCommands(void)
 	}
 }
 
-// flash memory layout:
-// 8 slots, slot 0 = menu, slot 1-7 = user PRGs
-// slot format:
-// magic non-empty byte marker: 0x42
-// 249 bytes ASCII filename, zero terminated
-// 2 bytes CRC16 checksum of PRG start, length and data
-// 2 bytes length of PRG data
-// 2 bytes PRG start
-// PRG data (starting at 0x100 for each slot)
+// show and start program from flash slot
 void menuStartProgramInSlot(void)
 {
 	static uint8_t i;
 	static uint8_t j;
 	static uint8_t* adr;
-	showTitle("start program");
+	clrscr();
 	disableInterrupts();
 
 	// enable ROM at $8000	
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW;
 	
-	for (i = 1; i < 11; i++) {
-		// 64 kb per slot
-		FLASH_ADDRESS_EXTENSION = i * 8;
+	for (i = 1; i < 26; i++) {
+		// 64 kb per slot, starting at $70000
+		FLASH_ADDRESS_EXTENSION = (i + 6) * 8;
 		adr = (uint8_t*) 0x8000;
-		cprintf("%i: ", i == 10 ? 0 : i);
-		if (adr[0] == 0x42) {
-			for (j = 1; j < 32; j++) {
-				uint8_t b = adr[j];
+		if (i < 10) {
+			cprintf("%i: ", i);
+		} else {
+			char c = 'A' + i - 10;
+			cprintf("%c(%i): ", c, i);
+		}
+		if (isValidSlotId()) {
+			for (j = 0; j < 32; j++) {
+				uint8_t b = adr[j + 0x10];
 				if (b == 0) break;
 				cputc(ascii2petscii(b));
 			}
@@ -230,7 +284,6 @@ void menuStartProgramInSlot(void)
 			cputs("[empty]\r\n");
 		}
 	}
-	cputs("\x1f: back\r\n");
 
 	// disable ROM at $8000	
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
@@ -239,14 +292,18 @@ void menuStartProgramInSlot(void)
 
 	for (;;) {
 		if (kbhit()) {
+			int slot = 0;
 			int key = cgetc();
 			if (key == LEFT_ARROW_KEY) {
 				return;
 			}
-			key -= '0';
-			if (key >= 0 && key <= 9) {
-				if (key == 0) key = 10;
-				startProgramInSlot(key);
+			if (key >= '0' && key <= '9') {
+				slot = key - '0';
+			} else if (key >= 'a' && key <= 'p') {
+				slot = key - 'a' + 10;
+			}
+			if (slot > 0 && slot <= 25) {
+				startProgramInSlot(slot);
 			}
 		}
 	}

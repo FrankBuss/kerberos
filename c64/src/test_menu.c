@@ -330,9 +330,8 @@ static uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
 		CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
 		gotox(0);
-		cprintf("RAM error in bank 0x%02x\r\n", bank);
+		cprintf("RAM error in bank 0x%04x\r\n", bank);
 		cprintf("test: %s\r\n", test);
-		enableInterrupts();
 		anyKey();
 		return 0;
 	}
@@ -422,7 +421,6 @@ static void testRamAsRom()
 				*((uint8_t*) 1) = 0x37;
 				CART_CONFIG = 0;
 				CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
-				enableInterrupts();
 				gotox(0);
 				cprintf("KERNAL HIRAM hack RAM error\r\n");
 				cprintf("bank: %i\r\n", i);
@@ -441,7 +439,6 @@ static void testRamAsRom()
 
 	gotox(0);
 	cputs("RAM as ROM test ok\r\n");
-	enableInterrupts();
 	anyKey();
 }
 

@@ -45,8 +45,6 @@ private slots:
     void onUploadAndRunPrg();
     void onUploadBasicToRam();
     void onUploadKernalToRam();
-    void onRunPrgFromSlot();
-    void onRunEasyFlash();
     void onBackToBasic();
 
 private:
@@ -57,6 +55,9 @@ private:
     void setMidiOutInterfaceName(QString name);
     void setMidiInInterfaceName(QString name);
 
+    QByteArray createHeader(QString name, bool ramOperation, int length);
+    void flashBasicKernal(QString name, int address);
+    void uploadBasicKernal(QString flashName, int address);
     QByteArray readFile(QString& name);
     bool flashPrg();
 

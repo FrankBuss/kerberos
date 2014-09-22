@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>671</width>
+    <width>684</width>
     <height>492</height>
    </rect>
   </property>
@@ -32,7 +32,7 @@
   <widget class="QGroupBox" name="groupBox_4">
    <property name="geometry">
     <rect>
-     <x>410</x>
+     <x>420</x>
      <y>10</y>
      <width>251</width>
      <height>441</height>
@@ -191,7 +191,7 @@
   <widget class="QPushButton" name="stopTestSequenceButton_2">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>270</x>
      <y>200</y>
      <width>141</width>
      <height>24</height>
@@ -209,7 +209,7 @@
   <widget class="QPushButton" name="stopTestSequenceButton_4">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>270</x>
      <y>230</y>
      <width>141</width>
      <height>24</height>
@@ -227,7 +227,7 @@
   <widget class="QGroupBox" name="groupBox_5">
    <property name="geometry">
     <rect>
-     <x>0</x>
+     <x>10</x>
      <y>10</y>
      <width>251</width>
      <height>441</height>
@@ -333,7 +333,7 @@
   <widget class="QPushButton" name="stopTestSequenceButton_3">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>270</x>
      <y>150</y>
      <width>141</width>
      <height>24</height>
@@ -351,7 +351,7 @@
   <widget class="QPushButton" name="stopTestSequenceButton">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>270</x>
      <y>120</y>
      <width>141</width>
      <height>24</height>

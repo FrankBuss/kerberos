@@ -16,28 +16,28 @@
 // data: 256 bytes, to be written to the flash at the current address
 #define MIDI_COMMAND_WRITE_FLASH 0x05
 
+// data: 256 bytes, to be compared to the flash at the current address
+#define MIDI_COMMAND_COMPARE_FLASH 0x06
+
 // data: up to 256 bytes, to be written to the current address in RAM (not under IO area)
-#define MIDI_COMMAND_WRITE_RAM 0x06
+#define MIDI_COMMAND_WRITE_RAM 0x07
 
 // no data
-#define MIDI_COMMAND_REDRAW_SCREEN 0x07
+#define MIDI_COMMAND_REDRAW_SCREEN 0x08
 
 // data: ASCIIZ text which is printed
-#define MIDI_COMMAND_PRINT 0x08
+#define MIDI_COMMAND_PRINT 0x09
 
 // data: one byte, move cursor to specified X position
-#define MIDI_COMMAND_GOTOX 0x09
-
-// data: one byte for the slot. Causes the C64 to wait for Y/N. If Y is pressed, then the program in the specified slot is started, otherwise the transfer menu is exited.
-#define MIDI_COMMAND_START_SLOT_PROGRAM 0x0a
-
-// waits for a key and returns the transfer menu
-#define MIDI_COMMAND_EXIT 0x0b
+#define MIDI_COMMAND_GOTOX 0x0a
 
 // data: up to 256 bytes. No operation, for delays.
-#define MIDI_COMMAND_NOP 0x0c
+#define MIDI_COMMAND_NOP 0x0b
 
-// no data. Reset, copy the program from SRAM and start.
+// data: slot number. Starts the program in the specified slot.
+#define MIDI_COMMAND_START_SLOT_PROGRAM 0x0c
+
+// no data. Reset, copy the program from SRAM and start. Header information in first SRAM block (256 bytes) is the same as in the first block of a slot.
 #define MIDI_COMMAND_START_SRAM_PROGRAM 0x0d
 
 #endif

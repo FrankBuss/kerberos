@@ -249,7 +249,7 @@ restore:	lda buffer,x
 
 ; =============================================================================
 ;
-; compare 256 bytes in BLOCK_BUFFER to flash for the specified address
+; compare 256 bytes in BLOCK_BUFFER to the specified address
 ;
 ; uint8_t __fastcall__ fastCompare256(uint8_t* address);
 ;
@@ -275,7 +275,7 @@ cmpDest = * + 1
 		lda #0
 		rts
 
-fastCmpErr:	lda #0
+fastCmpErr:	lda #1
 		rts
 
 ; =============================================================================
@@ -491,7 +491,8 @@ updateCrc:	eor crc
 
 ; =============================================================================
 ;
-; Read a program from RAM and start it. Size and start address in first RAM bank.
+; Read a program from SRAM (starting at 0x10000) and start it.
+; The header in the first bank has the same format as a flash slot header.
 ;
 ; void __fastcall__ startProgram(void);
 ;
@@ -506,16 +507,27 @@ updateCrc:	eor crc
 _startProgram:
 		sei
 
-		; disable cartridge
-		lda #(CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH)
+		; disable cartridge and MIDI
+		lda #CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH
 		sta CART_CONTROL
-		
-		; disable MIDI
 		lda #0
-		sta MIDI_CONFIG
-		
-		; disable RAM
 		sta CART_CONFIG
+		sta MIDI_CONFIG
+
+		; select program header at 0x10000 in SRAM
+		lda #0
+		sta RAM_ADDRESS_EXTENSION
+		lda #1
+		sta ADDRESS_EXTENSION2
+
+		; setup cartridge config
+		lda CART_CONTROL + $0100
+		sta CART_CONTROL
+		lda CART_CONFIG + $0100
+		sta CART_CONFIG
+		
+		ldx #$fb
+		txs
 
 		; KERNAL reset routine
 		jsr $fda3		; IOINIT - Init CIA chips
@@ -528,12 +540,10 @@ _startProgram:
 		jsr $e453		; Init BASIC RAM vectors
 		jsr $e3bf		; Main BASIC RAM Init routine
 		jsr $e422		; Power-up message / NEW command
-		ldx #$fb
-		txs			; Reduce stack pointer for BASIC
 
-		; standard mode
-		lda #0
-		sta CART_CONFIG
+		sei
+		ldx #$fb
+		txs
 
 		; copy RAM loader to datasette buffer
 		ldx #0
@@ -542,7 +552,7 @@ copy2:		lda __LOADER_LOAD__,x
 		inx
 		cpx #loaderEnd-loaderStart
 		bne copy2
-		
+
 		; load program from RAM and start it
 		jmp loadRamPrg		
 
@@ -553,49 +563,30 @@ flashBank:
 
 prgCounter = $5e
 bank = $60
-prgSize = $df00
-prgStart = $df02
+prgLoad = $df40
+prgStart = $df42
+prgLength = $df44
 
 loaderStart:
 
-startProgram:
-		lda #0
-		sta RAM_ADDRESS_EXTENSION
-		
-		lda prgStart
-		beq testHigh
-		cmp #$01
-		bne startAsm
-testHigh:	lda prgStart+1
-		cmp #$08
-		bne startAsm
-		
-		; if it starts at $0801 or $0800, then start as BASIC program
-		jsr $a663		; CLR
-		cli
-		jmp $a7ae		; jump to basic RUN command
-		
-		; start as assembler program
-startAsm:	jmp (prgStart)
-
-
 		; copy program from RAM and start it
-loadRamPrg:	sei
-		lda #0
-		sta RAM_ADDRESS_EXTENSION
-		lda prgCounter
+loadRamPrg:	lda prgLoad
+		bne loadRamPrg2
+		lda prgLoad+1
+		beq skipCopy		; special case: skip SRAM copy, if load address is 0
+loadRamPrg2:	lda prgCounter
 		pha
 		lda prgCounter+1
 		pha
 		lda bank
 		pha
-		lda prgSize
+		lda prgLength
 		sta prgCounter
-		lda prgSize+1
+		lda prgLength+1
 		sta prgCounter+1
-		lda prgStart
+		lda prgLoad
 		sta prg
-		lda prgStart+1
+		lda prgLoad+1
 		sta prg+1
 		lda #1
 		sta bank
@@ -612,7 +603,7 @@ copyRom1:	ldx #$35		; all RAM, and IO
 		dec prgCounter
 		bne copyRom2
 		dec prgCounter+1
-		lda prgCounter + 1
+		lda prgCounter+1
 		cmp #$ff
 		beq copyRomEnd
 copyRom2:	iny
@@ -621,17 +612,60 @@ copyRom2:	iny
 		inc bank
 		lda bank
 		sta RAM_ADDRESS_EXTENSION
-		bne copyRom1
+		bne copyRom1		; unconditional jump
 copyRomEnd:	pla
 		sta bank
 		pla
 		sta prgCounter+1
 		pla
 		sta prgCounter
-		jmp startProgram
+		
+		; select bank at $10000 and save regs from SRAM
+skipCopy:	ldx #0
+		stx RAM_ADDRESS_EXTENSION
+saveRegs:	lda $df39,x
+		sta regs,x
+		inx
+		cpx #7
+		bne saveRegs
+		
+		; start program (start address 0 = BASIC RUN)
+		lda prgStart
+		bne startAsm
+		lda prgStart+1
+		bne startAsm
+		
+		; start as BASIC program
+		jsr loadRegs
+		cli
+		jsr $a663		; CLR
+		jmp $a7ae		; jump to basic RUN command
+		
+		; start as assembler program
+startAsm:	lda prgStart
+		sta prgJmp
+		lda prgStart+1
+		sta prgJmp+1
+		jsr loadRegs
+		cli
+prgJmp = * + 1
+		jmp $8000
+
+loadRegs:	ldx #0
+loadRegs2:	lda regs,x
+		sta $de39,x
+		inx
+		cpx #7
+		bne loadRegs2	
+		rts
+
+regs:		.res 7
 		
 loaderEnd:
 
+.if loaderEnd - loaderStart > 255
+.error "loader too big!"
+.endif
 
 .segment "CART128"
 .export _cart128Start
