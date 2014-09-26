@@ -12,6 +12,8 @@
 #include "midi_commands.h"
 #include "kerberos.h"
 
+extern void about(void);
+
 uint8_t* g_ram = (uint8_t*) 0xdf00;
 uint8_t g_isC128 = 0;
 const char g_kerberosPrgSlotId[16] = KERBEROS_PRG_SLOT_ID;
@@ -34,6 +36,28 @@ static void copyRomReplacement(uint8_t* dst, uint8_t* src)
 		adr += 0x100;
 		ramBank++;
 	}
+}
+
+static void c128startProgramInSram()
+{
+	// CC65 bug? cart128Start doesn't work
+	uint8_t* start = (uint8_t*) 0x8000;
+	uint16_t size = ((uint16_t) cart128EndPtr) - ((uint16_t) start);
+	uint16_t i;
+	
+	// copy 128 catridge code to RAM at $8000
+	for (i = 0; i < size; i++) {
+		uint16_t target = ((uint16_t) start) + i;
+		if ((target & 0xff) == 0) {
+			ramSetBank(target >> 8);
+		}
+		g_ram[target & 0xff] = cart128Load[i];
+	}
+	
+	// CPLD generated reset for starting C128, with RAM as ROM enabled
+	CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON;
+	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH | CART_CONTROL_RESET_GENERATE;
+	while (1);
 }
 
 static void startProgramInSram(void)
@@ -67,15 +91,11 @@ static void startProgramInSram(void)
 	if (controlByte & 4) copyRomReplacement((uint8_t*) 0xe000, (uint8_t*) 0xe000);
 	
 	// reset and start program in assembler
-	startProgram();
-
-	ramSetBank(257);
-	for (i = 0; i < 10; i++) {
-		if ((i&0x7)==0)cputs("\r\n");
-//		cprintf("%02x ", g_ram[i]);
-		cprintf("%02x ", ((uint8_t*)0x1000)[i]);
+	if (controlByte & 1) {
+		c128startProgramInSram();
+	} else {
+		startProgram();
 	}
-	while(1);
 }
 
 static void startProgramInSlot(uint8_t slot)
@@ -333,12 +353,12 @@ int main(void)
 	
 	g_isC128 = isC128();
 	
-	bgcolor(BACKGROUND_COLOR);
-	bordercolor(BACKGROUND_COLOR);
-	textcolor(TEXT_COLOR);
-	gotoxy(0, 0);
-	
 	for (;;) {
+		bgcolor(BACKGROUND_COLOR);
+		bordercolor(BACKGROUND_COLOR);
+		textcolor(TEXT_COLOR);
+		gotoxy(0, 0);
+
 		// disable MIDI
 		MIDI_CONFIG = 0;
 	
@@ -350,10 +370,11 @@ int main(void)
 		
 		showTitle("main menu");
 		cputs("s: start program\r\n");
-		cputs("c: connect to PC/Mac over MIDI\r\n");
+		cputs("f: file transfer PC/Mac over MIDI\r\n");
 		cputs("e: EasyFlash start\r\n");
 		cputs("b: back to BASIC\r\n");
 		cputs("t: tests\r\n");
+		cputs("c: credits\r\n");
 		cputs("\r\n");
 		if (g_isC128) cputs("C128 computer detected\r\n");
 		while (!kbhit());
@@ -361,7 +382,7 @@ int main(void)
 			case 'e':
 				startEasyFlash();
 				break;
-			case 'c':
+			case 'f':
 				receiveMidiCommands();
 				break;
 			case 's':
@@ -372,6 +393,9 @@ int main(void)
 				break;
 			case 't':
 				testMenu();
+				break;
+			case 'c':
+				about();
 				break;
 		}
 	}

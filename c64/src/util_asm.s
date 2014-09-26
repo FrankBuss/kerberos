@@ -670,20 +670,11 @@ loaderEnd:
 .segment "CART128"
 .export _cart128Start
 .export _cart128End
-_cart128Start:
-
-		; recommended format from "C128 Programmers Reference", page 409
-		sei
-		jmp startup
-		nop
-		nop
-		.byte 1  ; ID 1 for autostart cartridge
-		.byte $43, $42, $4d  ; "cbm"
-
-startup:	sei
-
-		inc $d020
-		jmp startup
-
+_cart128Start:	.incbin "c128-cart.bin"
+c128loaderEnd:
 _cart128End:
+
+.if _cart128Start - _cart128End > 255
+.error "C128 loader too big!"
+.endif
 

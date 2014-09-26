@@ -421,6 +421,13 @@ void MainWindow::onSelectFile()
             QByteArray data = readFile(name);
             if (data.size() > 2) {
                 int loadAddress = data[0] | data[1] << 8;
+                if (loadAddress == 0x4001) {
+                    if (QMessageBox::question(this, tr("Kerberos"), tr("Load address $4001, probably wrong C128 load address\nDo you want to change it to $1c01?"),
+                                              QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+                    {
+                        loadAddress = 0x1c01;
+                    }
+                }
 
                 // use start address 0 for BASIC programs
                 int startAddress = 0;
@@ -638,7 +645,6 @@ void MainWindow::onSelectMidiOutInterfaceName(QString name)
 {
     setMidiOutInterfaceName(name);
     g_midiOut.closePort();
-    //qDebug("index: %i", midiInterfacesComboBox->currentIndex());
     g_midiOut.openPort(midiOutInterfacesComboBox->currentIndex());
 }
 
@@ -646,7 +652,6 @@ void MainWindow::onSelectMidiInInterfaceName(QString name)
 {
     setMidiInInterfaceName(name);
     g_midiIn.closePort();
-    //qDebug("index: %i", midiInterfacesComboBox->currentIndex());
     g_midiIn.openPort(midiInInterfacesComboBox->currentIndex());
     g_midiIn.setCallback(&midiCallback, this);
 }
