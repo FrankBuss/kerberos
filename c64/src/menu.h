@@ -9,6 +9,7 @@
 // menu colors
 #define BACKGROUND_COLOR 0
 #define TEXT_COLOR 5
+#define CAPTION_COLOR 1
 
 // back key
 #define LEFT_ARROW_KEY 0x5f

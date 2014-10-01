@@ -8,8 +8,8 @@
 #include "util.h"
 #include "regs.h"
 
-uint8_t* g_vicBase = (uint8_t*) 0xd000;
-uint8_t* g_sidBase = (uint8_t*) 0xd400;
+extern uint8_t* g_vicBase;
+extern uint8_t* g_sidBase;
 uint8_t* g_spritePointers = (uint8_t*) 0x7f8;
 uint8_t* g_screenRam = (uint8_t*) 0x0400;
 uint8_t* g_colorRam = (uint8_t*) 0xd800;
@@ -59,9 +59,6 @@ void about(void)
 	bgcolor(BACKGROUND_COLOR);
 	bordercolor(BACKGROUND_COLOR);
 	textcolor(TEXT_COLOR);
-	gotoxy(13, 24);
-	
-	cputs("www.frank-buss.de/kerberos\r\n");
 
 	// set sprite pointers (starting at 0x2600)
 	for (i = 0; i < 4; i++) g_spritePointers[i] = 152 + i;
@@ -102,14 +99,15 @@ void about(void)
 	cputs("              Marcel Andre\r\n");
 	cputs(" top backers: Benjamin Schneider\r\n");
 	cputs("              Bram Crul\r\n");
-	cputs("              Dirk Jagdmann\r\n");
+	cputs("              doj/cubic\r\n");
 	cputs("              freQvibez/Offence!\r\n");
 	cputs("              Mads Troest\r\n");
 	cputs("              Matt Shively\r\n");
 	cputs("              Remute (www.remute.org)\r\n");
 	cputs("              Robert Bernardo\r\n");
 	cputs("              Ziili/EXT\r\n");
-	cputs("  this music: Vomitoxin by Svetlana\r\n");
+	cputs("  this music: Vomitoxin by Svetlana\r\n\r\n");
+	cputs("       www.frank-buss.de/kerberos");
 
 	musicInit();
 	sinIndex = 0;
@@ -159,11 +157,7 @@ void about(void)
 			}
 			color--;
 		}
-		if (kbhit()) {
-			for (i = 0; i < 24; i++) g_sidBase[i] = 0;
-			g_vicBase[0x15] = 0;
-			return;
-		}
+		if (kbhit()) return;
 	}
 		
 }

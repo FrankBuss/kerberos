@@ -7,16 +7,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp\
-        disktoolswindow.cpp\
     RtMidi.cpp
 
 HEADERS  += mainwindow.h\
-	disktoolswindow.h\
     RtMidi.h \
     RtError.h
 
 FORMS    += mainwindowform.ui
-FORMS    += disktoolswindowform.ui
 
 win32:DEFINES += __WINDOWS_MM__
 win32:LIBS += -lwinmm

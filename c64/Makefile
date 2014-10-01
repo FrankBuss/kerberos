@@ -7,6 +7,7 @@ menu_obj += obj/main_menu.o
 menu_obj += obj/test_menu.o
 menu_obj += obj/about.o
 menu_obj += obj/about_asm.o
+menu_obj += obj/sid_test.o
 
 synthesizer_obj :=
 synthesizer_obj += obj/util.o

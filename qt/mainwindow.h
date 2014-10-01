@@ -30,7 +30,6 @@ private slots:
     void onSelectFile();
     void onNoteOn();
     void onNoteOff();
-    void onDiskTools();
     void onStartTestSequence();
     void onStopTestSequence();
     void onSelectMidiOutInterfaceName(QString name);

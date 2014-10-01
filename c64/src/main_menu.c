@@ -14,6 +14,8 @@
 
 extern void about(void);
 
+uint8_t* g_vicBase = (uint8_t*) 0xd000;
+uint8_t* g_sidBase = (uint8_t*) 0xd400;
 uint8_t* g_ram = (uint8_t*) 0xdf00;
 uint8_t g_isC128 = 0;
 const char g_kerberosPrgSlotId[16] = KERBEROS_PRG_SLOT_ID;
@@ -85,7 +87,7 @@ static void startProgramInSram(void)
 	cputs("starting program...\r\n");
 
 	// copy BASIC replacement
-	if (controlByte & 2) copyRomReplacement((uint8_t*) 0xa000, (uint8_t*) 0xa000);
+	if (controlByte & 2) copyRomReplacement((uint8_t*) 0xa000, (uint8_t*) 0xc000);
 
 	// copy KERNAL replacement
 	if (controlByte & 4) copyRomReplacement((uint8_t*) 0xe000, (uint8_t*) 0xe000);
@@ -342,18 +344,24 @@ void toBasic()
 void showTitle(char* subtitle)
 {
 	clrscr();
-	cputs("Kerberos Menu V0.8 - ");
+	textcolor(CAPTION_COLOR);
+	cputs("Kerberos Menu V0.9 - ");
 	cputs(subtitle);
+	textcolor(TEXT_COLOR);
 	cputs("\r\n\r\n");
 }
 
 int main(void)
 {
+	uint8_t i;
+
 	*((uint8_t*)1) = 55;
 	
 	g_isC128 = isC128();
 	
 	for (;;) {
+		for (i = 0; i < 24; i++) g_sidBase[i] = 0;
+		g_vicBase[0x15] = 0;
 		bgcolor(BACKGROUND_COLOR);
 		bordercolor(BACKGROUND_COLOR);
 		textcolor(TEXT_COLOR);
@@ -376,7 +384,6 @@ int main(void)
 		cputs("t: tests\r\n");
 		cputs("c: credits\r\n");
 		cputs("\r\n");
-		if (g_isC128) cputs("C128 computer detected\r\n");
 		while (!kbhit());
 		switch (cgetc()) {
 			case 'e':

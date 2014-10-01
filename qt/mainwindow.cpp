@@ -10,7 +10,6 @@
 #include <map>
 #include <initializer_list>
 #include "mainwindow.h"
-#include "disktoolswindow.h"
 #include "RtMidi.h"
 #include "../c64/src/midi_commands.h"
 #include "../c64/src/kerberos.h"
@@ -267,7 +266,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(stopTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStopTestSequence()));
     connect(midiInInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiInInterfaceName(QString)));
     connect(midiOutInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiOutInterfaceName(QString)));
-    connect(diskToolsButton, SIGNAL(clicked()), this, SLOT(onDiskTools()));
     connect(clearButton, SIGNAL(clicked()), this, SLOT(onClear()));
     connect(flashPrgButton, SIGNAL(clicked()), this, SLOT(onFlashPrg()));
     connect(flashAndRunPrgButton, SIGNAL(clicked()), this, SLOT(onFlashAndRunPrg()));
@@ -422,7 +420,7 @@ void MainWindow::onSelectFile()
             if (data.size() > 2) {
                 int loadAddress = data[0] | data[1] << 8;
                 if (loadAddress == 0x4001) {
-                    if (QMessageBox::question(this, tr("Kerberos"), tr("Load address $4001, probably wrong C128 load address\nDo you want to change it to $1c01?"),
+                    if (QMessageBox::question(this, QCoreApplication::applicationName(), tr("Load address $4001, probably wrong C128 load address\nDo you want to change it to $1c01?"),
                                               QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                     {
                         loadAddress = 0x1c01;
@@ -688,12 +686,6 @@ void MainWindow::timerEvent(QTimerEvent*)
     }
 }
 
-void MainWindow::onDiskTools()
-{
-    DiskToolsWindow w(this);
-    w.exec();
-}
-
 void MainWindow::onClear()
 {
     midiInDataTextEdit->clear();
@@ -706,13 +698,13 @@ QByteArray MainWindow::readFile(QString& name)
     QFile file(filename);
     name = QFileInfo(file).fileName();
     if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("file open error"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file open error"));
         return QByteArray();
     }
     QByteArray data = file.readAll();
     file.close();
     if (data.size() < 3) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("file size too small, min 3 bytes"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too small, min 3 bytes"));
     }
     return data;
 }
@@ -723,11 +715,11 @@ bool MainWindow::flashPrg()
     QByteArray data = readFile(name);
     if (data.size() == 0) return false;
     if (data.size() > 63486) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("file size too big, max 63486 bytes"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too big, max 63486 bytes"));
         return false;
     }
     if (!name.toLower().endsWith(".prg")) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr(".prg-file required for slot save"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".prg-file required for slot save"));
         return false;
     }
 
@@ -866,7 +858,7 @@ static QByteArray loadEapi()
     QFile file(":/eapi-sst39vf1681");
     QString name = QFileInfo(file).fileName();
     if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(NULL, "Kerberos", "file open error");
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), "file open error");
         return QByteArray();
     }
     QByteArray data = file.readAll();
@@ -963,12 +955,12 @@ void MainWindow::onFlashEasyFlashCrt()
     QString name;
     QByteArray data = readFile(name);
     if (!name.toLower().endsWith(".crt")) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr(".crt-file required for EasyFlash"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".crt-file required for EasyFlash"));
         return;
     }
     if (data.size() == 0) return;
     if (data.size() < 0x50) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("file size too small"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too small"));
         return;
     }
 
@@ -976,7 +968,7 @@ void MainWindow::onFlashEasyFlashCrt()
     CartHeader cartHeader;
     memcpy(&cartHeader, data.data(), sizeof(CartHeader));
     if (cartHeader.type[0] != 0 || cartHeader.type[1] != CART_TYPE_EASYFLASH || memcmp(cartHeader.signature, strCartSignature, sizeof(strCartSignature))) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("unsupported CRT file format"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
         return;
     }
 
@@ -991,13 +983,13 @@ void MainWindow::onFlashEasyFlashCrt()
         // copy and test bank header
         BankHeader bankHeader;
         if (pos + sizeof(BankHeader) > size_t(data.size())) {
-            QMessageBox::warning(NULL, tr("Kerberos"), tr("unsupported CRT file format"));
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
             return;
         }
         memcpy(&bankHeader, data.data() + pos, sizeof(BankHeader));
         pos += sizeof(BankHeader);
         if (memcmp(bankHeader.signature, strChipSignature, sizeof(strChipSignature)) != 0) {
-            QMessageBox::warning(NULL, tr("Kerberos"), tr("unsupported CRT file format"));
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
             return;
         }
         int m_nBank = bankHeader.bank[1] & FLASH_BANK_MASK;
@@ -1006,7 +998,7 @@ void MainWindow::onFlashEasyFlashCrt()
 
         // copy data
         if (pos + m_nSize > size_t(data.size())) {
-            QMessageBox::warning(NULL, tr("Kerberos"), tr("unsupported CRT file format"));
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
             return;
         }
         uint8_t* bankData = (uint8_t*) (data.data() + pos);
@@ -1024,7 +1016,7 @@ void MainWindow::onFlashEasyFlashCrt()
         {
             flashWriteBankFromFile(flash, bankData, m_nBank, 1, m_nSize);
         } else {
-            QMessageBox::warning(NULL, tr("Kerberos"), tr("unsupported CRT file format"));
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
             return;
         }
         pos += m_nSize;
@@ -1040,12 +1032,12 @@ void MainWindow::flashBasicKernal(QString flashName, int address)
     QString name;
     QByteArray data = readFile(name);
     if (!name.toLower().endsWith(".bin")) {
-        QMessageBox::warning(NULL, tr("Kerberos"), ".bin-file required for " + flashName + " flash");
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), ".bin-file required for " + flashName + " flash");
         return;
     }
     if (data.size() == 0) return;
     if (data.size() > 8192) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("wrong file size"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("wrong file size"));
         return;
     }
     flashFile(flashName, data, address);
@@ -1066,21 +1058,21 @@ void MainWindow::onFlashMenuBin()
     QString name;
     QByteArray data = readFile(name);
     if (!name.toLower().endsWith(".bin")) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr(".bin-file required for menu update"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".bin-file required for menu update"));
         return;
     }
     if (data.size() == 0) return;
     if (data.size() < 256) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("wrong file size"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("wrong file size"));
         return;
     }
     for (int i = 0; i < 16; i++) {
         if (g_kerberosMenuId[i] != data[0xf0 + i]) {
-            QMessageBox::warning(NULL, tr("Kerberos"), tr("invalid Kerberos menu file"));
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("invalid Kerberos menu file"));
             return;
         }
     }
-    if (QMessageBox::question(this, tr("Kerberos"), tr("Are you sure to update the menu system?"),
+    if (QMessageBox::question(this, QCoreApplication::applicationName(), tr("Are you sure to update the menu system?"),
                               QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
     {
         flashFile(name, data, 0);
@@ -1197,12 +1189,12 @@ void MainWindow::onUploadAndRunPrg()
     QString name;
     QByteArray data = readFile(name);
     if (!name.toLower().endsWith(".prg")) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr(".prg-file required for PRG run"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".prg-file required for PRG run"));
         return;
     }
     if (data.size() == 0) return;
     if (data.size() > 63486) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("file size too big, max 63486 bytes"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too big, max 63486 bytes"));
         return;
     }
 
@@ -1227,12 +1219,12 @@ void MainWindow::uploadBasicKernal(QString flashName, int address)
     QString name;
     QByteArray data = readFile(name);
     if (!name.toLower().endsWith(".bin")) {
-        QMessageBox::warning(NULL, tr("Kerberos"), ".bin-file required for " + flashName + " flash");
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), ".bin-file required for " + flashName + " flash");
         return;
     }
     if (data.size() == 0) return;
     if (data.size() > 8192) {
-        QMessageBox::warning(NULL, tr("Kerberos"), tr("wrong file size"));
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("wrong file size"));
         return;
     }
     sramUpload(flashName, data, address >> 8);
@@ -1240,7 +1232,7 @@ void MainWindow::uploadBasicKernal(QString flashName, int address)
 
 void MainWindow::onUploadBasicToRam()
 {
-    uploadBasicKernal("BASIC", 0xa000);
+    uploadBasicKernal("BASIC", 0xc000);
 }
 
 void MainWindow::onUploadKernalToRam()

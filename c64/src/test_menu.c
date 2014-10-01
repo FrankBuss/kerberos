@@ -10,6 +10,8 @@
 #include "regs.h"
 #include "menu.h"
 
+extern void sidTest(void);
+
 static void testRam()
 {
 	uint16_t i;
@@ -131,8 +133,8 @@ static void testFlash()
 				lastBank = FLASH_BANKS;
 				break;
 			case '2':
-				firstBank = 112;
-				lastBank = 120;
+				firstBank = 5;
+				lastBank = 6;
 				break;
 			case LEFT_ARROW_KEY:
 				return;
@@ -153,10 +155,12 @@ static void testFlash()
 			flashWrite256Block(adr);
 			adr += 0x100;
 		}
-		flashEraseSector(adr);
-		for (j = 0; j < 16; j++) {
-			flashWrite256Block(adr);
-			adr += 0x100;
+		if (firstBank != 5) {
+			flashEraseSector(adr);
+			for (j = 0; j < 16; j++) {
+				flashWrite256Block(adr);
+				adr += 0x100;
+			}
 		}
 	}
 
@@ -175,6 +179,7 @@ static void testFlash()
 				return;
 			}
 			adr += 0x100;
+			if (firstBank == 5 && j == 15) break;
 		}
 	}
 
@@ -192,11 +197,13 @@ static void testFlash()
 			flashWrite256Block(adr);
 			adr += 0x100;
 		}
-		flashEraseSector(adr);
-		for (j = 0; j < 16; j++) {
-			rand256Block();
-			flashWrite256Block(adr);
-			adr += 0x100;
+		if (firstBank != 5) {
+			flashEraseSector(adr);
+			for (j = 0; j < 16; j++) {
+				rand256Block();
+				flashWrite256Block(adr);
+				adr += 0x100;
+			}
 		}
 	}
 
@@ -218,6 +225,7 @@ static void testFlash()
 				return;
 			}
 			adr += 0x100;
+			if (firstBank == 5 && j == 15) break;
 		}
 	}
 
@@ -228,7 +236,9 @@ static void testFlash()
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
 		flashEraseSector((uint8_t*) 0x8000);
-		flashEraseSector((uint8_t*) 0x9000);
+		if (firstBank != 5) {
+			flashEraseSector((uint8_t*) 0x9000);
+		}
 	}
 
 	gotox(0);
@@ -247,6 +257,7 @@ static void testFlash()
 				return;
 			}
 			adr += 0x100;
+			if (firstBank == 5 && j == 15) break;
 		}
 	}
 
@@ -442,39 +453,6 @@ static void testRamAsRom()
 	anyKey();
 }
 
-static void c128Test()
-{
-	// CC65 bug? cart128Start doesn't work
-	uint8_t* start = (uint8_t*) 0x8000;
-	uint16_t size = ((uint16_t) cart128EndPtr) - ((uint16_t) start);
-	uint16_t i;
-	
-	showTitle("C128 test");
-
-	// clear id for the two autostart ROMs in RAM
-	memset(g_blockBuffer, 0xff, 256);
-	ramSetBank(0x80);
-	memcpy(g_ram, g_blockBuffer, 256);
-	ramSetBank(0xc0);
-	memcpy(g_ram, g_blockBuffer, 256);
-
-	// copy 128 catridge code to RAM at $8000
-	cputs("copy cartridge code and start C128...\r\n");
-	for (i = 0; i < size; i++) {
-		uint16_t target = ((uint16_t) start) + i;
-		if ((target & 0xff) == 0) {
-			ramSetBank(target >> 8);
-		}
-		g_ram[target & 0xff] = cart128Load[i];
-	}
-	
-	// CPLD generated reset for starting C128, with RAM as ROM enabled
-	anyKey();
-	CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON;
-	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH | CART_CONTROL_RESET_GENERATE;
-	while (1);
-}
-
 void testMenu(void)
 {
 	for (;;) {
@@ -492,7 +470,7 @@ void testMenu(void)
 		cputs("f: flash test\r\n");
 		cputs("m: MIDI test\r\n");
 		cputs("o: RAM as ROM tests\r\n");
-		if (g_isC128) cputs("8: C128 test\r\n");
+		cputs("s: SID test\r\n");
 		cputs("\r\n");
 		cputs("\x1f: back\r\n");
 		while (!kbhit());
@@ -509,8 +487,8 @@ void testMenu(void)
 			case 'o':
 				testRamAsRom();
 				break;
-			case '8':
-				if (g_isC128) c128Test();
+			case 's':
+				sidTest();
 				break;
 			case LEFT_ARROW_KEY:
 				return;
