@@ -45,6 +45,9 @@ QGroupBox::title {
       <pointsize>10</pointsize>
      </font>
     </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
       <string>File transfer</string>
@@ -640,7 +643,7 @@ QGroupBox::title {
        <string>Flash PRG</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="flashAndRunPrgButton">
+     <widget class="QPushButton" name="startPrgFromSlotButton">
       <property name="geometry">
        <rect>
         <x>450</x>
@@ -1088,7 +1091,7 @@ QGroupBox::title {
      <attribute name="title">
       <string>Cartridge settings</string>
      </attribute>
-     <widget class="QPushButton" name="flashBasicBinButton_3">
+     <widget class="QPushButton" name="saveSettingsButton">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -1190,7 +1193,7 @@ QGroupBox::title {
        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="prgSlotSpinBox_4">
+     <widget class="QSpinBox" name="autostartSlotSpinBox">
       <property name="geometry">
        <rect>
         <x>220</x>
@@ -1233,7 +1236,7 @@ QGroupBox::title {
       <property name="title">
        <string>Cartridge drive number</string>
       </property>
-      <widget class="QSpinBox" name="prgSlotSpinBox_3">
+      <widget class="QSpinBox" name="disk2SpinBox">
        <property name="geometry">
         <rect>
          <x>80</x>
@@ -1259,7 +1262,7 @@ QGroupBox::title {
         <number>9</number>
        </property>
       </widget>
-      <widget class="QSpinBox" name="prgSlotSpinBox_2">
+      <widget class="QSpinBox" name="disk1SpinBox">
        <property name="geometry">
         <rect>
          <x>80</x>

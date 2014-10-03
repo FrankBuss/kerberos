@@ -14,6 +14,7 @@
 #include "../c64/src/midi_commands.h"
 #include "../c64/src/kerberos.h"
 #include "../c64/src/regs.h"
+#include "../c64/src/config.h"
 
 #define NEWLINE QString("\x0d\x0a")
 
@@ -268,7 +269,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(midiOutInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiOutInterfaceName(QString)));
     connect(clearButton, SIGNAL(clicked()), this, SLOT(onClear()));
     connect(flashPrgButton, SIGNAL(clicked()), this, SLOT(onFlashPrg()));
-    connect(flashAndRunPrgButton, SIGNAL(clicked()), this, SLOT(onFlashAndRunPrg()));
+    connect(startPrgFromSlotButton, SIGNAL(clicked()), this, SLOT(onStartPrgFromSlot()));
     connect(flashEasyFlashCrtButton, SIGNAL(clicked()), this, SLOT(onFlashEasyFlashCrt()));
     connect(flashBasicBinButton, SIGNAL(clicked()), this, SLOT(onFlashBasicBin()));
     connect(flashKernalBinButton, SIGNAL(clicked()), this, SLOT(onFlashKernalBin()));
@@ -277,6 +278,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(uploadBasicToRamButton, SIGNAL(clicked()), this, SLOT(onUploadBasicToRam()));
     connect(uploadKernalToRamButton, SIGNAL(clicked()), this, SLOT(onUploadKernalToRam()));
     connect(backToBasicButton, SIGNAL(clicked()), this, SLOT(onBackToBasic()));
+    connect(saveSettingsButton, SIGNAL(clicked()), this, SLOT(onSaveSettings()));
 
     fileEdit->setText(getFilename());
 
@@ -744,12 +746,15 @@ void MainWindow::onFlashPrg()
     flashPrg();
 }
 
-void MainWindow::onFlashAndRunPrg()
+void MainWindow::onStartPrgFromSlot()
 {
-    if (flashPrg()) {
-        int slot = prgSlotSpinBox->value();
-        midiSendCommand(MIDI_COMMAND_START_SLOT_PROGRAM, { slot });
+    QByteArray header = createHeader("", true, 0);
+    ByteArray data;
+    data.push_back(prgSlotSpinBox->value());
+    for (int i = 0; i < 16; i++) {
+        data.push_back(header[0x30 + i]);
     }
+    midiSendCommand(MIDI_COMMAND_START_SLOT_PROGRAM, data);
 }
 
 
@@ -1045,7 +1050,7 @@ void MainWindow::flashBasicKernal(QString flashName, int address)
 
 void MainWindow::onFlashBasicBin()
 {
-    flashBasicKernal("BASIC", 0xa000);
+    flashBasicKernal("BASIC", 0xc000);
 }
 
 void MainWindow::onFlashKernalBin()
@@ -1108,6 +1113,7 @@ QByteArray MainWindow::createHeader(QString name, bool ramOperation, int length)
             controlByte |= 1 << 2;
         }
     }
+    controlByte |= 1 << 3;  // use global MIDI thru settings
     header.append(controlByte);
 
     // unused and init registers with 0
@@ -1232,7 +1238,7 @@ void MainWindow::uploadBasicKernal(QString flashName, int address)
 
 void MainWindow::onUploadBasicToRam()
 {
-    uploadBasicKernal("BASIC", 0xc000);
+    uploadBasicKernal("BASIC", 0xa000);
 }
 
 void MainWindow::onUploadKernalToRam()
@@ -1255,4 +1261,26 @@ void MainWindow::onBackToBasic()
 
     // start program
     midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
+}
+
+void MainWindow::onSaveSettings()
+{
+    ByteArray configs;
+
+    configs.push_back(KERBEROS_CONFIG_MIDI_IN_THRU);
+    configs.push_back(midiThruInCheckBox->isChecked());
+
+    configs.push_back(KERBEROS_CONFIG_MIDI_OUT_THRU);
+    configs.push_back(midiThruOutCheckBox->isChecked());
+
+    configs.push_back(KERBEROS_CONFIG_AUTOSTART_SLOT);
+    configs.push_back(autostartSlotSpinBox->value());
+
+    configs.push_back(KERBEROS_CONFIG_DRIVE_1);
+    configs.push_back(disk1SpinBox->value());
+
+    configs.push_back(KERBEROS_CONFIG_DRIVE_2);
+    configs.push_back(disk2SpinBox->value());
+
+    midiSendCommand(MIDI_COMMAND_CHANGE_CONFIG, configs);
 }

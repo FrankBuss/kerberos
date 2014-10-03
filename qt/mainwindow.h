@@ -36,7 +36,7 @@ private slots:
     void onSelectMidiInInterfaceName(QString name);
     void onClear();
     void onFlashPrg();
-    void onFlashAndRunPrg();
+    void onStartPrgFromSlot();
     void onFlashEasyFlashCrt();
     void onFlashBasicBin();
     void onFlashKernalBin();
@@ -45,6 +45,7 @@ private slots:
     void onUploadBasicToRam();
     void onUploadKernalToRam();
     void onBackToBasic();
+    void onSaveSettings();
 
 private:
     QString getFilename();

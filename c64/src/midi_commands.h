@@ -40,4 +40,7 @@
 // no data. Reset, copy the program from SRAM and start. Header information in first SRAM block (256 bytes) is the same as in the first block of a slot.
 #define MIDI_COMMAND_START_SRAM_PROGRAM 0x0d
 
+// key/value pairs, 2 bytes each. Change config values.
+#define MIDI_COMMAND_CHANGE_CONFIG 0x0e
+
 #endif

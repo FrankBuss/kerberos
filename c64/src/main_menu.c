@@ -11,6 +11,7 @@
 #include "menu.h"
 #include "midi_commands.h"
 #include "kerberos.h"
+#include "config.h"
 
 extern void about(void);
 
@@ -91,7 +92,18 @@ static void startProgramInSram(void)
 
 	// copy KERNAL replacement
 	if (controlByte & 4) copyRomReplacement((uint8_t*) 0xe000, (uint8_t*) 0xe000);
-	
+		
+	// copy global MIDI tru settings, if requested
+	if (controlByte & 8) {
+		g_ram[((uint16_t)(&MIDI_CONFIG)) - 0xde00] &= ~(MIDI_CONFIG_THRU_IN_ON | MIDI_CONFIG_THRU_OUT_ON);
+		if (getConfigValue(KERBEROS_CONFIG_MIDI_IN_THRU)) {
+			g_ram[((uint16_t)(&MIDI_CONFIG)) - 0xde00] |= MIDI_CONFIG_THRU_IN_ON;
+		}
+		if (getConfigValue(KERBEROS_CONFIG_MIDI_OUT_THRU)) {
+			g_ram[((uint16_t)(&MIDI_CONFIG)) - 0xde00] |= MIDI_CONFIG_THRU_OUT_ON;
+		}
+	}
+		
 	// reset and start program in assembler
 	if (controlByte & 1) {
 		c128startProgramInSram();
@@ -100,7 +112,7 @@ static void startProgramInSram(void)
 	}
 }
 
-static void startProgramInSlot(uint8_t slot)
+static void startProgramInSlot(uint8_t slot, uint8_t* controlBytesAndRegs)
 {
 	static uint8_t* adr;
 	static uint8_t i;
@@ -136,6 +148,12 @@ static void startProgramInSlot(uint8_t slot)
 		}
 		ramBank++;
 	}
+	ramSetBank(256);
+	if (controlBytesAndRegs) {
+		for (i = 0; i < 16; i++) {
+			g_ram[i + 0x30] = controlBytesAndRegs[i];
+		}
+	}
 	
 	startProgramInSram();
 }
@@ -148,6 +166,7 @@ void receiveMidiCommands(void)
 	static uint8_t b1;
 	static uint8_t tag;
 	static uint8_t length;
+	static uint8_t i;
 	static uint8_t* adr;
 	static uint8_t receivedBytes;
 	static uint8_t flashBank;
@@ -192,7 +211,6 @@ void receiveMidiCommands(void)
 					receivedBytes++;
 				}
 			}
-			//cprintf("tag: %02x, length: %02x\r\n", tag, length);
 			
 			// read data
 			disableInterrupts();
@@ -201,7 +219,6 @@ void receiveMidiCommands(void)
 				anyKey();
 				return;
 			}
-			//cprintf("read ok\r\n");
 			
 			// evaluate command
 			switch (tag & 0x7f) {
@@ -260,13 +277,28 @@ void receiveMidiCommands(void)
 					break;
 				
 				case MIDI_COMMAND_START_SLOT_PROGRAM:
-					startProgramInSlot(g_blockBuffer[0]);
+					startProgramInSlot(g_blockBuffer[0], &g_blockBuffer[1]);
 					break;
 	
 				case MIDI_COMMAND_START_SRAM_PROGRAM:
 					ramSetBank(0);
 					startProgramInSram();
 					return;
+					
+				case MIDI_COMMAND_CHANGE_CONFIG:
+					for (i == 0; i <= length; i += 2) {
+						uint8_t key = g_blockBuffer[i];
+						uint8_t value = g_blockBuffer[i + 1];
+						setConfigValue(key, value);
+					}
+					if (saveConfigs()) {
+						cputs("\r\nsettings saved\r\n");
+					} else {
+						cputs("\r\nflash write error!\r\n");
+						anyKey();
+						return;
+					}
+					break;
 			}
 			if (redrawScreen) break;
 		}
@@ -325,7 +357,7 @@ void menuStartProgramInSlot(void)
 				slot = key - 'a' + 10;
 			}
 			if (slot > 0 && slot <= 25) {
-				startProgramInSlot(slot);
+				startProgramInSlot(slot, NULL);
 			}
 		}
 	}
@@ -354,10 +386,9 @@ void showTitle(char* subtitle)
 int main(void)
 {
 	uint8_t i;
-
 	*((uint8_t*)1) = 55;
-	
 	g_isC128 = isC128();
+	loadConfigs();
 	
 	for (;;) {
 		for (i = 0; i < 24; i++) g_sidBase[i] = 0;
@@ -375,7 +406,7 @@ int main(void)
 	
 		// /GAME high, /EXROM low
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
-		
+
 		showTitle("main menu");
 		cputs("s: start program\r\n");
 		cputs("f: file transfer PC/Mac over MIDI\r\n");
