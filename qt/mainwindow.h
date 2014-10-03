@@ -45,6 +45,9 @@ private slots:
     void onUploadBasicToRam();
     void onUploadKernalToRam();
     void onBackToBasic();
+
+    void onOpenD64File();
+
     void onSaveSettings();
 
 private:
@@ -62,6 +65,7 @@ private:
     bool flashPrg();
 
     bool m_testSequenceRunning;
+    QString m_d64Filename;
 };
 
 extern QEvent::Type g_midiMessageEventType;

@@ -67,7 +67,7 @@ void di_sync(DiskImage *di);
 
 int di_status(DiskImage *di, char *status);
 
-ImageFile *di_open(DiskImage *di, unsigned char *rawname, FileType type, char *mode);
+ImageFile *di_open(DiskImage *di, const unsigned char *rawname, FileType type, const char *mode);
 void di_close(ImageFile *imgfile);
 int di_read(ImageFile *imgfile, unsigned char *buffer, int len);
 int di_write(ImageFile *imgfile, unsigned char *buffer, int len);

@@ -7,11 +7,15 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp\
-    RtMidi.cpp
+    RtMidi.cpp \
+    diskimage.cpp \
+    d64.cpp
 
 HEADERS  += mainwindow.h\
     RtMidi.h \
-    RtError.h
+    RtError.h \
+    diskimage.h \
+    d64.h
 
 FORMS    += mainwindowform.ui
 

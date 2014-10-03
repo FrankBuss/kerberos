@@ -9,8 +9,10 @@
 #include <vector>
 #include <map>
 #include <initializer_list>
+#include <QStandardItemModel>
 #include "mainwindow.h"
 #include "RtMidi.h"
+#include "d64.h"
 #include "../c64/src/midi_commands.h"
 #include "../c64/src/kerberos.h"
 #include "../c64/src/regs.h"
@@ -278,6 +280,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(uploadBasicToRamButton, SIGNAL(clicked()), this, SLOT(onUploadBasicToRam()));
     connect(uploadKernalToRamButton, SIGNAL(clicked()), this, SLOT(onUploadKernalToRam()));
     connect(backToBasicButton, SIGNAL(clicked()), this, SLOT(onBackToBasic()));
+
+    connect(openD64FileButton, SIGNAL(clicked()), this, SLOT(onOpenD64File()));
+
     connect(saveSettingsButton, SIGNAL(clicked()), this, SLOT(onSaveSettings()));
 
     fileEdit->setText(getFilename());
@@ -673,17 +678,17 @@ void MainWindow::timerEvent(QTimerEvent*)
     static int state = 0;
     if (m_testSequenceRunning) {
         switch (state) {
-            case 0:
-                onNoteOn();
-                state++;
-                break;
-            case 1:
-                onNoteOff();
-                state++;
-                break;
-            case 2:
-                state = 0;
-                break;
+        case 0:
+            onNoteOn();
+            state++;
+            break;
+        case 1:
+            onNoteOff();
+            state++;
+            break;
+        case 2:
+            state = 0;
+            break;
         }
     }
 }
@@ -880,13 +885,13 @@ static QByteArray loadEapi()
 // EAPI signature
 static const unsigned char aEAPISignature[] =
 {
-        0x65, 0x61, 0x70, 0x69 /* "EAPI" */
+    0x65, 0x61, 0x70, 0x69 /* "EAPI" */
 };
 
 // EAPI signature
 static const unsigned char aEFNameSignature[] =
 {
-        0x65, 0x66, 0x2d, 0x6e, 0x41, 0x4d, 0x45, 0x3a /* "EF-Name:" */
+    0x65, 0x66, 0x2d, 0x6e, 0x41, 0x4d, 0x45, 0x3a /* "EF-Name:" */
 };
 
 #define EF_CART_NAME_LEN 16
@@ -912,10 +917,10 @@ static QString flashWriteBankFromFile(QByteArray& flash, uint8_t* data, uint8_t 
         // Check if EAPI has to be replaced
         if (nBank == 0 && nChip == 1) {
             if (nOffset == 0x1800 &&
-                memcmp(data, aEAPISignature, sizeof(aEAPISignature)) == 0)
+                    memcmp(data, aEAPISignature, sizeof(aEAPISignature)) == 0)
                 bReplaceEAPI = 1;
             if (nOffset == 0x1b00 &&
-                memcmp(data, aEFNameSignature, sizeof(aEFNameSignature)) == 0)
+                    memcmp(data, aEFNameSignature, sizeof(aEFNameSignature)) == 0)
             {
                 for (int i = 0; i < EF_CART_NAME_LEN; i++) {
                     char c = data[i];
@@ -1124,32 +1129,32 @@ QByteArray MainWindow::createHeader(QString name, bool ramOperation, int length)
     uint8_t midiConfig = 0;
     switch (midiEmulationComboBox->currentIndex()) {
 
-        // Sequential Circuits Inc.
-        case 1:
-            midiAddress = 0x02;
-            midiConfig = MIDI_CONFIG_IRQ_ON | MIDI_CONFIG_NMI_OFF | MIDI_CONFIG_CLOCK_500_KHZ | MIDI_CONFIG_ENABLE_ON;
-            break;
+    // Sequential Circuits Inc.
+    case 1:
+        midiAddress = 0x02;
+        midiConfig = MIDI_CONFIG_IRQ_ON | MIDI_CONFIG_NMI_OFF | MIDI_CONFIG_CLOCK_500_KHZ | MIDI_CONFIG_ENABLE_ON;
+        break;
 
         // Passport & Syntech
-        case 2:
-            midiAddress = 0x88;
-            midiConfig = MIDI_CONFIG_IRQ_ON | MIDI_CONFIG_NMI_OFF | MIDI_CONFIG_CLOCK_500_KHZ | MIDI_CONFIG_ENABLE_ON;
-            break;
+    case 2:
+        midiAddress = 0x88;
+        midiConfig = MIDI_CONFIG_IRQ_ON | MIDI_CONFIG_NMI_OFF | MIDI_CONFIG_CLOCK_500_KHZ | MIDI_CONFIG_ENABLE_ON;
+        break;
 
         // DATEL/Siel/JMS
-        case 3:
-            midiAddress = 0x46;
-            midiConfig = MIDI_CONFIG_IRQ_ON | MIDI_CONFIG_NMI_OFF | MIDI_CONFIG_CLOCK_2_MHZ | MIDI_CONFIG_ENABLE_ON;
-            break;
+    case 3:
+        midiAddress = 0x46;
+        midiConfig = MIDI_CONFIG_IRQ_ON | MIDI_CONFIG_NMI_OFF | MIDI_CONFIG_CLOCK_2_MHZ | MIDI_CONFIG_ENABLE_ON;
+        break;
 
         // Namesoft
-        case 4:
-            midiAddress = 0x02;
-            midiConfig = MIDI_CONFIG_IRQ_OFF | MIDI_CONFIG_NMI_ON | MIDI_CONFIG_CLOCK_500_KHZ | MIDI_CONFIG_ENABLE_ON;
-            break;
+    case 4:
+        midiAddress = 0x02;
+        midiConfig = MIDI_CONFIG_IRQ_OFF | MIDI_CONFIG_NMI_ON | MIDI_CONFIG_CLOCK_500_KHZ | MIDI_CONFIG_ENABLE_ON;
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
     if (midiThruInCheckBox->isChecked()) midiConfig |= MIDI_CONFIG_THRU_IN_ON;
     if (midiThruOutCheckBox->isChecked()) midiConfig |= MIDI_CONFIG_THRU_OUT_ON;
@@ -1261,6 +1266,50 @@ void MainWindow::onBackToBasic()
 
     // start program
     midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
+}
+
+void MainWindow::onOpenD64File()
+{
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open D64"), getFilename(), tr("D64 file (*.d64)"));
+    if (filename.size() > 0) {
+        d64FileEdit->setText(filename);
+        m_d64Filename = filename;
+
+        // read directory
+        D64Disk d64;
+        d64.open(filename);
+        d64.readDirectory();
+
+        // show files in table
+        int entriesCount = d64.getDirectoryEntries().size();
+        QStandardItemModel* model = new QStandardItemModel(entriesCount, 3);
+        for (int row = 0; row < entriesCount; ++row) {
+            D64DirectoryEntry entry = d64.getDirectoryEntries()[row];
+            QStandardItem* size = new QStandardItem(QString::number(entry.size));
+            model->setItem(row, 0, size);
+            QStandardItem* name = new QStandardItem(entry.name);
+            model->setItem(row, 1, name);
+            QStandardItem* type = new QStandardItem(entry.type);
+            model->setItem(row, 2, type);
+        }
+        QStringList header;
+        header.append("Blocks");
+        header.append("Name");
+        header.append("Type");
+        model->setHorizontalHeaderLabels(header);
+        d64DirectoryListingTableView->setModel(model);
+        d64DirectoryListingTableView->verticalHeader()->hide();
+        d64DirectoryListingTableView->resizeColumnsToContents();
+        d64DirectoryListingTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        d64DirectoryListingTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+        d64DirectoryListingTableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+        d64DirectoryListingTableView->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+        d64DirectoryListingTableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+
+        // show title and free blocks
+        d64DirectoryListingTitle->setText(d64.getDirectoryTitle());
+        d64DirectoryListingFreeBlocks->setText(QString::number(d64.getDirectoryFreeBlocks()));
+    }
 }
 
 void MainWindow::onSaveSettings()

@@ -46,7 +46,7 @@ QGroupBox::title {
      </font>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -740,13 +740,13 @@ QGroupBox::title {
       <property name="flat">
        <bool>false</bool>
       </property>
-      <widget class="QTextEdit" name="midiInDataTextEdit_3">
+      <widget class="QTextEdit" name="remoteDirectoryListingTextEdit">
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>130</y>
+         <y>150</y>
          <width>231</width>
-         <height>211</height>
+         <height>191</height>
         </rect>
        </property>
        <property name="verticalScrollBarPolicy">
@@ -760,7 +760,7 @@ QGroupBox::title {
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>105</y>
+         <y>120</y>
          <width>231</width>
          <height>21</height>
         </rect>
@@ -771,7 +771,7 @@ QGroupBox::title {
         </font>
        </property>
        <property name="text">
-        <string>Remote directory listing listing</string>
+        <string>Remote directory listing</string>
        </property>
       </widget>
       <widget class="QPushButton" name="startTestSequenceButton_2">
@@ -894,6 +894,37 @@ QGroupBox::title {
         <string>Read directory</string>
        </property>
       </widget>
+      <widget class="QLineEdit" name="d64FileEdit_3">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>90</y>
+         <width>191</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_17">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>90</y>
+         <width>31</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Title</string>
+       </property>
+      </widget>
      </widget>
      <widget class="QPushButton" name="stopTestSequenceButton_2">
       <property name="geometry">
@@ -933,27 +964,11 @@ QGroupBox::title {
       <property name="flat">
        <bool>false</bool>
       </property>
-      <widget class="QTextEdit" name="midiInDataTextEdit_2">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>130</y>
-         <width>231</width>
-         <height>211</height>
-        </rect>
-       </property>
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOn</enum>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_10">
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>106</y>
+         <y>120</y>
          <width>231</width>
          <height>21</height>
         </rect>
@@ -967,32 +982,17 @@ QGroupBox::title {
         <string>D64 directory listing</string>
        </property>
       </widget>
-      <widget class="QLineEdit" name="fileEdit_2">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>30</y>
-         <width>231</width>
-         <height>22</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="selectFileButton_2">
+      <widget class="QLineEdit" name="d64FileEdit">
        <property name="geometry">
         <rect>
          <x>10</x>
          <y>60</y>
-         <width>131</width>
-         <height>24</height>
+         <width>231</width>
+         <height>22</height>
         </rect>
        </property>
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Select file...</string>
+       <property name="readOnly">
+        <bool>true</bool>
        </property>
       </widget>
       <widget class="QPushButton" name="startTestSequenceButton_5">
@@ -1029,6 +1029,102 @@ QGroupBox::title {
        </property>
        <property name="text">
         <string>Delete file</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="openD64FileButton">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>131</width>
+         <height>24</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Open D64 file...</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="d64DirectoryListingTitle">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>90</y>
+         <width>191</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_16">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>90</y>
+         <width>31</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Title</string>
+       </property>
+      </widget>
+      <widget class="QTableView" name="d64DirectoryListingTableView">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>150</y>
+         <width>231</width>
+         <height>161</height>
+        </rect>
+       </property>
+       <property name="verticalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOn</enum>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="d64DirectoryListingFreeBlocks">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>320</y>
+         <width>71</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_18">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>320</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Blocks free</string>
        </property>
       </widget>
      </widget>
