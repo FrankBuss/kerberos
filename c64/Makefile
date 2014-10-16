@@ -40,7 +40,7 @@ obj/%.s: src/%.c $(headers) | obj
 	cc65 -t c64 -T -O $(INCLUDE) $(DEFINE) -o $@ $<
 
 ###############################################################################
-obj/%.o: obj/%.s | obj c128-cart.bin cartridge-disk.bin
+obj/%.o: obj/%.s | obj c128-cart.bin
 	ca65 -t c64 $(INCLUDE) -o $@ $<
 
 obj/%.o: src/%.s | obj
