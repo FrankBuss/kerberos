@@ -1,14 +1,16 @@
 menu_obj :=
 menu_obj += obj/util.o
 menu_obj += obj/util_asm.o
+menu_obj += obj/loaders.o
+menu_obj += obj/floppy.o
 menu_obj += obj/midi.o
 menu_obj += obj/flash.o
 menu_obj += obj/main_menu.o
 menu_obj += obj/test_menu.o
 menu_obj += obj/about.o
 menu_obj += obj/about_asm.o
-menu_obj += obj/sid_test.o
 menu_obj += obj/config.o
+menu_obj += obj/cartridge-disk.o
 
 synthesizer_obj :=
 synthesizer_obj += obj/util.o
@@ -38,7 +40,7 @@ obj/%.s: src/%.c $(headers) | obj
 	cc65 -t c64 -T -O $(INCLUDE) $(DEFINE) -o $@ $<
 
 ###############################################################################
-obj/%.o: obj/%.s | obj c128-cart.bin
+obj/%.o: obj/%.s | obj c128-cart.bin cartridge-disk.bin
 	ca65 -t c64 $(INCLUDE) -o $@ $<
 
 obj/%.o: src/%.s | obj
@@ -66,7 +68,6 @@ menu.bin: menu.prg
 
 synthesizer: $(synthesizer_obj) $(ld_config)
 	ld65 -o $@ -m $@.map -C $(ld_config) $(synthesizer_obj) --lib c64.lib
-	cat $@.map | grep -e "^Name\|^CODE\|^DATA\|^BSS\|^RODATA\|^LOWCODE"
 
 synthesizer.prg: synthesizer
 	cp -f synthesizer synthesizer.prg

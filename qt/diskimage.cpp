@@ -221,7 +221,7 @@ int get_block_num(ImageType type, TrackSector ts) {
 
 /* get a pointer to block data */
 unsigned char *get_ts_addr(DiskImage *di, TrackSector ts) {
-    return(di->image + get_block_num(di->type, ts) * 256);
+    return di->diskData->getData(get_block_num(di->type, ts) * 256);
 }
 
 
@@ -552,31 +552,18 @@ void free_chain(DiskImage *di, TrackSector ts) {
 }
 
 
-DiskImage *di_load_image(char *name) {
-    FILE *file;
-    int filesize, l, read;
+DiskImage *di_load_image(DiskData* diskData) {
+    int filesize;
     DiskImage *di;
 
-    /* open image */
-    if ((file = fopen(name, "rb")) == NULL) {
-        //puts("fopen failed");
-        return(NULL);
-    }
-
     /* get file size*/
-    if (fseek(file, 0, SEEK_END)) {
-        //puts("fseek failed");
-        fclose(file);
-        return(NULL);
-    }
-    filesize = ftell(file);
-    fseek(file, 0, SEEK_SET);
+    filesize = diskData->getSize();
 
     if ((di = (DiskImage*) malloc(sizeof(*di))) == NULL) {
         //puts("malloc failed");
-        fclose(file);
         return(NULL);
     }
+    di->diskData = diskData;
 
     /* check image type */
     switch (filesize) {
@@ -607,54 +594,29 @@ DiskImage *di_load_image(char *name) {
     default:
         //puts("unknown type");
         free(di);
-        fclose(file);
         return(NULL);
     }
 
     di->size = filesize;
-
-    /* allocate buffer for image */
-    if ((di->image = (unsigned char*) malloc(filesize)) == NULL) {
-        //puts("image malloc failed");
-        free(di);
-        fclose(file);
-        return(NULL);
-    }
-
-    /* read file into buffer */
-    read = 0;
-    while (read < filesize) {
-        if ((l = fread(di->image, 1, filesize - read, file))) {
-            read += l;
-        } else {
-            //puts("fread failed");
-            free(di->image);
-            free(di);
-            fclose(file);
-            return(NULL);
-        }
-    }
-
-    di->filename = (char*) malloc(strlen(name) + 1);
-    strcpy(di->filename, name);
     di->openfiles = 0;
     di->blocksfree = blocks_free(di);
     di->modified = 0;
-    fclose(file);
     set_status(di, 254, 0, 0);
     return(di);
 }
 
 
-DiskImage *di_create_image(char *name, int size) {
+DiskImage *di_create_image(DiskData* diskData) {
     DiskImage *di;
 
     if ((di = (DiskImage*) malloc(sizeof(*di))) == NULL) {
         //puts("malloc failed");
         return(NULL);
     }
+    di->diskData = diskData;
 
     /* check image type */
+    int size = diskData->getSize();
     switch (size) {
     case 174848: // standard D64
     case 175531: // D64 with error info (which we just ignore)
@@ -688,16 +650,6 @@ DiskImage *di_create_image(char *name, int size) {
 
     di->size = size;
 
-    /* allocate buffer for image */
-    if ((di->image = (unsigned char*) malloc(size)) == NULL) {
-        //puts("image malloc failed");
-        free(di);
-        return(NULL);
-    }
-    memset(di->image, 0, size);
-
-    di->filename = (char*) malloc(strlen(name) + 1);
-    strcpy(di->filename, name);
     di->openfiles = 0;
     di->blocksfree = blocks_free(di);
     di->modified = 1;
@@ -707,25 +659,8 @@ DiskImage *di_create_image(char *name, int size) {
 
 
 void di_sync(DiskImage *di) {
-    FILE *file;
-    int l, left;
-    unsigned char *image;
-
-    if ((file = fopen(di->filename, "wb"))) {
-        image = di->image;
-        left = di->size;
-        l = 0;
-        while (left) {
-            if ((l = fwrite(image, 1, left, file)) == 0) {
-                fclose(file);
-                return;
-            }
-            left -= l;
-            image += l;
-        }
-        fclose(file);
-        di->modified = 0;
-    }
+    di->diskData->save();
+    di->modified = 0;
 }
 
 
@@ -733,10 +668,6 @@ void di_free_image(DiskImage *di) {
     if (di->modified) {
         di_sync(di);
     }
-    if (di->filename) {
-        free(di->filename);
-    }
-    free(di->image);
     free(di);
 }
 
@@ -1085,11 +1016,6 @@ int di_format(DiskImage *di, unsigned char *rawname, unsigned char *rawid) {
     switch (di->type) {
 
     case D64:
-        /* erase disk */
-        if (rawid) {
-            memset(di->image, 0, 174848);
-        }
-
         /* get ptr to bam */
         p = get_ts_addr(di, di->bam);
 
@@ -1137,11 +1063,6 @@ int di_format(DiskImage *di, unsigned char *rawname, unsigned char *rawid) {
         break;
 
     case D71:
-        /* erase disk */
-        if (rawid) {
-            memset(di->image, 0, 349696);
-        }
-
         /* get ptr to bam2 */
         p = get_ts_addr(di, di->bam2);
 
@@ -1200,11 +1121,6 @@ int di_format(DiskImage *di, unsigned char *rawname, unsigned char *rawid) {
         break;
 
     case D81:
-        /* erase disk */
-        if (rawid) {
-            memset(di->image, 0, 819200);
-        }
-
         /* get ptr to bam */
         p = get_ts_addr(di, di->bam);
 

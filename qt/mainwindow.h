@@ -7,6 +7,8 @@
 #include <QMainWindow>
 #include <vector>
 #include <stdint.h>
+#include "diskdata.h"
+#include "d64.h"
 #include "ui_mainwindowform.h"
 
 using namespace std;
@@ -42,15 +44,20 @@ private slots:
     void onFlashKernalBin();
     void onFlashMenuBin();
     void onUploadAndRunPrg();
+    void onListSlots();
     void onUploadBasicToRam();
     void onUploadKernalToRam();
     void onBackToBasic();
 
     void onOpenD64File();
+    void onReadDirectory();
+    void onDownloadD64();
+    void onUploadD64();
 
     void onSaveSettings();
 
 private:
+    void calculateDriveAndType(int& drive, int& type);
     QString getFilename();
     void setFilename(QString filename);
     QString getMidiOutInterfaceName();
@@ -64,8 +71,16 @@ private:
     QByteArray readFile(QString& name);
     bool flashPrg();
 
+    void openD64File(QString filename);
+
     bool m_testSequenceRunning;
     QString m_d64Filename;
+
+    FileDiskData m_fileDiskData;
+    D64Disk m_localD64Disk;
+
+    RemoteDiskData m_remoteDiskData;
+    D64Disk m_remoteD64Disk;
 };
 
 extern QEvent::Type g_midiMessageEventType;

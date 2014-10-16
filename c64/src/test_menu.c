@@ -10,7 +10,7 @@
 #include "regs.h"
 #include "menu.h"
 
-extern void sidTest(void);
+//extern void sidTest(void);
 
 static void testRam()
 {
@@ -470,7 +470,7 @@ void testMenu(void)
 		cputs("f: flash test\r\n");
 		cputs("m: MIDI test\r\n");
 		cputs("o: RAM as ROM tests\r\n");
-		cputs("s: SID test\r\n");
+		//cputs("s: SID test\r\n");
 		cputs("\r\n");
 		cputs("\x1f: back\r\n");
 		while (!kbhit());
@@ -487,9 +487,9 @@ void testMenu(void)
 			case 'o':
 				testRamAsRom();
 				break;
-			case 's':
+			/*case 's':
 				sidTest();
-				break;
+				break;*/
 			case LEFT_ARROW_KEY:
 				return;
 		}

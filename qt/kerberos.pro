@@ -9,12 +9,14 @@ SOURCES += main.cpp\
         mainwindow.cpp\
     RtMidi.cpp \
     diskimage.cpp \
+    diskdata.cpp \
     d64.cpp
 
 HEADERS  += mainwindow.h\
     RtMidi.h \
     RtError.h \
     diskimage.h \
+    diskdata.h \
     d64.h
 
 FORMS    += mainwindowform.ui

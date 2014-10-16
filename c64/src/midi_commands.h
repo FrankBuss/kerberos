@@ -43,4 +43,26 @@
 // key/value pairs, 2 bytes each. Change config values.
 #define MIDI_COMMAND_CHANGE_CONFIG 0x0e
 
+// no data. Show all slots on the C64.
+#define MIDI_COMMAND_LIST_SLOTS 0x0f
+
+// data: flash start bank and number of blocks to write, copied from SRAM starting at 0x10000 (for menu update)
+#define MIDI_COMMAND_WRITE_FLASH_FROM_SRAM 0x10
+
+// data: type (see below), drive number, low byte block number, high byte block number to load. Sends a MIDI_COMMAND_DRIVE_BLOCK or MIDI_COMMAND_DRIVE_ERROR back.
+#define MIDI_COMMAND_DRIVE_LOAD_BLOCK 0x11
+#define DRIVE_INTERNAL 1
+#define DRIVE_IEC 2
+
+// data: type (see above), drive number, low byte block number, high byte block number to save.
+// Next command has to be a MIDI_COMMAND_DRIVE_BLOCK with the data to send.
+// Sends a MIDI_COMMAND_DRIVE_ERROR back with an empty string, if ok, otherwise with an error message.
+#define MIDI_COMMAND_DRIVE_SAVE_BLOCK 0x12
+
+// data: 256 bytes for the requested block from the C64 after a MIDI_COMMAND_DRIVE_LOAD_BLOCK, or from the PC after a MIDI_COMMAND_DRIVE_SAVE_BLOCK
+#define MIDI_COMMAND_DRIVE_BLOCK 0x13
+
+// data: error message in PETSCII, empty string for no error
+#define MIDI_COMMAND_DRIVE_ERROR 0x14
+
 #endif

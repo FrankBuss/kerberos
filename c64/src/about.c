@@ -90,23 +90,23 @@ void about(void)
 	g_vicBase[0x15] = 0x0f;
 	
 	textcolor(TEXT_COLOR);
-	gotoxy(0, 6);
+	gotoxy(0, 7);
 	cputs("-= C64/C128 MIDI and flash cartridge =-\r\n");
 	cputs("\r\n");
-	cputs("   developer: Frank Buss\r\n");
-	cputs("   Cynthcart: Paul Slocum\r\n");
-	cputs("beta testers: Gert Borovcak\r\n");
-	cputs("              Marcel Andre\r\n");
-	cputs(" top backers: Benjamin Schneider\r\n");
-	cputs("              Bram Crul\r\n");
-	cputs("              doj/cubic\r\n");
-	cputs("              freQvibez/Offence!\r\n");
-	cputs("              Mads Troest\r\n");
-	cputs("              Matt Shively\r\n");
-	cputs("              Remute (www.remute.org)\r\n");
-	cputs("              Robert Bernardo\r\n");
-	cputs("              Ziili/EXT\r\n");
-	cputs("  this music: Vomitoxin by Svetlana\r\n\r\n");
+	cputs("  top backers: Benjamin Schneider\r\n");
+	cputs("               Bram Crul\r\n");
+	cputs("               doj/cubic\r\n");
+	cputs("               freQvibez/Offence!\r\n");
+	cputs("               Mads Troest\r\n");
+	cputs("               Matt Shively\r\n");
+	cputs("               Remute (www.remute.org)\r\n");
+	cputs("               Robert Bernardo\r\n");
+	cputs("               Ziili/EXT\r\n");
+	cputs(" beta testers: Gert Borovcak\r\n");
+	cputs("               Marcel Andre\r\n");
+	cputs("    Cynthcart: Paul Slocum\r\n");
+	cputs("   this music: Vomitoxin by Svetlana\r\n");
+	cputs("hardware/code: Frank Buss\r\n\r\n");
 	cputs("       www.frank-buss.de/kerberos");
 
 	musicInit();

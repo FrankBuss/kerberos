@@ -1,3 +1,8 @@
+#ifndef DISK_IMAGE_H
+#define DISK_IMAGE_H
+
+#include "diskdata.h"
+
 typedef enum imagetype {
   D64 = 1,
   D71,
@@ -20,10 +25,9 @@ typedef struct ts {
 } TrackSector;
 
 typedef struct diskimage {
-  char *filename;
   int size;
   ImageType type;
-  unsigned char *image;
+  DiskData* diskData;
   TrackSector bam;
   TrackSector bam2;
   TrackSector dir;
@@ -60,8 +64,8 @@ typedef struct imagefile {
 } ImageFile;
 
 
-DiskImage *di_load_image(char *name);
-DiskImage *di_create_image(char *name, int size);
+DiskImage *di_load_image(DiskData* diskData);
+DiskImage *di_create_image(DiskData* diskData);
 void di_free_image(DiskImage *di);
 void di_sync(DiskImage *di);
 
@@ -87,3 +91,5 @@ void di_free_ts(DiskImage *di, TrackSector ts);
 
 int di_rawname_from_name(unsigned char *rawname, char *name);
 int di_name_from_rawname(char *name, unsigned char *rawname);
+
+#endif
