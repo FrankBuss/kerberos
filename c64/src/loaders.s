@@ -9,71 +9,36 @@
 .import         __ROMLOADER_LOAD__
 .import         __TRAMPOLINE_LOAD__
 .import         __TRAMPOLINE_RUN__
-.import         D_CHROUT
+
+.import 	openCallback
+.import 	closeCallback
+.import 	chkinCallback
+.import 	chkoutCallback
+.import 	chrinCallback
+.import 	chroutCallback
+.import 	getinCallback
+.import		loadCallback
+
+.import		driveNumber1
+.import		driveNumber2
+
 
 .include "regs.inc"
 
 prg = $2d
-
-CHROUT = $ffd2
-
-.segment "TRAMPOLINE"
-trampolineStart:
-T_CHROUT:	php
-		inc $d020
-		plp
-		jmp $f1ca
-		
-		jsr enableRom
-		jsr D_CHROUT
-		jmp disableRom
-		jsr enableRom
-		jsr $8000
-		jmp disableRom
-		jsr enableRom
-		jsr $8000
-		jmp disableRom
-		jsr enableRom
-		jsr $8000
-		jmp disableRom
-enableRom:	sta accuBackup
-		php
-		pla
-		sta statusBackup
-		sei
-		; enable cartridge ROM at $8000
-		lda #CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW | CART_CONTROL_LED1_ON | CART_CONTROL_LED2_ON
-		sta CART_CONTROL
-		lda #0
-		sta CART_CONFIG
-		lda #4
-		sta FLASH_ADDRESS_EXTENSION
-		lda #0
-		sta ADDRESS_EXTENSION2
-		rts
-disableRom:	; restore current slot settings
-T_CART_CONTROL:	lda #0
-		sta CART_CONTROL
-T_CART_CONFIG:	lda #0
-		sta CART_CONFIG
-T_FLASH_ADDRESS_EXTENSION: lda #0
-		sta FLASH_ADDRESS_EXTENSION
-T_ADDRESS_EXTENSION2: lda #0
-		sta ADDRESS_EXTENSION2
-		lda statusBackup
-		pha
-		plp
-		lda accuBackup
-		rts
-
-accuBackup:	.res 1
-statusBackup:	.res 1
-
+prgCounter = $5e
+bank = $60
+prgLoad = $df40
+prgStart = $df42
+prgLength = $df44
 
 .segment "LOWCODE"
 
-.export _cartridgeDiskTest
-_cartridgeDiskTest:
+; void __fastcall__ initCartridgeDisk(uint8_t driveNumber1, uint8_t driveNumber2)
+.export _initCartridgeDisk
+_initCartridgeDisk:
+		pha
+		
 		; copy trampoline code to $0000 in SRAM
 		ldx #0
 		stx RAM_ADDRESS_EXTENSION
@@ -82,37 +47,85 @@ c0:		lda __TRAMPOLINE_LOAD__,x
 		sta __TRAMPOLINE_RUN__,x
 		inx
 		bne c0
+		
+		; set drive numbers
+		jsr popa
+		sta driveNumber1		
+		pla
+		sta driveNumber2
 
-		; copy KERNAL and BASIC to RAM
+		; copy KERNAL to SRAM
+		lda #$e0
+		sta bank
 		ldy #$20
 c1:		ldx #0
+		lda bank
+		sta RAM_ADDRESS_EXTENSION
+		inc $d020
 c2:		lda $e000,x
-c3:		sta $e000,x
-c4:		lda $a000,x
-c5:		sta $a000,x
+		sta $df00,x
 		dex
 		bne c2
 		inc c2+2
-		inc c3+2
-		inc c4+2
-		inc c5+2
+		inc bank
 		dey
 		bne c1
+
+		; disable cartridge
+		lda #0
+		sta CART_CONFIG
+		lda #CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH
+		sta CART_CONTROL
+
+		; copy cartridge disk implementation to SRAM
+		lda #$80
+		sta bank
+		ldy #$20
+c3:		ldx #0
+		lda bank
+		sta RAM_ADDRESS_EXTENSION
+c4:		lda $8000,x
+		sta $df00,x
+		dex
+		bne c4
+		inc c4+2
+		inc bank
+		dey
+		bne c3
 		
 		; patch jump table ($4c = absolute jmp instead of indirect jmp)
-		ldx #$4c
-		stx CHROUT
-		lda #<T_CHROUT
-		sta CHROUT+1
-		lda #>T_CHROUT
-		sta CHROUT+2
-		
-		; enable KERNAL in RAM for testing
-		lda #$35
-		sta 1
-		
-		rts
+        .macro  patchKernal addr, callback
+        	lda #$4c
+        	sta addr + $df00
+        	lda #<callback
+        	sta addr + $df01
+        	lda #>callback
+        	sta addr + $df02
+        .endmacro
+        	lda #$ff
+		sta RAM_ADDRESS_EXTENSION
+        	patchKernal $c0, openCallback
+        	patchKernal $c3, closeCallback
+        	patchKernal $c6, chkinCallback
+        	patchKernal $c9, chkoutCallback
+        	patchKernal $cf, chrinCallback
+        	patchKernal $d2, chroutCallback
+        	patchKernal $d5, loadCallback
+        	patchKernal $e4, getinCallback
 
+		; update slot header settings to reset with KERNAL hack
+		lda #ADDRESS_EXTENSION2_RAM_A16
+		sta ADDRESS_EXTENSION2
+		lda #0
+		sta RAM_ADDRESS_EXTENSION
+		
+		lda #CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON | CART_CONFIG_HIRAM_HACK_ON
+		sta CART_CONFIG+$100
+		lda #CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH
+		sta CART_CONTROL+$100
+		lda #4
+		sta FLASH_ADDRESS_EXTENSION+$100
+		rts
 
 ; =============================================================================
 ;
@@ -142,34 +155,21 @@ _startProgram:
 		; select program header at 0x10000 in SRAM
 		lda #ADDRESS_EXTENSION2_RAM_A16
 		sta ADDRESS_EXTENSION2
-		ldx #0
-		stx RAM_ADDRESS_EXTENSION
+		lda #0
+		sta RAM_ADDRESS_EXTENSION
 
-		; setup cartridge config and patch trampoline code
+		; setup cartridge config
 		lda CART_CONTROL + $0100
 		sta CART_CONTROL
-		; sta T_CART_CONTROL+1-__TRAMPOLINE_RUN__+__TRAMPOLINE_LOAD__
 		lda CART_CONFIG + $0100
 		sta CART_CONFIG
-		; sta T_CART_CONFIG+1-__TRAMPOLINE_RUN__+__TRAMPOLINE_LOAD__
-		lda FLASH_ADDRESS_EXTENSION + $0100
-		; sta T_FLASH_ADDRESS_EXTENSION+1-__TRAMPOLINE_RUN__+__TRAMPOLINE_LOAD__
-		lda ADDRESS_EXTENSION2 + $0100
-		; sta T_ADDRESS_EXTENSION2+1-__TRAMPOLINE_RUN__+__TRAMPOLINE_LOAD__
 
-		; copy trampoline code to $0000 in SRAM
-		ldx #0
-		stx RAM_ADDRESS_EXTENSION
-		stx ADDRESS_EXTENSION2
-copyTrampoline:	lda __TRAMPOLINE_LOAD__,x
-		sta __TRAMPOLINE_RUN__,x
-		inx
-		bne copyTrampoline
-
-		; select program header at 0x10000 in SRAM
-		lda #ADDRESS_EXTENSION2_RAM_A16
+		; select program header at 0x0000 in SRAM, for the trampoline code, in case the cartridge disk is enabled
+		lda #0
 		sta ADDRESS_EXTENSION2
+		sta RAM_ADDRESS_EXTENSION
 
+		; clear CPU stack
 		ldx #$fb
 		txs
 
@@ -197,20 +197,19 @@ copy2:		lda __LOADER_LOAD__,x
 		cpx #loaderEnd-loaderStart
 		bne copy2
 		
+		; select program header at 0x10000 in SRAM
+		lda #ADDRESS_EXTENSION2_RAM_A16
+		sta ADDRESS_EXTENSION2
+		lda #0
+		sta RAM_ADDRESS_EXTENSION
+
 		; copy regs
-		ldx #ADDRESS_EXTENSION2_RAM_A16
-		stx ADDRESS_EXTENSION2
 		ldx #0
-		stx RAM_ADDRESS_EXTENSION
 saveRegs:	lda $df39,x
 		sta regs,x
 		inx
 		cpx #7
 		bne saveRegs
-
-		; select SRAM bank at $10000
-		ldx #0
-		stx RAM_ADDRESS_EXTENSION
 
 		; load program from RAM and start it
 		jmp loadRamPrg		
@@ -220,12 +219,6 @@ flashBank:
 
 
 .segment "LOADER"
-
-prgCounter = $5e
-bank = $60
-prgLoad = $df40
-prgStart = $df42
-prgLength = $df44
 
 loaderStart:
 		; copy program from RAM and start it
@@ -286,10 +279,12 @@ copyRomEnd2:	pla
 		pla
 		sta prgCounter
 		
-		; program starts with SRAM bank $0000 activated
-skipCopy:	ldx #0
-		stx RAM_ADDRESS_EXTENSION
-		
+		; select SRAM bank $10000 to get the program address
+skipCopy:	lda #ADDRESS_EXTENSION2_RAM_A16
+		sta ADDRESS_EXTENSION2
+		lda #0
+		sta RAM_ADDRESS_EXTENSION
+
 		; start program (start address 0 = BASIC RUN)
 		lda prgStart
 		bne startAsm
@@ -312,7 +307,11 @@ startAsm:	lda prgStart
 prgJmp = * + 1
 		jmp $8000
 
-loadRegs:	ldx #0
+loadRegs:	; select SRAM bank at $0000 (with trampoline code, if the cartridge disk is enabled) for starting the program
+		lda #0
+		sta ADDRESS_EXTENSION2
+		sta RAM_ADDRESS_EXTENSION
+		ldx #0
 loadRegs2:	lda regs,x
 		sta $de39,x
 		inx
@@ -338,3 +337,4 @@ _cart128End:
 .if _cart128Start - _cart128End > 255
 .error "C128 loader too big!"
 .endif
+

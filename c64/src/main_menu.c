@@ -88,6 +88,13 @@ static void c128startProgramInSram()
 	while (1);
 }
 
+static void filterHiramHack(void)
+{
+	if (g_isC128) {
+		g_ram[((uint16_t)(&CART_CONFIG)) - 0xde00] &= ~CART_CONFIG_HIRAM_HACK_ON;
+	}
+}
+
 static void startProgramInSram(void)
 {
 	static uint8_t controlByte;
@@ -102,7 +109,7 @@ static void startProgramInSram(void)
 	}
 	cprintf("\r\n\r\nload address: 0x%04x\r\n", g_ram[0x40] | (g_ram[0x41] << 8));
 	cprintf("start address: 0x%04x\r\n", g_ram[0x42] | (g_ram[0x43] << 8));
-	cprintf("length: %i\r\n", g_ram[0x44] | (g_ram[0x45] << 8));
+	cprintf("length: %u\r\n", g_ram[0x44] | (g_ram[0x45] << 8));
 	cprintf("MIDI_ADDRESS: %02x\r\n", g_ram[((uint16_t)(&MIDI_ADDRESS)) - 0xde00]);
 	cprintf("MIDI_CONFIG: %02x\r\n", g_ram[((uint16_t)(&MIDI_CONFIG)) - 0xde00]);
 	cprintf("CART_CONTROL: %02x\r\n", g_ram[((uint16_t)(&CART_CONTROL)) - 0xde00]);
@@ -131,14 +138,21 @@ static void startProgramInSram(void)
 	}
 	
 	// filter HIRAM hack, if C128, because the hardware doesn't allow it
-	if (g_isC128) {
-		g_ram[((uint16_t)(&CART_CONFIG)) - 0xde00] &= ~CART_CONFIG_HIRAM_HACK_ON;
-	}
+	filterHiramHack();
 		
 	// reset and start program in assembler
 	if (controlByte & 1) {
 		c128startProgramInSram();
 	} else {
+		// init cartridge disk (only possible for C64)
+		if (controlByte & 16)
+			initCartridgeDisk(
+				getConfigValue(KERBEROS_CONFIG_DRIVE_1),
+				getConfigValue(KERBEROS_CONFIG_DRIVE_2));
+		ramSetBank(256);
+		filterHiramHack();
+		
+		// start program
 		startProgram();
 	}
 }
@@ -658,6 +672,8 @@ void showTitle(char* subtitle)
 	cputs("\r\n\r\n");
 }
 
+extern void get_ts_addr(void);
+
 int main(void)
 {
 	uint8_t i;
@@ -666,9 +682,8 @@ int main(void)
 	loadConfigs();
 	//startProgram();
 
+	//get_ts_addr();
 /*	
-	cartridgeDiskTest();
-	
 	i = readBlock(8, 18, 0, g_blockBuffer);
 	if (i) {
 		cputs("floppyReadBlock error\r\n");
@@ -682,6 +697,7 @@ int main(void)
 	*((uint8_t*)1) = 55;
 	return 0;
 	*/
+
 
 	i = getConfigValue(KERBEROS_CONFIG_AUTOSTART_SLOT);
 	if (i) {

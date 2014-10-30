@@ -10,6 +10,10 @@ void ramSetBank(uint16_t bank);
 void anyKey();
 
 
+// loaders.s
+void __fastcall__ initCartridgeDisk(uint8_t driveNumber1, uint8_t driveNumber2);
+
+
 // util_asm.s
 
 uint8_t __fastcall__ isC128(void);
@@ -29,7 +33,6 @@ uint8_t __fastcall__ fastCompare256(uint8_t* address);
 uint8_t __fastcall__ fastCompare256Ultimax(uint8_t* address);
 void __fastcall__ fastScreenBackup(void);
 void __fastcall__ fastScreenRestore(void);
-void __fastcall__ cartridgeDiskTest(void);
 
 extern uint8_t _BLOCK_BUFFER_LOAD__;
 #define g_blockBuffer (&_BLOCK_BUFFER_LOAD__)

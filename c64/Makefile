@@ -37,21 +37,21 @@ all: menu.bin synthesizer.prg
 headers := $(foreach dir, $(inc), $(wildcard $(dir)/*.h))
 
 obj/%.s: src/%.c $(headers) | obj
-	cc65 -t c64 -T -O $(INCLUDE) $(DEFINE) -o $@ $<
+	cc65 -g -t c64 -T -O $(INCLUDE) $(DEFINE) -o $@ $<
 
 ###############################################################################
 obj/%.o: obj/%.s | obj c128-cart.bin
-	ca65 -t c64 $(INCLUDE) -o $@ $<
+	ca65 -g -t c64 $(INCLUDE) -o $@ $<
 
 obj/%.o: src/%.s | obj
-	ca65 -t c64 $(INCLUDE) -o $@ $<
+	ca65 -g -t c64 $(INCLUDE) -o $@ $<
 
 ###############################################################################
 obj:
 	mkdir -p $@
 
 c128-cart.bin: src/c128-cart.s
-	ca65 -t none -Isrc -o obj/c128-cart.o src/c128-cart.s
+	ca65 -g -t none -Isrc -o obj/c128-cart.o src/c128-cart.s
 	ld65 -o c128-cart.bin -C src/ld-c128cart.cfg obj/c128-cart.o
 
 menu: $(menu_obj) $(ld_config) c128-cart.bin
@@ -64,7 +64,6 @@ menu.prg: menu
 menu.bin: menu.prg
 	ca65 -t none -Isrc -o obj/cart-loader.o src/cart-loader.s
 	ld65 -o menu.bin -C src/ld-cart.cfg obj/cart-loader.o
-	# cartconv -t md -i menu.bin -o menu.crt
 
 synthesizer: $(synthesizer_obj) $(ld_config)
 	ld65 -o $@ -m $@.map -C $(ld_config) $(synthesizer_obj) --lib c64.lib
