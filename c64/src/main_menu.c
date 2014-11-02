@@ -654,14 +654,24 @@ void menuStartProgramInSlot(void)
 	}
 }
 
-void toBasic()
+void hardwareReset()
 {
-	showTitle("back to BASIC");
+	showTitle("hardware reset");
 
 	// CPLD generated reset for starting c64, with disabled cartridge
 	CART_CONFIG = 0;
 	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH | CART_CONTROL_RESET_GENERATE;
 	while (1);
+}
+
+void c64Reset()
+{
+	showTitle("C64 BASIC");
+
+	// back to C64 basic
+	CART_CONFIG = 0;
+	CART_CONTROL = CART_CONTROL_EXROM_HIGH | CART_CONTROL_GAME_HIGH;
+	 __asm__ ("jmp $fce2");
 }
 
 void showTitle(char* subtitle)
@@ -738,7 +748,8 @@ int main(void)
 		cputs("s: start program\r\n");
 		cputs("f: file/settings transfer from PC/Mac\r\n");
 		cputs("e: EasyFlash start\r\n");
-		cputs("b: back to BASIC\r\n");
+		cputs("h: hardware reset without cartridge\r\n");
+		cputs("r: reset to C64 BASIC\r\n");
 		cputs("t: tests\r\n");
 		cputs("c: credits\r\n");
 		cputs("\r\n");
@@ -753,8 +764,11 @@ int main(void)
 			case 's':
 				menuStartProgramInSlot();
 				break;
-			case 'b':
-				toBasic();
+			case 'r':
+				c64Reset();
+				break;
+			case 'h':
+				hardwareReset();
 				break;
 			case 't':
 				testMenu();
