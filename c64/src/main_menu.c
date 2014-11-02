@@ -107,6 +107,7 @@ static void startProgramInSram(void)
 		if (b == 0) break;
 		cputc(ascii2petscii(b));
 	}
+	/*
 	cprintf("\r\n\r\nload address: 0x%04x\r\n", g_ram[0x40] | (g_ram[0x41] << 8));
 	cprintf("start address: 0x%04x\r\n", g_ram[0x42] | (g_ram[0x43] << 8));
 	cprintf("length: %u\r\n", g_ram[0x44] | (g_ram[0x45] << 8));
@@ -117,7 +118,8 @@ static void startProgramInSram(void)
 	cprintf("FLASH_ADDRESS_EXTENSION: %02x\r\n", g_ram[((uint16_t)(&FLASH_ADDRESS_EXTENSION)) - 0xde00]);
 	cprintf("RAM_ADDRESS_EXTENSION: %02x\r\n", g_ram[((uint16_t)(&RAM_ADDRESS_EXTENSION)) - 0xde00]);
 	cprintf("ADDRESS_EXTENSION2: %02x\r\n", g_ram[((uint16_t)(&ADDRESS_EXTENSION2)) - 0xde00]);
-	cputs("starting program...\r\n");
+	*/
+	cputs("\r\nstarting program...\r\n");
 
 	// copy BASIC replacement
 	if (controlByte & 2) copyRomReplacement((uint8_t*) 0xa000, (uint8_t*) 0xc000);
@@ -666,7 +668,7 @@ void showTitle(char* subtitle)
 {
 	clrscr();
 	textcolor(CAPTION_COLOR);
-	cputs("Kerberos Menu V0.9 - ");
+	cputs("Kerberos Menu V1.0 - ");
 	cputs(subtitle);
 	textcolor(TEXT_COLOR);
 	cputs("\r\n\r\n");

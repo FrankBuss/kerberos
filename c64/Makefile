@@ -37,7 +37,7 @@ all: menu.bin synthesizer.prg
 headers := $(foreach dir, $(inc), $(wildcard $(dir)/*.h))
 
 obj/%.s: src/%.c $(headers) | obj
-	cc65 -g -t c64 -T -O $(INCLUDE) $(DEFINE) -o $@ $<
+	cc65 -O2 -g -t c64 -T -O $(INCLUDE) $(DEFINE) -o $@ $<
 
 ###############################################################################
 obj/%.o: obj/%.s | obj c128-cart.bin

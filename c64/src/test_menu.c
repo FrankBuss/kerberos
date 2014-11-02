@@ -467,7 +467,7 @@ void testMenu(void)
 		
 		showTitle("test menu");
 		cputs("r: ram test\r\n");
-		cputs("f: flash test\r\n");
+//		cputs("f: flash test\r\n");
 		cputs("m: MIDI test\r\n");
 		cputs("o: RAM as ROM tests\r\n");
 		//cputs("s: SID test\r\n");
@@ -478,9 +478,9 @@ void testMenu(void)
 			case 'r':
 				testRam();
 				break;
-			case 'f':
+/*			case 'f':
 				testFlash();
-				break;
+				break;*/
 			case 'm':
 				testMidi();
 				break;
