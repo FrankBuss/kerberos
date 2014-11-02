@@ -61,7 +61,6 @@ c0:		lda __TRAMPOLINE_LOAD__,x
 c1:		ldx #0
 		lda bank
 		sta RAM_ADDRESS_EXTENSION
-		inc $d020
 c2:		lda $e000,x
 		sta $df00,x
 		dex

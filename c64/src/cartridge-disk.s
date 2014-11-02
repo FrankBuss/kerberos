@@ -60,65 +60,49 @@ T_REL = 4
 T_CBM = 5
 T_DIR = 6
 
+        .macro  disableRomAndJump addr
+        	php
+        	sta accuBackup
+        	pla
+        	sta statusBackup2
+        	lda #>(addr-1)
+        	pha
+        	lda #<(addr-1)
+        	pha
+        	lda statusBackup2
+        	pha
+        	lda accuBackup
+        	plp
+        	jmp disableRom
+        .endmacro
+
 
 .segment "TRAMPOLINE"
 trampolineStart:
 
 openCallback:	jsr enableRom
 		jmp openImpl
-openCallback2:	jsr disableRom
-		jmp KERNAL_OPEN
-openCallback3:	jsr disableRom
-		JMP $F70A
-openCallback4:	jsr disableRom
-		JMP $F6FE
-openCallback5:	jsr disableRom
-		JMP $F6FB
 
 closeCallback:	jsr enableRom
 		jmp closeImpl
-closeCallback2: jsr disableRom		
-		jmp $f29b
-closeCallback3: jsr disableRom
-		jmp $f2f1
 
 chkinCallback:	jsr enableRom
 		jmp chkinImpl
-chkinCallback2:	jsr disableRom
-		JMP $F701	
-chkinCallback3:	jsr disableRom
-		jmp $F219	
-chkinCallback4:	jsr disableRom
-		jmp $f233
 
 chkoutCallback:	jsr enableRom
 		jmp chkoutImpl
-chkoutCallback2: jsr disableRom
-		JMP $F701	
-chkoutCallback3: jsr disableRom
-		jmp $F25B	
-chkoutCallback4: jsr disableRom
-		jmp $f275
 
 chrinCallback:	jsr enableRom
 		jmp chrinImpl
-chrinCallback2:	jsr disableRom
-		jmp KERNAL_CHRIN
 
 chroutCallback:	jsr enableRom
 		jmp chroutImpl
-chroutCallback2: jsr disableRom
-		jmp KERNAL_CHROUT
 
 loadCallback:	jsr enableRom
 		jmp loadImpl
-loadCallback2:	jsr disableRom
-		jmp KERNAL_LOAD
 
 getinCallback:	jsr enableRom
 		jmp getinImpl
-getinCallback2:	jsr disableRom
-		jmp KERNAL_GETIN
 
 enableRom:	sta accuBackup
 		php
@@ -134,6 +118,10 @@ enableRom:	sta accuBackup
 		sta FLASH_ADDRESS_EXTENSION
 		lda #0
 		sta ADDRESS_EXTENSION2
+		lda 1
+		sta cpuPortBackup
+		lda #55
+		sta 1
 		lda accuBackup
 		rts
 
@@ -146,6 +134,8 @@ disableRom:	; save accu
 		and #1
 		ora statusBackup
 		sta statusBackup
+		lda cpuPortBackup
+		sta 1
 		; restore current slot settings
 		lda #CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH
 		sta CART_CONTROL
@@ -187,6 +177,8 @@ flashDiskOffset: .res 1
 
 accuBackup:	.res 1
 statusBackup:	.res 1
+statusBackup2:	.res 1
+cpuPortBackup:	.res 1
 
 .segment        "CARTRIDGE_DISK"
 
@@ -267,21 +259,21 @@ openImpl:
 	lda $ba
 	jsr selectFlashDisk
 	bcc openImpl2
-	jmp openCallback2
+	disableRomAndJump KERNAL_OPEN
 openImpl2:
 ; KERNAL function for opening the file, but no IEC communication
 	LDX $B8
 	BNE openImpl3
-	JMP openCallback3
+	disableRomAndJump $F70A
 openImpl3:
 	JSR $F30F
 	BNE openImpl4
-	JMP openCallback4
+	disableRomAndJump $F6FE
 openImpl4:
 	LDX $98
 	CPX #$0A
 	BCC openImpl5
-	JMP openCallback5
+	disableRomAndJump $F6FB
 openImpl5:
 	INC $98
 	LDA $B8
@@ -300,7 +292,12 @@ openImpl5:
 	; restore registers
 	jsr epilog
 	
-	; signal no error (TODO)
+	; save open error and return error flag
+	cmp #0
+	beq openNoError
+	sec
+	jmp disableRom
+openNoError:	
 	clc
 	jmp disableRom
 	
@@ -310,7 +307,7 @@ closeImpl:
 	JSR $F314	; search in logical file table (input A instead of X)
 	BEQ closeImpl2
 	CLC
-	RTS
+	jmp disableRom
 closeImpl2:
 	JSR $F31F	; set file parameters
 
@@ -318,13 +315,13 @@ closeImpl2:
 	lda $ba
 	jsr selectFlashDisk
 	bcc closeImpl3
-	jmp closeCallback2  ; end with original KERNAL function
+	disableRomAndJump $f29b  ; end with original KERNAL function
 
 ; close without IEC communication
 closeImpl3:
 	TXA
 	PHA
-	jmp closeCallback3
+	disableRomAndJump $f2f1
 
 
 
@@ -332,7 +329,7 @@ chkinImpl:
 ; start of the original KERNAL function
 	JSR $F30F	; search in logical file table
 	BEQ chkinImpl2
-	jmp chkinCallback2  ; file not open error
+	disableRomAndJump $F701  ; file not open error
 chkinImpl2:
 	JSR $F31F	; set file parameters
 	
@@ -340,18 +337,18 @@ chkinImpl2:
 	lda $ba
 	jsr selectFlashDisk
 	bcc chkinImpl3
-	jmp chkinCallback3  ; continue with original KERNAL function
+	disableRomAndJump $F219  ; continue with original KERNAL function
 chkinImpl3:	
 	; set current input device
 	lda $ba
-	jmp chkinCallback4
+	disableRomAndJump $f233
 
 	
 chkoutImpl:
 ; start of the original KERNAL function
 	JSR $F30F	; search in logical file table
 	BEQ chkoutImpl2
-	jmp chkoutCallback2  ; file not open error
+	disableRomAndJump $F701  ; file not open error
 chkoutImpl2:
 	JSR $F31F	; set file parameters
 
@@ -359,11 +356,11 @@ chkoutImpl2:
 	lda $ba
 	jsr selectFlashDisk
 	bcc chkoutImpl3
-	jmp chkoutCallback3  ; continue with original KERNAL function
+	disableRomAndJump $F25B	 ; continue with original KERNAL function
 chkoutImpl3:
 	; set current output device
 	lda $ba
-	jmp chkoutCallback4
+	disableRomAndJump $f275
 	
 
 chrinImpl:
@@ -371,7 +368,7 @@ chrinImpl:
 	lda $99
 	jsr selectFlashDisk
 	bcc chrinImpl2
-	jmp chrinCallback2
+	disableRomAndJump KERNAL_CHRIN
 
 chrinImpl2:
 	; call the cartride disk implementation
@@ -388,7 +385,7 @@ chroutImpl:
 	jsr selectFlashDisk
 	bcc chroutImpl2
 	pla
-	jmp chroutCallback2
+	disableRomAndJump KERNAL_CHROUT
 
 chroutImpl2:
 	; ignore, not implemented for cartridge disk
@@ -401,7 +398,7 @@ getinImpl:
 	lda $99
 	jsr selectFlashDisk
 	bcc getinImpl2
-	jmp getinCallback2
+	disableRomAndJump KERNAL_GETIN
 
 getinImpl2:
 	; call the cartride disk implementation
@@ -420,8 +417,7 @@ loadImpl:
 		bcc loadImpl2
 ; original KERNAL load function
 		pla
-		jmp loadCallback2
-
+		disableRomAndJump KERNAL_LOAD
 loadImpl2:
 		; no save support, so verify is always ok
 		pla
@@ -431,6 +427,11 @@ loadImpl2:
 		jsr prolog
 		lda $b9
 		jsr di_load
+
+		; address of last written byte
+		ldx ptr4
+		ldy ptr4+1
+		
 		jsr epilog
 
 		; set carry flag and error code	
@@ -442,9 +443,7 @@ loadImpl2:
 		jmp disableRom
 	
 		; return no error
-loadImpl4:	ldx ptr4
-		ldy ptr4+1
-		clc
+loadImpl4:	clc
 		jmp disableRom
 
 
@@ -497,6 +496,7 @@ swap3: lda diskDataStart,x
         bpl swap3
 
 	; swap diskbuf
+	; TODO: very slow, if a program uses CHRIN to read a directory; change diskbuf access
 	lda #3
 	sta RAM_ADDRESS_EXTENSION
         ldx #0
@@ -787,15 +787,25 @@ convertSpace2:
 ; Used registers: A
 ;
 di_open:
+	; reset KERNAL status
 	lda #0
 	sta $90
+	; reset all variables
 	sta addBlocksFreeFlag
-	sta _imgfileBuflen
-	sta _imgfileBuflen+1
-	sta _imgfileBufptr
-	sta _imgfileBufptr+1
 	sta bytesleft
 	sta bytesleft+1
+	sta di_open_result
+	sta _imgfileMode
+	sta _imgfileTrack
+	sta _imgfileSector
+	sta _imgfileNextTrack
+	sta _imgfileNextSector
+	sta _imgfileBufptr
+	sta _imgfileBufptr+1
+	sta _imgfileBuflen
+	sta _imgfileBuflen+1
+	sta _blocksfree
+	sta _blocksfree+1
 
 	; default mode is read
 	lda #'r'
@@ -921,6 +931,7 @@ di_open4:
 	; file not found
 di_open5:
 	lda #1
+	sta di_open_result
 	rts
 di_open6:
 	lda _imgfileTrack
@@ -955,6 +966,7 @@ di_open_end:
 	lda #0
 	sta _imgfileBufptr
 	sta _imgfileBufptr+1
+	sta di_open_result
 	rts
 
 
@@ -1229,7 +1241,7 @@ addBlocksFree3:
 ;
 ; read data from disk
 ;
-; Input: A = len, X/Y = load/high address of buffer
+; Input: A = len, X/Y = low/high address of buffer
 ; Output: A/X = low/high block number
 ; Used registers: A, X
 ;
@@ -1239,8 +1251,12 @@ len = tmp4
 	sta len
 	stx buffer
 	sty buffer+1
-	lda #0
-	sta addBlocksFreeFlag
+
+	; if there was an open error, don't read
+	lda di_open_result
+	beq di_read2
+	rts
+
 di_read2:
 	sec
 	lda _imgfileBuflen
@@ -1270,7 +1286,25 @@ di_read_fill_buffer:
 	sta addBlocksFreeFlag
 	bne di_read2  ; unconditional jump
 di_read3:
+	; special case: some programs read with CHRIN after the end of the directory and expect a $0d
+	lda len
+	bne di_read_chrin
 	rts
+di_read_chrin:
+	lda #<diskbuf
+	ldx #>diskbuf
+	sta _imgfileBuffer
+	stx _imgfileBuffer+1
+	lda #1
+	sta _imgfileBuflen
+	lda #0
+	lda #0
+	sta _imgfileBufptr
+	sta _imgfileBufptr+1
+	sta _imgfileBuflen + 1
+	lda #$0d
+	sta diskbuf
+	jmp di_read2
 di_read4:
 	lda _imgfileNextTrack
 	beq di_read3
@@ -1505,15 +1539,23 @@ di_load3:
 ;
 ; Input: A = secondaryAddress, X/Y = load/high of start address
 ; Output: 0 if ok, otherwise KERNAL error code
-; Used registers: A, X, Y
+; Used registers: A, Y
 ;
 di_chrin:
+	txa
+	pha
+	tya
+	pha
 	ldx #<data
 	ldy #>data
 	lda #1
 	jsr di_read
 	lda #0
 	sta $90
+	pla
+	tay
+	pla
+	tax
 	lda data
 	rts
 
@@ -1546,6 +1588,8 @@ secondaryAddress: .res 1
 
 bytesleft: .res 2
 addBlocksFreeFlag: .res 1
+
+di_open_result: .res 1
 
 _imgfileMode: .res 1
 _imgfileTrack: .res 1
