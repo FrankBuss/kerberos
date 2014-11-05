@@ -1,5 +1,6 @@
-<!DOCTYPE RCC><RCC version="1.0">
-<qresource>
-    <file>eapi-sst39vf1681</file>
-</qresource>
+<RCC>
+    <qresource prefix="/">
+        <file>eapi-sst39vf1681</file>
+        <file>kerberos.png</file>
+    </qresource>
 </RCC>

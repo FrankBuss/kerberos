@@ -23,6 +23,7 @@ class MainWindow : public QMainWindow, Ui_MainWindowForm
 public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
+    void enableMidiTransferButtons(bool enable);
 
 protected:
     void customEvent(QEvent* event);
@@ -55,6 +56,8 @@ private slots:
     void onUploadD64();
 
     void onSaveSettings();
+
+    void onReadFlashBlock();
 
 private:
     void calculateDriveAndType(int& drive, int& type);

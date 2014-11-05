@@ -13,7 +13,7 @@ int main(int argc, char** argv)
 {
     QCoreApplication::setOrganizationName("Frank Buss");
     QCoreApplication::setOrganizationDomain("frank-buss.de");
-    QCoreApplication::setApplicationName("Kerberos");
+    QCoreApplication::setApplicationName("Kerberos App");
 
     QApplication a(argc, argv);
 	MainWindow w;

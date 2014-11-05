@@ -24,6 +24,32 @@
 
 using namespace std;
 
+MainWindow* g_mainWindow;
+
+bool g_midiTransferInProgress = false;
+
+class MidiTransferInProgress {
+public:
+    MidiTransferInProgress() {
+        g_midiTransferInProgress = true;
+        g_mainWindow->enableMidiTransferButtons(false);
+    }
+
+    ~MidiTransferInProgress() {
+        g_mainWindow->enableMidiTransferButtons(true);
+        g_midiTransferInProgress = false;
+    }
+};
+
+bool isMidiTransferInProgress() {
+    if (g_midiTransferInProgress) {
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Please wait, MIDI transfer in progress.");
+        return true;
+    } else {
+        return false;
+    }
+}
+
 class Helper: public QThread {
 public:
         static void msleep(int ms)
@@ -36,8 +62,6 @@ void myMsleep(int milliseconds)
 {
     Helper::msleep(milliseconds);
 }
-
-MainWindow* g_mainWindow;
 
 const char* g_filename = "filename";
 const char* g_midiInInterfaceName = "midiInInterfaceName";
@@ -456,6 +480,7 @@ MainWindow::MainWindow(QWidget *parent) :
     g_mainWindow = this;
     m_testSequenceRunning = false;
     setupUi(this);
+    setWindowTitle(QCoreApplication::applicationName());
     startTimer(100);
 
     connect(selectFileButton, SIGNAL(clicked()), this, SLOT(onSelectFile()));
@@ -484,6 +509,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(uploadD64Button, SIGNAL(clicked()), this, SLOT(onUploadD64()));
 
     connect(saveSettingsButton, SIGNAL(clicked()), this, SLOT(onSaveSettings()));
+
+    connect(readFlashBlockButton, SIGNAL(clicked()), this, SLOT(onReadFlashBlock()));
 
     fileEdit->setText(getFilename());
 
@@ -561,50 +588,69 @@ static void midiSendNopCommand()
 
 void MainWindow::onNoteOn()
 {
-    try {
-        ByteArray message;
-        unsigned char chan = 0;
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            ByteArray message;
+            unsigned char chan = 0;
 
-        int midiNote = 60;
-        int vel = 100;
+            int midiNote = 60;
+            int vel = 100;
 
-        // Note On: 0x90 + channel, note, vel
-        message.push_back(STATUS_NOTEON | chan);
-        message.push_back(midiNote);
-        message.push_back(vel);
-        g_midiOut.sendMessage(&message);
-    } catch (RtError& err) {
-        //qWarning() << QString::fromStdString(err.getMessage());
+            // Note On: 0x90 + channel, note, vel
+            message.push_back(STATUS_NOTEON | chan);
+            message.push_back(midiNote);
+            message.push_back(vel);
+            g_midiOut.sendMessage(&message);
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
+        }
     }
 }
 
 void MainWindow::onNoteOff()
 {
-    try {
-        ByteArray message;
-        unsigned char chan = 0;
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            ByteArray message;
+            unsigned char chan = 0;
 
-        int midiNote = 60;
-        int vel = 0;
+            int midiNote = 60;
+            int vel = 0;
 
-        // Note On: 0x80 + channel, note, vel
-        message.push_back(STATUS_NOTEOFF | chan);
-        message.push_back(midiNote);
-        message.push_back(vel);
-        g_midiOut.sendMessage(&message);
-    } catch (RtError& err) {
-        //qWarning() << QString::fromStdString(err.getMessage());
+            // Note On: 0x80 + channel, note, vel
+            message.push_back(STATUS_NOTEOFF | chan);
+            message.push_back(midiNote);
+            message.push_back(vel);
+            g_midiOut.sendMessage(&message);
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
+        }
     }
 }
 
 void MainWindow::onStartTestSequence()
 {
-    m_testSequenceRunning = true;
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        m_testSequenceRunning = true;
+    }
 }
 
 void MainWindow::onStopTestSequence()
 {
-    m_testSequenceRunning = false;
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        m_testSequenceRunning = false;
+    }
+}
+
+static QString hexNumber2(int number)
+{
+    QString result = QString::number(number, 16);
+    while (result.size() < 2) result = "0" + result;
+    return result;
 }
 
 static QString hexNumber4(int number)
@@ -612,6 +658,11 @@ static QString hexNumber4(int number)
     QString result = QString::number(number, 16);
     while (result.size() < 4) result = "0" + result;
     return result;
+}
+
+static QString hexNumber8(uint32_t number)
+{
+    return hexNumber4(number >> 16) + "." + hexNumber4(number & 0xffff);
 }
 
 void MainWindow::onSelectFile()
@@ -837,8 +888,11 @@ void MainWindow::customEvent(QEvent *event)
         MidiMessageEvent* midiEvent = static_cast<MidiMessageEvent*>(event);
         vector< unsigned char > msg = midiEvent->getMessage();
         for (size_t i = 0; i < msg.size(); i++) {
-            //midiInDataTextEdit->append(QString("").sprintf("%02x", msg[i]));
-            g_receivedMidiData.push_back(msg[i]);
+            if (g_midiTransferInProgress) {
+                g_receivedMidiData.push_back(msg[i]);
+            } else {
+                midiInDataTextEdit->append(QString("").sprintf("%02x", msg[i]));
+            }
         }
     }
     event->accept();
@@ -920,18 +974,24 @@ bool MainWindow::flashPrg()
 
 void MainWindow::onFlashPrg()
 {
-    flashPrg();
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        flashPrg();
+    }
 }
 
 void MainWindow::onStartPrgFromSlot()
 {
-    QByteArray header = createHeader("", true, 0);
-    ByteArray data;
-    data.push_back(prgSlotSpinBox->value());
-    for (int i = 0; i < 16; i++) {
-        data.push_back(header[0x30 + i]);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        QByteArray header = createHeader("", true, 0);
+        ByteArray data;
+        data.push_back(prgSlotSpinBox->value());
+        for (int i = 0; i < 16; i++) {
+            data.push_back(header[0x30 + i]);
+        }
+        midiSendCommand(MIDI_COMMAND_START_SLOT_PROGRAM, data);
     }
-    midiSendCommand(MIDI_COMMAND_START_SLOT_PROGRAM, data);
 }
 
 
@@ -1134,79 +1194,82 @@ static QString flashWriteBankFromFile(QByteArray& flash, uint8_t* data, uint8_t 
 
 void MainWindow::onFlashEasyFlashCrt()
 {
-    QString name;
-    QByteArray data = readFile(name);
-    if (!name.toLower().endsWith(".crt")) {
-        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".crt-file required for EasyFlash"));
-        return;
-    }
-    if (data.size() == 0) return;
-    if (data.size() < 0x50) {
-        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too small"));
-        return;
-    }
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        QString name;
+        QByteArray data = readFile(name);
+        if (!name.toLower().endsWith(".crt")) {
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".crt-file required for EasyFlash"));
+            return;
+        }
+        if (data.size() == 0) return;
+        if (data.size() < 0x50) {
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too small"));
+            return;
+        }
 
-    // extract cart header
-    CartHeader cartHeader;
-    memcpy(&cartHeader, data.data(), sizeof(CartHeader));
-    if (cartHeader.type[0] != 0 || cartHeader.type[1] != CART_TYPE_EASYFLASH || memcmp(cartHeader.signature, strCartSignature, sizeof(strCartSignature))) {
-        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
-        return;
-    }
-
-    // 1 MB flash memory
-    QByteArray flash;
-    flash.reserve(1024*1024);
-    for (int i = 0; i < 1024*1024; i++) flash.append(char(0xff));
-
-    // extract all bank blocks
-    size_t pos = sizeof(CartHeader);
-    while (pos < size_t(data.size())) {
-        // copy and test bank header
-        BankHeader bankHeader;
-        if (pos + sizeof(BankHeader) > size_t(data.size())) {
+        // extract cart header
+        CartHeader cartHeader;
+        memcpy(&cartHeader, data.data(), sizeof(CartHeader));
+        if (cartHeader.type[0] != 0 || cartHeader.type[1] != CART_TYPE_EASYFLASH || memcmp(cartHeader.signature, strCartSignature, sizeof(strCartSignature))) {
             QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
             return;
         }
-        memcpy(&bankHeader, data.data() + pos, sizeof(BankHeader));
-        pos += sizeof(BankHeader);
-        if (memcmp(bankHeader.signature, strChipSignature, sizeof(strChipSignature)) != 0) {
-            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
-            return;
-        }
-        int m_nBank = bankHeader.bank[1] & FLASH_BANK_MASK;
-        int m_nAddress = 256 * bankHeader.loadAddr[0] + bankHeader.loadAddr[1];
-        int m_nSize = 256 * bankHeader.romLen[0] + bankHeader.romLen[1];
 
-        // copy data
-        if (pos + m_nSize > size_t(data.size())) {
-            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
-            return;
-        }
-        uint8_t* bankData = (uint8_t*) (data.data() + pos);
-        if ((m_nAddress == ROM0_BASE) && (m_nSize <= 0x4000)) {
-            if (m_nSize > 0x2000) {
-                flashWriteBankFromFile(flash, bankData, m_nBank, 0, 0x2000);
-                flashWriteBankFromFile(flash, bankData, m_nBank, 1, m_nSize - 0x2000);
-            } else {
-                flashWriteBankFromFile(flash, bankData, m_nBank, 0, m_nSize);
+        // 1 MB flash memory
+        QByteArray flash;
+        flash.reserve(1024*1024);
+        for (int i = 0; i < 1024*1024; i++) flash.append(char(0xff));
+
+        // extract all bank blocks
+        size_t pos = sizeof(CartHeader);
+        while (pos < size_t(data.size())) {
+            // copy and test bank header
+            BankHeader bankHeader;
+            if (pos + sizeof(BankHeader) > size_t(data.size())) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
+                return;
             }
-        }
-        else if (((m_nAddress == ROM1_BASE) ||
-                  (m_nAddress == ROM1_BASE_ULTIMAX)) &&
-                 (m_nSize <= 0x2000))
-        {
-            flashWriteBankFromFile(flash, bankData, m_nBank, 1, m_nSize);
-        } else {
-            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
-            return;
-        }
-        pos += m_nSize;
-    }
+            memcpy(&bankHeader, data.data() + pos, sizeof(BankHeader));
+            pos += sizeof(BankHeader);
+            if (memcmp(bankHeader.signature, strChipSignature, sizeof(strChipSignature)) != 0) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
+                return;
+            }
+            int m_nBank = bankHeader.bank[1] & FLASH_BANK_MASK;
+            int m_nAddress = 256 * bankHeader.loadAddr[0] + bankHeader.loadAddr[1];
+            int m_nSize = 256 * bankHeader.romLen[0] + bankHeader.romLen[1];
 
-    // flash
-    //flashCompare(name, flash, 1024*1024);
-    flashFile(name, flash, 1024*1024);
+            // copy data
+            if (pos + m_nSize > size_t(data.size())) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
+                return;
+            }
+            uint8_t* bankData = (uint8_t*) (data.data() + pos);
+            if ((m_nAddress == ROM0_BASE) && (m_nSize <= 0x4000)) {
+                if (m_nSize > 0x2000) {
+                    flashWriteBankFromFile(flash, bankData, m_nBank, 0, 0x2000);
+                    flashWriteBankFromFile(flash, bankData, m_nBank, 1, m_nSize - 0x2000);
+                } else {
+                    flashWriteBankFromFile(flash, bankData, m_nBank, 0, m_nSize);
+                }
+            }
+            else if (((m_nAddress == ROM1_BASE) ||
+                      (m_nAddress == ROM1_BASE_ULTIMAX)) &&
+                     (m_nSize <= 0x2000))
+            {
+                flashWriteBankFromFile(flash, bankData, m_nBank, 1, m_nSize);
+            } else {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("unsupported CRT file format"));
+                return;
+            }
+            pos += m_nSize;
+        }
+
+        // flash
+        //flashCompare(name, flash, 1024*1024);
+        flashFile(name, flash, 1024*1024);
+    }
 }
 
 void MainWindow::flashBasicKernal(QString flashName, int address)
@@ -1227,39 +1290,48 @@ void MainWindow::flashBasicKernal(QString flashName, int address)
 
 void MainWindow::onFlashBasicBin()
 {
-    flashBasicKernal("BASIC", 0xc000);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        flashBasicKernal("BASIC", 0xc000);
+    }
 }
 
 void MainWindow::onFlashKernalBin()
 {
-    flashBasicKernal("KERNAL", 0xe000);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        flashBasicKernal("KERNAL", 0xe000);
+    }
 }
 
 void MainWindow::onFlashMenuBin()
 {
-    QString name;
-    QByteArray data = readFile(name);
-    if (!name.toLower().endsWith(".bin")) {
-        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".bin-file required for menu update"));
-        return;
-    }
-    if (data.size() == 0) return;
-    if (data.size() < 256) {
-        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("wrong file size"));
-        return;
-    }
-    for (int i = 0; i < 16; i++) {
-        if (g_kerberosMenuId[i] != data[0xf0 + i]) {
-            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("invalid Kerberos menu file"));
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        QString name;
+        QByteArray data = readFile(name);
+        if (!name.toLower().endsWith(".bin")) {
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".bin-file required for menu update"));
             return;
         }
-    }
-    if (QMessageBox::question(this, QCoreApplication::applicationName(), tr("Are you sure to update the menu system?"),
-                              QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
-    {
-        sramUpload(name, data, 0x100);
-        midiSendNopCommand();
-        midiSendCommand(MIDI_COMMAND_WRITE_FLASH_FROM_SRAM, { 0, (data.size() + 255) >> 8});
+        if (data.size() == 0) return;
+        if (data.size() < 256) {
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("wrong file size"));
+            return;
+        }
+        for (int i = 0; i < 16; i++) {
+            if (g_kerberosMenuId[i] != data[0xf0 + i]) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("invalid Kerberos menu file"));
+                return;
+            }
+        }
+        if (QMessageBox::question(this, QCoreApplication::applicationName(), tr("Are you sure to update the menu system?"),
+                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+        {
+            sramUpload(name, data, 0x100);
+            midiSendNopCommand();
+            midiSendCommand(MIDI_COMMAND_WRITE_FLASH_FROM_SRAM, { 0, (data.size() + 255) >> 8});
+        }
     }
 }
 
@@ -1293,6 +1365,9 @@ QByteArray MainWindow::createHeader(QString name, bool ramOperation, int length)
         }
     }
     controlByte |= 1 << 3;  // use global MIDI thru settings
+    if (enableCartridgeDisksCheckBox->isChecked()) {
+        controlByte |= 1 << 4;
+    }
     header.append(controlByte);
 
     // unused and init registers with 0
@@ -1371,37 +1446,43 @@ QByteArray MainWindow::createHeader(QString name, bool ramOperation, int length)
 
 void MainWindow::onUploadAndRunPrg()
 {
-    QString name;
-    QByteArray data = readFile(name);
-    if (!name.toLower().endsWith(".prg")) {
-        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".prg-file required for PRG run"));
-        return;
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        QString name;
+        QByteArray data = readFile(name);
+        if (!name.toLower().endsWith(".prg")) {
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr(".prg-file required for PRG run"));
+            return;
+        }
+        if (data.size() == 0) return;
+        if (data.size() > 63486) {
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too big, max 63486 bytes"));
+            return;
+        }
+
+        // remove load address
+        data.remove(0, 2);
+
+        // save size and address in first SRAM bank (at 0x10000)
+        QByteArray header = createHeader(name, true, data.length());
+
+        // program starts at second bank in SRAM (at 0x10100)
+        data.prepend(header);
+
+        // transfer data
+        sramUpload(name, data, 256);
+
+        // start program
+        midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
     }
-    if (data.size() == 0) return;
-    if (data.size() > 63486) {
-        QMessageBox::warning(NULL, QCoreApplication::applicationName(), tr("file size too big, max 63486 bytes"));
-        return;
-    }
-
-    // remove load address
-    data.remove(0, 2);
-
-    // save size and address in first SRAM bank (at 0x10000)
-    QByteArray header = createHeader(name, true, data.length());
-
-    // program starts at second bank in SRAM (at 0x10100)
-    data.prepend(header);
-
-    // transfer data
-    sramUpload(name, data, 256);
-
-    // start program
-    midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
 }
 
 void MainWindow::onListSlots()
 {
-    midiSendCommand(MIDI_COMMAND_LIST_SLOTS);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        midiSendCommand(MIDI_COMMAND_LIST_SLOTS);
+    }
 }
 
 void MainWindow::uploadBasicKernal(QString flashName, int address)
@@ -1422,36 +1503,48 @@ void MainWindow::uploadBasicKernal(QString flashName, int address)
 
 void MainWindow::onUploadBasicToRam()
 {
-    uploadBasicKernal("BASIC", 0xa000);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        uploadBasicKernal("BASIC", 0xa000);
+    }
 }
 
 void MainWindow::onUploadKernalToRam()
 {
-    uploadBasicKernal("KERNAL", 0xe000);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        uploadBasicKernal("KERNAL", 0xe000);
+    }
 }
 
 void MainWindow::onBackToBasic()
 {
-    // save size and address in first SRAM bank (at 0x10000)
-    QString name = "BASIC";
-    QByteArray header = createHeader(name, true, 0);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        // save size and address in first SRAM bank (at 0x10000)
+        QString name = "BASIC";
+        QByteArray header = createHeader(name, true, 0);
 
-    // set load address 0 for special BASIC boot
-    header[0x40] = 0;
-    header[0x41] = 0;
+        // set load address 0 for special BASIC boot
+        header[0x40] = 0;
+        header[0x41] = 0;
 
-    // transfer data
-    sramUpload(name, header, 256);
+        // transfer data
+        sramUpload(name, header, 256);
 
-    // start program
-    midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
+        // start program
+        midiSendCommand(MIDI_COMMAND_START_SRAM_PROGRAM);
+    }
 }
 
 void MainWindow::onOpenD64File()
 {
-    QString filename = QFileDialog::getOpenFileName(this, tr("Open D64"), getFilename(), tr("D64 file (*.d64)"));
-    if (filename.size() > 0) {
-        openD64File(filename);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        QString filename = QFileDialog::getOpenFileName(this, tr("Open D64"), getFilename(), tr("D64 file (*.d64)"));
+        if (filename.size() > 0) {
+            openD64File(filename);
+        }
     }
 }
 
@@ -1501,50 +1594,53 @@ void MainWindow::openD64File(QString filename)
 
 void MainWindow::onReadDirectory()
 {
-    try {
-        // set drive and type
-        int drive;
-        int type;
-        calculateDriveAndType(drive, type);
-        m_remoteDiskData.init();
-        m_remoteDiskData.setDriveType(type);
-        m_remoteDiskData.setDriveNumber(drive);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            // set drive and type
+            int drive;
+            int type;
+            calculateDriveAndType(drive, type);
+            m_remoteDiskData.init();
+            m_remoteDiskData.setDriveType(type);
+            m_remoteDiskData.setDriveNumber(drive);
 
-        // open disk and read directory
-        m_remoteD64Disk.open(&m_remoteDiskData);
-        m_remoteD64Disk.readDirectory();
+            // open disk and read directory
+            m_remoteD64Disk.open(&m_remoteDiskData);
+            m_remoteD64Disk.readDirectory();
 
-        // show files in table
-        int entriesCount = m_remoteD64Disk.getDirectoryEntries().size();
-        QStandardItemModel* model = new QStandardItemModel(entriesCount, 3);
-        for (int row = 0; row < entriesCount; ++row) {
-            D64DirectoryEntry entry = m_remoteD64Disk.getDirectoryEntries()[row];
-            QStandardItem* size = new QStandardItem(QString::number(entry.size));
-            model->setItem(row, 0, size);
-            QStandardItem* name = new QStandardItem(entry.name);
-            model->setItem(row, 1, name);
-            QStandardItem* type = new QStandardItem(entry.type);
-            model->setItem(row, 2, type);
+            // show files in table
+            int entriesCount = m_remoteD64Disk.getDirectoryEntries().size();
+            QStandardItemModel* model = new QStandardItemModel(entriesCount, 3);
+            for (int row = 0; row < entriesCount; ++row) {
+                D64DirectoryEntry entry = m_remoteD64Disk.getDirectoryEntries()[row];
+                QStandardItem* size = new QStandardItem(QString::number(entry.size));
+                model->setItem(row, 0, size);
+                QStandardItem* name = new QStandardItem(entry.name);
+                model->setItem(row, 1, name);
+                QStandardItem* type = new QStandardItem(entry.type);
+                model->setItem(row, 2, type);
+            }
+            QStringList header;
+            header.append("Blocks");
+            header.append("Name");
+            header.append("Type");
+            model->setHorizontalHeaderLabels(header);
+            remoteDirectoryTableView->setModel(model);
+            remoteDirectoryTableView->verticalHeader()->hide();
+            remoteDirectoryTableView->resizeColumnsToContents();
+            remoteDirectoryTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+            remoteDirectoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+            remoteDirectoryTableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+            remoteDirectoryTableView->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+            remoteDirectoryTableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+
+            // show title and free blocks
+            remoteDiskName->setText(m_remoteD64Disk.getDirectoryTitle());
+            remoteFreeBlocks->setText(QString::number(m_remoteD64Disk.getDirectoryFreeBlocks()));
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
         }
-        QStringList header;
-        header.append("Blocks");
-        header.append("Name");
-        header.append("Type");
-        model->setHorizontalHeaderLabels(header);
-        remoteDirectoryTableView->setModel(model);
-        remoteDirectoryTableView->verticalHeader()->hide();
-        remoteDirectoryTableView->resizeColumnsToContents();
-        remoteDirectoryTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-        remoteDirectoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        remoteDirectoryTableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-        remoteDirectoryTableView->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-        remoteDirectoryTableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-
-        // show title and free blocks
-        remoteDiskName->setText(m_remoteD64Disk.getDirectoryTitle());
-        remoteFreeBlocks->setText(QString::number(m_remoteD64Disk.getDirectoryFreeBlocks()));
-    } catch (RtError& err) {
-        //qWarning() << QString::fromStdString(err.getMessage());
     }
 }
 
@@ -1561,96 +1657,186 @@ void MainWindow::calculateDriveAndType(int& drive, int& type)
 
 void MainWindow::onDownloadD64()
 {
-    try {
-        QString filename = QFileDialog::getSaveFileName(this, tr("Save as D64"), getFilename(), tr("D64 file (*.d64)"));
-        if (filename.size() > 0) {
-            // open file
-            QFile file(filename);
-            if (!file.open(QIODevice::WriteOnly)) {
-                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "can't write to file " + filename);
-                return;
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            QString filename = QFileDialog::getSaveFileName(this, tr("Save as D64"), getFilename(), tr("D64 file (*.d64)"));
+            if (filename.size() > 0) {
+                // open file
+                QFile file(filename);
+                if (!file.open(QIODevice::WriteOnly)) {
+                    QMessageBox::warning(NULL, QCoreApplication::applicationName(), "can't write to file " + filename);
+                    return;
+                }
+
+                // set drive and type
+                int drive;
+                int type;
+                calculateDriveAndType(drive, type);
+                m_remoteDiskData.setDriveType(type);
+                m_remoteDiskData.setDriveNumber(drive);
+
+                // load data
+                QByteArray data;
+                int size = 174848;
+                int blocks = size / 256;
+                data.reserve(size);
+                for (int i = 0; i < blocks; i++) {
+                    unsigned char* blockData = m_remoteDiskData.getData(i * 256);
+                    for (int j = 0; j < 256; j++) data.push_back(blockData[j]);
+                }
+
+                // save data
+                file.write(data);
+                file.close();
+
+                // show disk
+                openD64File(filename);
+
+                showStatus("download done");
             }
-
-            // set drive and type
-            int drive;
-            int type;
-            calculateDriveAndType(drive, type);
-            m_remoteDiskData.setDriveType(type);
-            m_remoteDiskData.setDriveNumber(drive);
-
-            // load data
-            QByteArray data;
-            int size = 174848;
-            int blocks = size / 256;
-            data.reserve(size);
-            for (int i = 0; i < blocks; i++) {
-                unsigned char* blockData = m_remoteDiskData.getData(i * 256);
-                for (int j = 0; j < 256; j++) data.push_back(blockData[j]);
-            }
-
-            // save data
-            file.write(data);
-            file.close();
-
-            // show disk
-            openD64File(filename);
-
-            showStatus("download done");
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
         }
-    } catch (RtError& err) {
-        //qWarning() << QString::fromStdString(err.getMessage());
     }
 }
 
 void MainWindow::onUploadD64()
 {
-    if (m_d64Filename.size() == 0) {
-        QMessageBox::warning(NULL, QCoreApplication::applicationName(), "please open a D64 first");
-        return;
-    }
-    try {
-        // save data
-        QByteArray data;
-        int size = 174848;
-        int blocks = size / 256;
-        data.reserve(size);
-        for (int i = 0; i < blocks; i++) {
-            unsigned char* blockData = m_fileDiskData.getData(i * 256);
-            int drive;
-            int type;
-            calculateDriveAndType(drive, type);
-            midiDriveSaveBlock(type, drive, i, blockData);
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        int drive;
+        int type;
+        calculateDriveAndType(drive, type);
+        QString target = "";
+        if (type == DRIVE_INTERNAL) {
+            target = "cartridge disk " + QString::number(drive + 1);
+        } else {
+            target = "IEC drive " + QString::number(drive);
         }
+        if (m_d64Filename.size() == 0) {
+            QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Please open a D64 first.");
+            return;
+        }
+        if (QMessageBox::question(this, QCoreApplication::applicationName(), "Transfer will erase all data on " + target + ". Continue?",
+                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::No)
+        {
+            return;
+        }
+        try {
+            // save data
+            QByteArray data;
+            int size = 174848;
+            int blocks = size / 256;
+            data.reserve(size);
+            for (int i = 0; i < blocks; i++) {
+                unsigned char* blockData = m_fileDiskData.getData(i * 256);
+                midiDriveSaveBlock(type, drive, i, blockData);
+            }
 
-        // show disk
-        onReadDirectory();
+            // show disk
+            onReadDirectory();
 
-        showStatus("upload done");
-    } catch (RtError& err) {
-        //qWarning() << QString::fromStdString(err.getMessage());
+            showStatus("upload done");
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
+        }
     }
 }
 
 void MainWindow::onSaveSettings()
 {
-    ByteArray configs;
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        ByteArray configs;
 
-    configs.push_back(KERBEROS_CONFIG_MIDI_IN_THRU);
-    configs.push_back(midiThruInCheckBox->isChecked());
+        midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
 
-    configs.push_back(KERBEROS_CONFIG_MIDI_OUT_THRU);
-    configs.push_back(midiThruOutCheckBox->isChecked());
+        configs.push_back(KERBEROS_CONFIG_MIDI_IN_THRU);
+        configs.push_back(midiThruInCheckBox->isChecked());
 
-    configs.push_back(KERBEROS_CONFIG_AUTOSTART_SLOT);
-    configs.push_back(autostartSlotSpinBox->value());
+        configs.push_back(KERBEROS_CONFIG_MIDI_OUT_THRU);
+        configs.push_back(midiThruOutCheckBox->isChecked());
 
-    configs.push_back(KERBEROS_CONFIG_DRIVE_1);
-    configs.push_back(disk1SpinBox->value());
+        configs.push_back(KERBEROS_CONFIG_AUTOSTART_SLOT);
+        configs.push_back(autostartSlotSpinBox->value());
 
-    configs.push_back(KERBEROS_CONFIG_DRIVE_2);
-    configs.push_back(disk2SpinBox->value());
+        configs.push_back(KERBEROS_CONFIG_DRIVE_1);
+        configs.push_back(disk1SpinBox->value());
 
-    midiSendCommand(MIDI_COMMAND_CHANGE_CONFIG, configs);
+        configs.push_back(KERBEROS_CONFIG_DRIVE_2);
+        configs.push_back(disk2SpinBox->value());
 
-    showStatus("settings saved");
+        midiSendCommand(MIDI_COMMAND_CHANGE_CONFIG, configs);
+
+        showStatus("settings saved");
+    }
+}
+
+void MainWindow::onReadFlashBlock()
+{
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
+            midiSendNopCommand();
+            midiSendPrintCommand("reading block..." + NEWLINE);
+            midiSendNopCommand();
+            int address = QString(flashBlockEdit->text()).toInt(NULL, 16);
+            int c64Address = (address & 0x1fff) | 0x8000;
+            midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, c64Address);
+            midiSendNopCommand();
+            midiSendCommand(MIDI_COMMAND_SET_FLASH_BANK, { address >> 13 });
+            midiSendNopCommand();
+            midiSendCommand(MIDI_COMMAND_READ_MEMORY_BLOCK);
+            int tag;
+            QByteArray data = midiReceiveCommand(tag);
+            if (tag == MIDI_COMMAND_MEMORY_BLOCK && data.size() == 256) {
+                int adr = 0;
+                for (int i = 0; i < 32; i++) {
+                    QString line = hexNumber8(address + adr) + ": ";
+                    QString text = "";
+                    for (int j = 0; j < 8; j++) {
+                        uint8_t b = ((int)data[adr++]) & 0xff;
+                        QString d = hexNumber2(b);
+                        line += d + " ";
+                        if (b < 32) text += "."; else text += QString::fromLatin1((char*) &b, 1);
+                    }
+                    midiInDataTextEdit->append(line + "  " + text);
+                }
+            }
+            midiSendPrintCommand("done");
+            showStatus("read block done");
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
+        }
+    }
+}
+
+void MainWindow::enableMidiTransferButtons(bool enable)
+{
+    noteOnButton->setEnabled(enable);
+    noteOffButton->setEnabled(enable);
+    startTestSequenceButton->setEnabled(enable);
+    stopTestSequenceButton->setEnabled(enable);
+    midiInInterfacesComboBox->setEnabled(enable);
+    midiOutInterfacesComboBox->setEnabled(enable);
+    flashPrgButton->setEnabled(enable);
+    startPrgFromSlotButton->setEnabled(enable);
+    flashEasyFlashCrtButton->setEnabled(enable);
+    flashBasicBinButton->setEnabled(enable);
+    flashKernalBinButton->setEnabled(enable);
+    flashMenuBinButton->setEnabled(enable);
+    uploadAndRunPrgButton->setEnabled(enable);
+    listSlotsButton->setEnabled(enable);
+    uploadBasicToRamButton->setEnabled(enable);
+    uploadKernalToRamButton->setEnabled(enable);
+    backToBasicButton->setEnabled(enable);
+
+    openD64FileButton->setEnabled(enable);
+    readDirectoryButton->setEnabled(enable);
+    downloadD64Button->setEnabled(enable);
+    uploadD64Button->setEnabled(enable);
+
+    saveSettingsButton->setEnabled(enable);
 }

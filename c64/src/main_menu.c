@@ -15,6 +15,7 @@
 #include "floppy.h"
 
 extern void about(void);
+extern void configureSettings(void);
 
 uint8_t* g_vicBase = (uint8_t*) 0xd000;
 uint8_t* g_sidBase = (uint8_t*) 0xd400;
@@ -366,9 +367,15 @@ void calculateCartridgeDiskAddress()
 //	cprintf("bank: %i\r\n", flashBank);
 }
 
+void redrawScreen()
+{
+	disableInterrupts();
+	fastScreenRestore();
+	gotoxy(startX, startY);
+}
+
 void receiveMidiCommands(void)
 {
-	static uint8_t redrawScreen;
 	static uint8_t b;
 	static uint8_t b0;
 	static uint8_t b1;
@@ -378,246 +385,243 @@ void receiveMidiCommands(void)
 	static uint8_t err;
 	midiInit();
 	showTitle("PC/Mac link");
-	cputs("\x1f: back\r\n\r\n");
+	cputs("\x1f: Back\r\n\r\n");
 	startX = wherex();
 	startY = wherey();
 	fastScreenBackup();
 
 	for (;;) {
-		disableInterrupts();
-		fastScreenRestore();
-		gotoxy(startX, startY);
-		redrawScreen = 0;
-		
+		receivedBytes = 0;
+		enableInterrupts();
 		for (;;) {
-			receivedBytes = 0;
-			enableInterrupts();
-			for (;;) {
-				if (kbhit()) {
-					cgetc();
-					return;
-				} else if (midiByteReceived()) {
-					b = midiReadByte();
-					if ((b & 0xfc) == 0x8c) {
-						receivedBytes = 0;
+			if (kbhit()) {
+				cgetc();
+				return;
+			} else if (midiByteReceived()) {
+				b = midiReadByte();
+				if ((b & 0xfc) == 0x8c) {
+					receivedBytes = 0;
+				}
+				if (receivedBytes == 2) {
+					if ((b0 & 0xfc) == 0x8c) {
+						tag = b1;
+						length = b;
+						if (b0 & 2) tag |= 0x80;
+						if (b0 & 1) length |= 0x80;
+						break;
 					}
-					if (receivedBytes == 2) {
-						if ((b0 & 0xfc) == 0x8c) {
-							tag = b1;
-							length = b;
-							if (b0 & 2) tag |= 0x80;
-							if (b0 & 1) length |= 0x80;
-							break;
+				}
+				b0 = b1;
+				b1 = b;
+				receivedBytes++;
+			}
+		}
+		
+		// read data
+		disableInterrupts();
+		if (midiReadCommand(tag, length)) {
+			cputs("\r\nchecksum error!\r\n");
+			anyKey();
+			return;
+		}
+		
+		// evaluate command
+		switch (tag & 0x7f) {
+			case MIDI_COMMAND_SET_ADDRESS:
+				adr = (uint8_t*) (g_blockBuffer[0] | (g_blockBuffer[1] << 8));
+				break;
+				
+			case MIDI_COMMAND_SET_RAM_BANK:
+				ramSetBank(g_blockBuffer[0] | (g_blockBuffer[1] << 8));
+				break;
+				
+			case MIDI_COMMAND_SET_FLASH_BANK:
+				flashBank = g_blockBuffer[0];
+				flashSetBank(flashBank);
+				break;
+				
+			case MIDI_COMMAND_ERASE_FLASH_SECTOR:
+				flashEraseSector(adr);
+				break;
+
+			case MIDI_COMMAND_WRITE_FLASH:
+				flashWrite256Block(adr);
+				FLASH_ADDRESS_EXTENSION = flashBank;
+				if (fastCompare256(adr)) {
+					cputs("\r\nflash write error!\r\n");
+					cprintf("flash bank: %i\r\n", flashBank);
+					anyKey();
+					return;
+				}
+				break;
+				
+			case MIDI_COMMAND_WRITE_FLASH_FROM_SRAM:
+			{
+				cputs("flashing menu\r\n");
+				cputs("please wait\r\n");
+				cputs("don't turn off the computer\r\n");
+				flashBank = g_blockBuffer[0];
+				length = g_blockBuffer[1];
+				adr = (uint8_t*) 0x8000;
+				for (i = 0; i < length; i++) {
+					flashSetBank(flashBank);
+					if (adr == (uint8_t*) 0x8000 || adr == (uint8_t*) 0x9000) {
+						flashEraseSector(adr);
+					}
+					ramSetBank(i + 0x100);
+					memcpy(g_blockBuffer, g_ram, 256);
+					flashWrite256Block(adr);
+					FLASH_ADDRESS_EXTENSION = flashBank;
+					if (fastCompare256Ultimax(adr)) {
+						// try again
+						flashWrite256Block(adr);
+						if (fastCompare256Ultimax(adr)) {
+							cputs("\r\nflash write error!\r\n");
+							cprintf("flash bank: %i\r\n", flashBank);
+							cputs("please try flashing menu again\r\n");
+							anyKey();
+							return;
 						}
 					}
-					b0 = b1;
-					b1 = b;
-					receivedBytes++;
+					adr += 0x100;
+					if (adr == (uint8_t*) 0xa000) {
+						cputs(".");
+						flashBank++;
+						adr = (uint8_t*) 0x8000;
+					}
 				}
-			}
-			
-			// read data
-			disableInterrupts();
-			if (midiReadCommand(tag, length)) {
-				cputs("\r\nchecksum error!\r\n");
+				cputs("\r\nmenu flash ok\r\n");
 				anyKey();
-				return;
+				FLASH_ADDRESS_EXTENSION = 0;
+				CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW | CART_CONTROL_RESET_GENERATE;
+				while (1);
+				break;
 			}
 			
-			// evaluate command
-			switch (tag & 0x7f) {
-				case MIDI_COMMAND_SET_ADDRESS:
-					adr = (uint8_t*) (g_blockBuffer[0] | (g_blockBuffer[1] << 8));
-					break;
-					
-				case MIDI_COMMAND_SET_RAM_BANK:
-					ramSetBank(g_blockBuffer[0] | (g_blockBuffer[1] << 8));
-					break;
-					
-				case MIDI_COMMAND_SET_FLASH_BANK:
-					flashBank = g_blockBuffer[0];
+			case MIDI_COMMAND_COMPARE_FLASH:
+				FLASH_ADDRESS_EXTENSION = flashBank;
+				if (fastCompare256(adr)) {
+					cputs("\r\nflash compare error!\r\n");
+					cprintf("flash bank: %i\r\n", flashBank);
+					anyKey();
+					return;
+				}
+				break;
+
+			case MIDI_COMMAND_WRITE_RAM:
+				memcpy(adr, g_blockBuffer, length + 1);
+				break;
+			
+			case MIDI_COMMAND_REDRAW_SCREEN:
+				redrawScreen();
+				break;
+			
+			case MIDI_COMMAND_PRINT:
+				cputs(g_blockBuffer);
+				break;
+			
+			case MIDI_COMMAND_GOTOX:
+				gotox(g_blockBuffer[0]);
+				break;
+			
+			case MIDI_COMMAND_START_SLOT_PROGRAM:
+				startProgramInSlot(g_blockBuffer[0], &g_blockBuffer[1]);
+				break;
+
+			case MIDI_COMMAND_START_SRAM_PROGRAM:
+				ramSetBank(0);
+				startProgramInSram();
+				return;
+				
+			case MIDI_COMMAND_CHANGE_CONFIG:
+				for (i == 0; i <= length; i += 2) {
+					uint8_t key = g_blockBuffer[i];
+					uint8_t value = g_blockBuffer[i + 1];
+					setConfigValue(key, value);
+				}
+				if (saveConfigs()) {
+					cputs("\r\nsettings saved\r\n");
+				} else {
+					cputs("\r\nflash write error!\r\n");
+					anyKey();
+					return;
+				}
+				break;
+
+			case MIDI_COMMAND_LIST_SLOTS:
+				listSlots();
+				break;
+			
+			case MIDI_COMMAND_DRIVE_LOAD_BLOCK:
+				drive = g_blockBuffer[0];
+				number = g_blockBuffer[1];
+				block = g_blockBuffer[2] | (g_blockBuffer[3] << 8);
+				blockToTrackSector(block, &track, &sector);
+				fastScreenRestore();
+				gotoxy(startX, startY);
+				cputs("read block\r\n");
+				showTrackInfo();
+				if (drive == DRIVE_INTERNAL) {
+					calculateCartridgeDiskAddress();
+					FLASH_ADDRESS_EXTENSION = flashBank;
+					midiSendCommand(MIDI_COMMAND_DRIVE_BLOCK, 256, adr);
+				} else {
+					err = readBlock(number, track, sector, g_blockBuffer);
+					if (err) {
+						const char* errorText = _stroserror(err);
+						cprintf("error: %s\r\n", errorText);
+						midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, strlen(errorText), errorText);
+					} else {
+						midiSendCommand(MIDI_COMMAND_DRIVE_BLOCK, 256, g_blockBuffer);
+					}
+				}
+				break;
+
+			case MIDI_COMMAND_DRIVE_SAVE_BLOCK:
+				drive = g_blockBuffer[0];
+				number = g_blockBuffer[1];
+				block = g_blockBuffer[2] | (g_blockBuffer[3] << 8);
+				break;
+
+			case MIDI_COMMAND_DRIVE_BLOCK:
+				blockToTrackSector(block, &track, &sector);
+				fastScreenRestore();
+				gotoxy(startX, startY);
+				cputs("write block\r\n");
+				showTrackInfo();
+				if (drive == DRIVE_INTERNAL) {
+					calculateCartridgeDiskAddress();
 					flashSetBank(flashBank);
-					break;
-					
-				case MIDI_COMMAND_ERASE_FLASH_SECTOR:
-					flashEraseSector(adr);
-					break;
-	
-				case MIDI_COMMAND_WRITE_FLASH:
+					if (adr == (uint8_t*) 0x8000 || adr == (uint8_t*) 0x9000) {
+						flashEraseSector(adr);
+					}
 					flashWrite256Block(adr);
 					FLASH_ADDRESS_EXTENSION = flashBank;
 					if (fastCompare256(adr)) {
-						cputs("\r\nflash write error!\r\n");
+						const char* errorText = "flash write error!";
+						cprintf("\r\n%s\r\n", errorText);
 						cprintf("flash bank: %i\r\n", flashBank);
-						anyKey();
+						midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, strlen(errorText), errorText);
 						return;
+					} else {
+						midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, 0, 0);
 					}
-					break;
-					
-				case MIDI_COMMAND_WRITE_FLASH_FROM_SRAM:
-				{
-					cputs("flashing menu\r\n");
-					cputs("please wait\r\n");
-					cputs("don't turn off the computer\r\n");
-					flashBank = g_blockBuffer[0];
-					length = g_blockBuffer[1];
-					adr = (uint8_t*) 0x8000;
-					for (i = 0; i < length; i++) {
-						flashSetBank(flashBank);
-						if (adr == (uint8_t*) 0x8000 || adr == (uint8_t*) 0x9000) {
-							flashEraseSector(adr);
-						}
-						ramSetBank(i + 0x100);
-						memcpy(g_blockBuffer, g_ram, 256);
-						flashWrite256Block(adr);
-						FLASH_ADDRESS_EXTENSION = flashBank;
-						if (fastCompare256Ultimax(adr)) {
-							// try again
-							flashWrite256Block(adr);
-							if (fastCompare256Ultimax(adr)) {
-								cputs("\r\nflash write error!\r\n");
-								cprintf("flash bank: %i\r\n", flashBank);
-								cputs("please try flashing menu again\r\n");
-								anyKey();
-								return;
-							}
-						}
-						adr += 0x100;
-						if (adr == (uint8_t*) 0xa000) {
-							cputs(".");
-							flashBank++;
-							adr = (uint8_t*) 0x8000;
-						}
+				} else {
+					err = writeBlock(number, track, sector, g_blockBuffer);
+					if (err) {
+						const char* errorText = _stroserror(err);
+						cprintf("error: %s\r\n", errorText);
+						midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, strlen(errorText), errorText);
+					} else {
+						midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, 0, 0);
 					}
-					cputs("\r\nmenu flash ok\r\n");
-					anyKey();
-					FLASH_ADDRESS_EXTENSION = 0;
-					CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW | CART_CONTROL_RESET_GENERATE;
-					while (1);
-					break;
 				}
-				
-				case MIDI_COMMAND_COMPARE_FLASH:
-					FLASH_ADDRESS_EXTENSION = flashBank;
-					if (fastCompare256(adr)) {
-						cputs("\r\nflash compare error!\r\n");
-						cprintf("flash bank: %i\r\n", flashBank);
-						anyKey();
-						return;
-					}
-					break;
+				break;
 
-				case MIDI_COMMAND_WRITE_RAM:
-					memcpy(adr, g_blockBuffer, length + 1);
-					break;
-				
-				case MIDI_COMMAND_REDRAW_SCREEN:
-					redrawScreen = 1;
-					break;
-				
-				case MIDI_COMMAND_PRINT:
-					cputs(g_blockBuffer);
-					break;
-				
-				case MIDI_COMMAND_GOTOX:
-					gotox(g_blockBuffer[0]);
-					break;
-				
-				case MIDI_COMMAND_START_SLOT_PROGRAM:
-					startProgramInSlot(g_blockBuffer[0], &g_blockBuffer[1]);
-					break;
-	
-				case MIDI_COMMAND_START_SRAM_PROGRAM:
-					ramSetBank(0);
-					startProgramInSram();
-					return;
-					
-				case MIDI_COMMAND_CHANGE_CONFIG:
-					for (i == 0; i <= length; i += 2) {
-						uint8_t key = g_blockBuffer[i];
-						uint8_t value = g_blockBuffer[i + 1];
-						setConfigValue(key, value);
-					}
-					if (saveConfigs()) {
-						cputs("\r\nsettings saved\r\n");
-					} else {
-						cputs("\r\nflash write error!\r\n");
-						anyKey();
-						return;
-					}
-					break;
-
-				case MIDI_COMMAND_LIST_SLOTS:
-					listSlots();
-					break;
-				
-				case MIDI_COMMAND_DRIVE_LOAD_BLOCK:
-					drive = g_blockBuffer[0];
-					number = g_blockBuffer[1];
-					block = g_blockBuffer[2] | (g_blockBuffer[3] << 8);
-					blockToTrackSector(block, &track, &sector);
-					fastScreenRestore();
-					gotoxy(startX, startY);
-					cputs("read block\r\n");
-					showTrackInfo();
-					if (drive == DRIVE_INTERNAL) {
-						calculateCartridgeDiskAddress();
-						FLASH_ADDRESS_EXTENSION = flashBank;
-						midiSendCommand(MIDI_COMMAND_DRIVE_BLOCK, 256, adr);
-					} else {
-						err = readBlock(number, track, sector, g_blockBuffer);
-						if (err) {
-							const char* errorText = _stroserror(err);
-							cprintf("error: %s\r\n", errorText);
-							midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, strlen(errorText), errorText);
-						} else {
-							midiSendCommand(MIDI_COMMAND_DRIVE_BLOCK, 256, g_blockBuffer);
-						}
-					}
-					break;
-
-				case MIDI_COMMAND_DRIVE_SAVE_BLOCK:
-					drive = g_blockBuffer[0];
-					number = g_blockBuffer[1];
-					block = g_blockBuffer[2] | (g_blockBuffer[3] << 8);
-					break;
-
-				case MIDI_COMMAND_DRIVE_BLOCK:
-					blockToTrackSector(block, &track, &sector);
-					fastScreenRestore();
-					gotoxy(startX, startY);
-					cputs("write block\r\n");
-					showTrackInfo();
-					if (drive == DRIVE_INTERNAL) {
-						calculateCartridgeDiskAddress();
-						flashSetBank(flashBank);
-						if (adr == (uint8_t*) 0x8000 || adr == (uint8_t*) 0x9000) {
-							flashEraseSector(adr);
-						}
-						flashWrite256Block(adr);
-						FLASH_ADDRESS_EXTENSION = flashBank;
-						if (fastCompare256(adr)) {
-							const char* errorText = "flash write error!";
-							cprintf("\r\n%s\r\n", errorText);
-							cprintf("flash bank: %i\r\n", flashBank);
-							midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, strlen(errorText), errorText);
-							return;
-						} else {
-							midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, 0, 0);
-						}
-					} else {
-						err = writeBlock(number, track, sector, g_blockBuffer);
-						if (err) {
-							const char* errorText = _stroserror(err);
-							cprintf("error: %s\r\n", errorText);
-							midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, strlen(errorText), errorText);
-						} else {
-							midiSendCommand(MIDI_COMMAND_DRIVE_ERROR, 0, 0);
-						}
-					}
-					break;
-			}
-			if (redrawScreen) break;
+			case MIDI_COMMAND_READ_MEMORY_BLOCK:
+				FLASH_ADDRESS_EXTENSION = flashBank;
+				midiSendCommand(MIDI_COMMAND_MEMORY_BLOCK, 256, adr);
+				break;
 		}
 	}
 }
@@ -656,7 +660,7 @@ void menuStartProgramInSlot(void)
 
 void hardwareReset()
 {
-	showTitle("hardware reset");
+	showTitle("Hardware reset");
 
 	// CPLD generated reset for starting c64, with disabled cartridge
 	CART_CONFIG = 0;
@@ -684,8 +688,6 @@ void showTitle(char* subtitle)
 	cputs("\r\n\r\n");
 }
 
-extern void get_ts_addr(void);
-
 int main(void)
 {
 	uint8_t i;
@@ -712,6 +714,7 @@ int main(void)
 
 
 	i = getConfigValue(KERBEROS_CONFIG_AUTOSTART_SLOT);
+	//cprintf("autostart slot: %i\r\n", i);
 	if (i) {
 		uint8_t start = 1;
 		if (kbhit()) {
@@ -722,10 +725,15 @@ int main(void)
 		if (start) {
 			FLASH_ADDRESS_EXTENSION = (i + 6) * 8;
 			if (isValidSlotId()) {
+				//cprintf("autostarting\r\n");
+				//anyKey();
 				startProgramInSlot(i, NULL);
+//			} else {
+//				cprintf("empty slot\r\n");
 			}
 		}
 	}
+	anyKey();
 	
 	for (;;) {
 		for (i = 0; i < 24; i++) g_sidBase[i] = 0;
@@ -744,36 +752,40 @@ int main(void)
 		// /GAME high, /EXROM low
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 
-		showTitle("main menu");
-		cputs("s: start program\r\n");
-		cputs("f: file/settings transfer from PC/Mac\r\n");
-		cputs("e: EasyFlash start\r\n");
-		cputs("h: hardware reset without cartridge\r\n");
-		cputs("r: reset to C64 BASIC\r\n");
-		cputs("t: tests\r\n");
-		cputs("c: credits\r\n");
+		showTitle("Main Menu");
+		cputs("S: Start program\r\n");
+		cputs("F: File/settings transfer from PC/Mac\r\n");
+		cputs("E: EasyFlash start\r\n");
+		cputs("C: Configure settings\r\n");
+		cputs("H: Hardware reset without cartridge\r\n");
+		cputs("R: Reset to C64 BASIC\r\n");
+		cputs("T: Tests\r\n");
+		cputs("A: About\r\n");
 		cputs("\r\n");
 		while (!kbhit());
 		switch (cgetc()) {
-			case 'e':
-				startEasyFlash();
+			case 's':
+				menuStartProgramInSlot();
 				break;
 			case 'f':
 				receiveMidiCommands();
 				break;
-			case 's':
-				menuStartProgramInSlot();
+			case 'e':
+				startEasyFlash();
 				break;
-			case 'r':
-				c64Reset();
+			case 'c':
+				configureSettings();
 				break;
 			case 'h':
 				hardwareReset();
 				break;
+			case 'r':
+				c64Reset();
+				break;
 			case 't':
 				testMenu();
 				break;
-			case 'c':
+			case 'a':
 				about();
 				break;
 		}

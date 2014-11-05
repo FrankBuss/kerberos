@@ -10,9 +10,6 @@
     <height>509</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>Kerberos</string>
-  </property>
   <property name="statusTip">
    <string/>
   </property>
@@ -72,7 +69,7 @@ QGroupBox::title {
        <rect>
         <x>310</x>
         <y>20</y>
-        <width>111</width>
+        <width>141</width>
         <height>24</height>
        </rect>
       </property>
@@ -90,7 +87,7 @@ QGroupBox::title {
        <rect>
         <x>10</x>
         <y>50</y>
-        <width>411</width>
+        <width>451</width>
         <height>191</height>
        </rect>
       </property>
@@ -169,7 +166,7 @@ QGroupBox::title {
       <widget class="QLineEdit" name="startAddressEdit">
        <property name="geometry">
         <rect>
-         <x>350</x>
+         <x>370</x>
          <y>60</y>
          <width>51</width>
          <height>22</height>
@@ -189,7 +186,7 @@ QGroupBox::title {
       <widget class="QLineEdit" name="loadAddressEdit">
        <property name="geometry">
         <rect>
-         <x>350</x>
+         <x>370</x>
          <y>40</y>
          <width>51</width>
          <height>22</height>
@@ -259,7 +256,7 @@ QGroupBox::title {
       <widget class="QLabel" name="label_8">
        <property name="geometry">
         <rect>
-         <x>190</x>
+         <x>210</x>
          <y>60</y>
          <width>151</width>
          <height>21</height>
@@ -277,7 +274,7 @@ QGroupBox::title {
       <widget class="QLabel" name="label_7">
        <property name="geometry">
         <rect>
-         <x>190</x>
+         <x>210</x>
          <y>40</y>
          <width>151</width>
          <height>21</height>
@@ -292,7 +289,7 @@ QGroupBox::title {
         <string>Load address (in hex)</string>
        </property>
       </widget>
-      <widget class="QCheckBox" name="customBasicCheckBox_2">
+      <widget class="QCheckBox" name="enableCartridgeDisksCheckBox">
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -309,9 +306,6 @@ QGroupBox::title {
        <property name="text">
         <string>Enable cartridge disks</string>
        </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
       </widget>
      </widget>
      <widget class="QGroupBox" name="groupBox_9">
@@ -319,7 +313,7 @@ QGroupBox::title {
        <rect>
         <x>10</x>
         <y>250</y>
-        <width>411</width>
+        <width>451</width>
         <height>181</height>
        </rect>
       </property>
@@ -388,7 +382,7 @@ QGroupBox::title {
       <widget class="QPushButton" name="uploadBasicToRamButton">
        <property name="geometry">
         <rect>
-         <x>220</x>
+         <x>240</x>
          <y>80</y>
          <width>171</width>
          <height>24</height>
@@ -412,7 +406,7 @@ QGroupBox::title {
       <widget class="QPushButton" name="uploadKernalToRamButton">
        <property name="geometry">
         <rect>
-         <x>220</x>
+         <x>240</x>
          <y>110</y>
          <width>171</width>
          <height>24</height>
@@ -436,7 +430,7 @@ QGroupBox::title {
       <widget class="QPushButton" name="backToBasicButton">
        <property name="geometry">
         <rect>
-         <x>220</x>
+         <x>240</x>
          <y>140</y>
          <width>171</width>
          <height>24</height>
@@ -460,7 +454,7 @@ QGroupBox::title {
       <widget class="QCheckBox" name="customBasicFromRamCheckbox">
        <property name="geometry">
         <rect>
-         <x>220</x>
+         <x>240</x>
          <y>30</y>
          <width>181</width>
          <height>17</height>
@@ -478,7 +472,7 @@ QGroupBox::title {
       <widget class="QCheckBox" name="customKernalFromRamCheckbox">
        <property name="geometry">
         <rect>
-         <x>220</x>
+         <x>240</x>
          <y>50</y>
          <width>181</width>
          <height>17</height>
@@ -554,7 +548,7 @@ QGroupBox::title {
      <widget class="QPushButton" name="uploadAndRunPrgButton">
       <property name="geometry">
        <rect>
-        <x>450</x>
+        <x>480</x>
         <y>50</y>
         <width>201</width>
         <height>24</height>
@@ -578,8 +572,8 @@ QGroupBox::title {
      <widget class="QSpinBox" name="prgSlotSpinBox">
       <property name="geometry">
        <rect>
-        <x>560</x>
-        <y>170</y>
+        <x>590</x>
+        <y>130</y>
         <width>61</width>
         <height>22</height>
        </rect>
@@ -604,8 +598,8 @@ QGroupBox::title {
      <widget class="QLabel" name="label_4">
       <property name="geometry">
        <rect>
-        <x>450</x>
-        <y>170</y>
+        <x>480</x>
+        <y>130</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -622,8 +616,8 @@ QGroupBox::title {
      <widget class="QPushButton" name="flashPrgButton">
       <property name="geometry">
        <rect>
-        <x>450</x>
-        <y>200</y>
+        <x>480</x>
+        <y>160</y>
         <width>201</width>
         <height>24</height>
        </rect>
@@ -646,8 +640,8 @@ QGroupBox::title {
      <widget class="QPushButton" name="startPrgFromSlotButton">
       <property name="geometry">
        <rect>
-        <x>450</x>
-        <y>230</y>
+        <x>480</x>
+        <y>190</y>
         <width>201</width>
         <height>24</height>
        </rect>
@@ -670,8 +664,8 @@ QGroupBox::title {
      <widget class="QPushButton" name="flashEasyFlashCrtButton">
       <property name="geometry">
        <rect>
-        <x>450</x>
-        <y>320</y>
+        <x>480</x>
+        <y>270</y>
         <width>201</width>
         <height>24</height>
        </rect>
@@ -694,8 +688,8 @@ QGroupBox::title {
      <widget class="QPushButton" name="flashMenuBinButton">
       <property name="geometry">
        <rect>
-        <x>450</x>
-        <y>350</y>
+        <x>480</x>
+        <y>300</y>
         <width>201</width>
         <height>24</height>
        </rect>
@@ -718,8 +712,8 @@ QGroupBox::title {
      <widget class="QPushButton" name="listSlotsButton">
       <property name="geometry">
        <rect>
-        <x>450</x>
-        <y>260</y>
+        <x>480</x>
+        <y>220</y>
         <width>201</width>
         <height>24</height>
        </rect>
@@ -742,7 +736,7 @@ QGroupBox::title {
      <widget class="QLabel" name="label_19">
       <property name="geometry">
        <rect>
-        <x>450</x>
+        <x>480</x>
         <y>20</y>
         <width>101</width>
         <height>21</height>
@@ -760,8 +754,8 @@ QGroupBox::title {
      <widget class="QLabel" name="label_20">
       <property name="geometry">
        <rect>
-        <x>450</x>
-        <y>140</y>
+        <x>480</x>
+        <y>100</y>
         <width>101</width>
         <height>21</height>
        </rect>
@@ -773,6 +767,27 @@ QGroupBox::title {
       </property>
       <property name="text">
        <string>Flash operations</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_22">
+      <property name="geometry">
+       <rect>
+        <x>580</x>
+        <y>340</y>
+        <width>111</width>
+        <height>101</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap resource="application.qrc">:/kerberos.png</pixmap>
       </property>
      </widget>
     </widget>
@@ -1438,7 +1453,7 @@ QGroupBox::title {
        <rect>
         <x>20</x>
         <y>20</y>
-        <width>401</width>
+        <width>451</width>
         <height>151</height>
        </rect>
       </property>
@@ -1473,7 +1488,7 @@ QGroupBox::title {
         <rect>
          <x>130</x>
          <y>30</y>
-         <width>261</width>
+         <width>311</width>
          <height>22</height>
         </rect>
        </property>
@@ -1512,7 +1527,7 @@ QGroupBox::title {
         <rect>
          <x>130</x>
          <y>60</y>
-         <width>261</width>
+         <width>311</width>
          <height>22</height>
         </rect>
        </property>
@@ -1552,9 +1567,15 @@ QGroupBox::title {
        <rect>
         <x>20</x>
         <y>220</y>
-        <width>401</width>
+        <width>501</width>
         <height>181</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Courier</family>
+        <pointsize>10</pointsize>
+       </font>
       </property>
       <property name="verticalScrollBarPolicy">
        <enum>Qt::ScrollBarAlwaysOn</enum>
@@ -1566,7 +1587,7 @@ QGroupBox::title {
      <widget class="QGroupBox" name="groupBox_3">
       <property name="geometry">
        <rect>
-        <x>430</x>
+        <x>480</x>
         <y>20</y>
         <width>201</width>
         <height>150</height>
@@ -1653,6 +1674,55 @@ QGroupBox::title {
        </property>
       </widget>
      </widget>
+     <widget class="QGroupBox" name="groupBox_8">
+      <property name="geometry">
+       <rect>
+        <x>530</x>
+        <y>220</y>
+        <width>151</width>
+        <height>181</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="title">
+       <string>Debugging</string>
+      </property>
+      <widget class="QPushButton" name="readFlashBlockButton">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>70</y>
+         <width>131</width>
+         <height>24</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Read flash block</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="flashBlockEdit">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>131</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>b000</string>
+       </property>
+      </widget>
+     </widget>
     </widget>
    </widget>
   </widget>
@@ -1668,6 +1738,8 @@ QGroupBox::title {
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="application.qrc"/>
+ </resources>
  <connections/>
 </ui>

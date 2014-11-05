@@ -65,4 +65,11 @@
 // data: error message in PETSCII, empty string for no error
 #define MIDI_COMMAND_DRIVE_ERROR 0x14
 
+// no data. Reads 256 bytes of flash memory from current set address and bank (C64 address, can be used to read RAM, too)
+#define MIDI_COMMAND_READ_MEMORY_BLOCK 0x15
+
+// data: 256 bytes in response to MIDI_COMMAND_READ_FLASH_BLOCK
+#define MIDI_COMMAND_MEMORY_BLOCK 0x16
+
+
 #endif

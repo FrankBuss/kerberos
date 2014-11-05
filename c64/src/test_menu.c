@@ -98,6 +98,7 @@ static void testRam()
 	anyKey();
 }
 
+/*
 static void testFlash()
 {
 	uint16_t i;
@@ -111,7 +112,7 @@ static void testFlash()
 	enableInterrupts();
 
 	while (1) {
-		showTitle("flash test");
+		showTitle("Flash test");
 		cprintf("flash id: 0x%04x\r\n", id);
 		if (id != 0xbfc8) {
 			cputs("wrong flash id\r\n");
@@ -123,7 +124,7 @@ static void testFlash()
 		cputs("1: full test, all data will be erased\r\n");
 		cputs("2: quick test in unused area\r\n");
 		cputs("\r\n");
-		cputs("\x1f: back\r\n");
+		cputs("\x1f: Back\r\n");
 		cputs("\r\n");
 
 		while (!kbhit());
@@ -265,6 +266,7 @@ static void testFlash()
 	cputs("flash test ok\r\n");
 	anyKey();
 }
+*/
 
 static void testMidi()
 {
@@ -279,12 +281,12 @@ static void testMidi()
 	}
 	midiInit();
 	
-	cputs("n: send note on\r\n");
-	cputs("f: send note off\r\n");
+	cputs("n: Send note on\r\n");
+	cputs("f: Send note off\r\n");
 	cputs("i: MIDI thru in setting\r\n");
 	cputs("o: MIDI thru out setting\r\n");
 	cputs("\r\n");
-	cputs("\x1f: back\r\n");
+	cputs("\x1f: Back\r\n");
 	cputs("\r\n");
 
 	for (;;) {
@@ -465,20 +467,20 @@ void testMenu(void)
 		// /GAME high, /EXROM low
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 		
-		showTitle("test menu");
-		cputs("r: ram test\r\n");
-//		cputs("f: flash test\r\n");
-		cputs("m: MIDI test\r\n");
-		cputs("o: RAM as ROM tests\r\n");
+		showTitle("Test Menu");
+		cputs("R: RAM test\r\n");
+		//cputs("f: flash test\r\n");
+		cputs("M: MIDI test\r\n");
+		cputs("O: RAM as ROM tests\r\n");
 		//cputs("s: SID test\r\n");
 		cputs("\r\n");
-		cputs("\x1f: back\r\n");
+		cputs("\x1f: Back\r\n");
 		while (!kbhit());
 		switch (cgetc()) {
 			case 'r':
 				testRam();
 				break;
-/*			case 'f':
+		/*	case 'f':
 				testFlash();
 				break;*/
 			case 'm':

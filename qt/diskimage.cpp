@@ -221,6 +221,8 @@ int get_block_num(ImageType type, TrackSector ts) {
 
 /* get a pointer to block data */
 unsigned char *get_ts_addr(DiskImage *di, TrackSector ts) {
+//    printf("track: %i, sector: %i, address: %04x\n",ts.track,ts.sector,get_block_num(di->type, ts));
+//            fflush(stdout);
     return di->diskData->getData(get_block_num(di->type, ts) * 256);
 }
 

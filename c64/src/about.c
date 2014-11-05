@@ -157,7 +157,13 @@ void about(void)
 			}
 			color--;
 		}
-		if (kbhit()) return;
+		if (kbhit()) {
+			MIDI_CONFIG = 0;
+			CART_CONFIG = 0;
+			CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
+			FLASH_ADDRESS_EXTENSION = 0;
+			__asm__ ("jmp $fce2");
+		}
 	}
 		
 }

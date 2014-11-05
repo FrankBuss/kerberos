@@ -26,3 +26,4 @@ win32:LIBS += -lwinmm
 win32:LIBS += -lws2_32
 
 RESOURCES = application.qrc
+RC_ICONS = kerberos.ico

@@ -7,6 +7,7 @@ menu_obj += obj/midi.o
 menu_obj += obj/flash.o
 menu_obj += obj/main_menu.o
 menu_obj += obj/test_menu.o
+menu_obj += obj/configure_menu.o
 menu_obj += obj/about.o
 menu_obj += obj/about_asm.o
 menu_obj += obj/config.o
