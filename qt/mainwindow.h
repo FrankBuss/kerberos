@@ -39,6 +39,7 @@ private slots:
     void onSelectMidiInInterfaceName(QString name);
     void onClear();
     void onFlashPrg();
+    void onDeletePrg();
     void onStartPrgFromSlot();
     void onFlashEasyFlashCrt();
     void onFlashBasicBin();
@@ -54,15 +55,16 @@ private slots:
     void onReadDirectory();
     void onDownloadD64();
     void onUploadD64();
-
-    void onSaveSettings();
+    void onDriveChange(QString name);
 
     void onReadFlashBlock();
+    void onConnectionTest();
+    void onRamAndFlashTests();
+    void onDumpFlashButton();
+    void onUploadFlashButton();
 
 private:
     void calculateDriveAndType(int& drive, int& type);
-    QString getFilename();
-    void setFilename(QString filename);
     QString getMidiOutInterfaceName();
     QString getMidiInInterfaceName();
     void setMidiOutInterfaceName(QString name);
@@ -76,7 +78,6 @@ private:
 
     void openD64File(QString filename);
 
-    bool m_testSequenceRunning;
     QString m_d64Filename;
 
     FileDiskData m_fileDiskData;

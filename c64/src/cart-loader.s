@@ -15,6 +15,42 @@ RESTOR = $ff8a
 
 cold_start:	sei
 
+		; disable screen and black
+		lda #0
+		sta $d011
+		sta $d020
+		sta $d021
+		
+		; SID reset
+		ldx #23
+sidReset:	sta $d400,x
+		dex
+		bpl sidReset		
+
+		; KERNAL reset routine
+		jsr $fda3		; IOINIT - Init CIA chips
+
+		; faster RANTAM without memory test
+		lda #$00
+		sta $0283
+		tay
+rantam2:	sta $0002,y
+		sta $0200,y
+		sta $0300,y
+		iny
+		bne rantam2
+		ldx #$3c
+		ldy #$03
+		stx $b2
+		sty $b3
+		lda #$a0
+		sta $c2
+		sta $0284
+		lda #$08
+		sta $0282
+		lda #$04
+		sta $0288
+
 		; copy RAM loader to datasette buffer
 		ldx #0
 copy:		lda __LOADER_LOAD__,x
@@ -46,24 +82,26 @@ loaderStart:
 		; disable RAM
 		sta CART_CONFIG
 
-		; KERNAL reset routine
-		jsr $fda3		; IOINIT - Init CIA chips
-		jsr $fd50		; RANTAM - Clear/test system RAM
 		jsr $fd15		; RESTOR - Init KERNAL RAM vectors
 		jsr $ff5b		; CINT   - Init VIC and screen editor
+
+		lda #0
+		sta $d020
+		sta $d021
+
 		cli			; Re-enable IRQ interrupts
 
 		; BASIC reset routine
 		jsr $e453		; Init BASIC RAM vectors
 		jsr $e3bf		; Main BASIC RAM Init routine
-		jsr $e422		; Power-up message / NEW command
+		jsr $a644		; NEW command
 		ldx #$fb
 		txs			; Reduce stack pointer for BASIC
 
 		; enable cartridge in $8000
 		lda #(CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW)
 		sta CART_CONTROL
-
+		
 		; copy program from ROM
 		ldx #(>(menuEnd - menuStart))+1
 		lda #0

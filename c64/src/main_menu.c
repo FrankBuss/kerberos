@@ -13,9 +13,12 @@
 #include "kerberos.h"
 #include "config.h"
 #include "floppy.h"
+#include "crc8.h"
+#include "tests.h"
 
 extern void about(void);
 extern void configureSettings(void);
+extern void waitVsync(void);
 
 uint8_t* g_vicBase = (uint8_t*) 0xd000;
 uint8_t* g_sidBase = (uint8_t*) 0xd400;
@@ -24,7 +27,6 @@ uint8_t g_isC128 = 0;
 const char g_kerberosPrgSlotId[16] = KERBEROS_PRG_SLOT_ID;
 int g_lastByte;
 
-static uint8_t g_crc;
 static uint8_t* adr;
 static uint8_t receivedBytes;
 static uint8_t flashBank;
@@ -35,17 +37,6 @@ static uint8_t number;
 static uint16_t block;
 static uint8_t track;
 static uint8_t sector;
-
-void crc8Init()
-{
-	g_crc = 0xff;
-}
-
-uint8_t crc8Update(uint8_t data)
-{
-	g_crc = g_crc8Table[data ^ g_crc];
-	return g_crc;
-}
 
 static uint8_t isValidSlotId()
 {
@@ -148,10 +139,11 @@ static void startProgramInSram(void)
 		c128startProgramInSram();
 	} else {
 		// init cartridge disk (only possible for C64)
-		if (controlByte & 16)
+		if (controlByte & 16) {
 			initCartridgeDisk(
 				getConfigValue(KERBEROS_CONFIG_DRIVE_1),
 				getConfigValue(KERBEROS_CONFIG_DRIVE_2));
+		}
 		ramSetBank(256);
 		filterHiramHack();
 		
@@ -322,7 +314,7 @@ static void midiSendCommand(uint8_t tag, int size, const uint8_t* data)
     }
 
     // send checksum
-    midiSendByteNote(g_crc);
+    midiSendByteNote(crc8Get());
 
     // end file transfer
     midiEndTransfer();
@@ -374,6 +366,15 @@ void redrawScreen()
 	gotoxy(startX, startY);
 }
 
+void updateMidiConfig(void)
+{
+	uint8_t config = 0;
+	config = MIDI_CONFIG_ENABLE_ON | MIDI_CONFIG_NMI_ON;
+	if (getConfigValue(KERBEROS_CONFIG_MIDI_IN_THRU)) config |= MIDI_CONFIG_THRU_IN_ON;
+	if (getConfigValue(KERBEROS_CONFIG_MIDI_OUT_THRU)) config |= MIDI_CONFIG_THRU_OUT_ON;
+	MIDI_CONFIG = config;
+}
+
 void receiveMidiCommands(void)
 {
 	static uint8_t b;
@@ -384,6 +385,7 @@ void receiveMidiCommands(void)
 	static uint8_t i;
 	static uint8_t err;
 	midiInit();
+	updateMidiConfig();
 	showTitle("PC/Mac link");
 	cputs("\x1f: Back\r\n\r\n");
 	startX = wherex();
@@ -539,13 +541,7 @@ void receiveMidiCommands(void)
 					uint8_t value = g_blockBuffer[i + 1];
 					setConfigValue(key, value);
 				}
-				if (saveConfigs()) {
-					cputs("\r\nsettings saved\r\n");
-				} else {
-					cputs("\r\nflash write error!\r\n");
-					anyKey();
-					return;
-				}
+				updateMidiConfig();
 				break;
 
 			case MIDI_COMMAND_LIST_SLOTS:
@@ -622,6 +618,49 @@ void receiveMidiCommands(void)
 				FLASH_ADDRESS_EXTENSION = flashBank;
 				midiSendCommand(MIDI_COMMAND_MEMORY_BLOCK, 256, adr);
 				break;
+
+			case MIDI_COMMAND_PING:
+				FLASH_ADDRESS_EXTENSION = flashBank;
+				midiSendCommand(MIDI_COMMAND_PONG, 0, 0);
+				break;
+				
+			case MIDI_COMMAND_RAM_AND_FLASH_TESTS:
+				fastScreenRestore();
+				gotoxy(startX, startY);
+				if (testRam()) {
+					fastScreenRestore();
+					gotoxy(startX, startY);
+					if (testFlash()) {
+						fastScreenRestore();
+						gotoxy(startX, startY);
+						if (testRamAsRom()) {
+							fastScreenRestore();
+							gotoxy(startX, startY);
+							puts("tests ok");
+						} else {
+							puts("RAM as ROM test failed");
+						}
+					} else {
+						puts("flash test failed");
+					}
+				} else {
+					puts("RAM test failed");
+				}
+				break;
+				
+			case MIDI_COMMAND_DUMP_FLASH:
+				for (block = 0; block < 256; block++) {
+					FLASH_ADDRESS_EXTENSION = block;
+					adr = (uint8_t*) 0x8000;
+					gotoxy(startX, startY);
+					cprintf("read bank %i", block);
+					for (i = 0; i < 32; i++) {
+						midiSendCommand(MIDI_COMMAND_MEMORY_BLOCK, 256, adr);
+						adr += 0x100;
+					}
+				}
+				cputs("\r\ndump done");
+				break;
 		}
 	}
 }
@@ -680,12 +719,86 @@ void c64Reset()
 
 void showTitle(char* subtitle)
 {
+	bgcolor(BACKGROUND_COLOR);
+	bordercolor(BACKGROUND_COLOR);
 	clrscr();
+	gotoxy(0, 0);
 	textcolor(CAPTION_COLOR);
 	cputs("Kerberos Menu V1.0 - ");
 	cputs(subtitle);
 	textcolor(TEXT_COLOR);
 	cputs("\r\n\r\n");
+}
+
+void testForAutostart(void)
+{
+	uint8_t i;
+	uint8_t start = getConfigValue(KERBEROS_CONFIG_AUTOSTART_SLOT);
+	FLASH_ADDRESS_EXTENSION = (start + 6) * 8;
+	if (start && isValidSlotId()) {
+		showTitle("Autostart");
+		cprintf("starting slot %i\r\n", start);
+		cputs("press any key to cancel\r\n");
+		for (i = 0; i < 40; i++) {
+			waitVsync();
+			waitVsync();
+			cputc(96);
+			if (kbhit()) {
+				cgetc();
+				return;
+			}
+		}
+		startProgramInSlot(start, NULL);
+	}
+}
+
+static void testMidi()
+{
+	showTitle("MIDI menu");
+	if (!midiIrqNmiTest()) {
+		cputs("MIDI IRQ not working\r\n");
+		anyKey();
+		return;
+	}
+	midiInit();
+	updateMidiConfig();
+
+	for (;;) {	
+		showTitle("MIDI menu");
+		cputs("n: Send note on\r\n");
+		cputs("f: Send note off\r\n");
+		cputs("\r\n");
+		cputs("\x1f: Back\r\n");
+		cputs("\r\n");
+	
+		for (;;) {
+			if (wherey() > 23) break;
+			if (kbhit()) {
+				switch (cgetc()) {
+					case 'n':
+						// note on, note 60, velocity 100
+						cputs("sending note on\r\n");
+						midiSendByte(0x90);
+						midiSendByte(60);
+						midiSendByte(100);
+						break;
+					
+					case 'f':
+						// note off
+						cputs("sending note off\r\n");
+						midiSendByte(0x80);
+						midiSendByte(60);
+						midiSendByte(0);
+						break;
+					
+					case LEFT_ARROW_KEY:  // left arrow
+						return;
+				}
+			} else if (midiByteReceived()) {
+				cprintf("MIDI-in: %02x\r\n", midiReadByte());
+			}
+		}
+	}
 }
 
 int main(void)
@@ -694,54 +807,12 @@ int main(void)
 	*((uint8_t*)1) = 55;
 	g_isC128 = isC128();
 	loadConfigs();
-	//startProgram();
-
-	//get_ts_addr();
-/*	
-	i = readBlock(8, 18, 0, g_blockBuffer);
-	if (i) {
-		cputs("floppyReadBlock error\r\n");
-		cputs(_stroserror(i));
-		cputs("\r\n");
-	} else {
-		cputs("floppyReadBlock ok\r\n");
-		for (i = 0; i < 16; i++) cputc(g_blockBuffer[i + 0x90]);
-	}
-
-	*((uint8_t*)1) = 55;
-	return 0;
-	*/
-
-
-	i = getConfigValue(KERBEROS_CONFIG_AUTOSTART_SLOT);
-	//cprintf("autostart slot: %i\r\n", i);
-	if (i) {
-		uint8_t start = 1;
-		if (kbhit()) {
-			if (cgetc() == 'm') {
-				start = 0;
-			}
-		}
-		if (start) {
-			FLASH_ADDRESS_EXTENSION = (i + 6) * 8;
-			if (isValidSlotId()) {
-				//cprintf("autostarting\r\n");
-				//anyKey();
-				startProgramInSlot(i, NULL);
-//			} else {
-//				cprintf("empty slot\r\n");
-			}
-		}
-	}
-	anyKey();
+	testForAutostart();
+	FLASH_ADDRESS_EXTENSION = 0;
 	
 	for (;;) {
 		for (i = 0; i < 24; i++) g_sidBase[i] = 0;
 		g_vicBase[0x15] = 0;
-		bgcolor(BACKGROUND_COLOR);
-		bordercolor(BACKGROUND_COLOR);
-		textcolor(TEXT_COLOR);
-		gotoxy(0, 0);
 
 		// disable MIDI
 		MIDI_CONFIG = 0;
@@ -754,12 +825,12 @@ int main(void)
 
 		showTitle("Main Menu");
 		cputs("S: Start program\r\n");
-		cputs("F: File/settings transfer from PC/Mac\r\n");
 		cputs("E: EasyFlash start\r\n");
 		cputs("C: Configure settings\r\n");
+		cputs("F: File transfer from PC/Mac\r\n");
 		cputs("H: Hardware reset without cartridge\r\n");
-		cputs("R: Reset to C64 BASIC\r\n");
-		cputs("T: Tests\r\n");
+		cputs("R: Reset to C64 BASIC prompt\r\n");
+		cputs("M: MIDI test\r\n");
 		cputs("A: About\r\n");
 		cputs("\r\n");
 		while (!kbhit());
@@ -767,14 +838,15 @@ int main(void)
 			case 's':
 				menuStartProgramInSlot();
 				break;
-			case 'f':
-				receiveMidiCommands();
-				break;
 			case 'e':
 				startEasyFlash();
 				break;
 			case 'c':
 				configureSettings();
+				break;
+			case 'f':
+				receiveMidiCommands();
+				loadConfigs();
 				break;
 			case 'h':
 				hardwareReset();
@@ -782,8 +854,8 @@ int main(void)
 			case 'r':
 				c64Reset();
 				break;
-			case 't':
-				testMenu();
+			case 'm':
+				testMidi();
 				break;
 			case 'a':
 				about();

@@ -9,14 +9,12 @@
 #include "midi.h"
 #include "regs.h"
 #include "menu.h"
+#include "tests.h"
 
-//extern void sidTest(void);
-
-static void testRam()
+static uint8_t testRam()
 {
 	uint16_t i;
 
-	showTitle("RAM tests");
 	cputs("RAM 0xff test...\r\n");
 	memset(g_blockBuffer, 0xff, 256);
 	for (i = 0; i < 512; i++) {
@@ -36,8 +34,8 @@ static void testRam()
 		if (fastCompare256(g_ram)) {
 			gotox(0);
 			cprintf("RAM error, bank: %i\r\n", i);
-			anyKey();
-			return;
+			enableInterrupts();
+			return 0;
 		}
 	}
 
@@ -63,8 +61,8 @@ static void testRam()
 		if (fastCompare256(g_ram)) {
 			gotox(0);
 			cprintf("RAM error, bank: %i\r\n", i);
-			anyKey();
-			return;
+			enableInterrupts();
+			return 0;
 		}
 	}
 
@@ -88,65 +86,42 @@ static void testRam()
 		if (fastCompare256(g_ram)) {
 			gotox(0);
 			cprintf("RAM error, bank: %i\r\n", i);
-			anyKey();
-			return;
+			enableInterrupts();
+			return 0;
 		}
 	}
 
 	gotox(0);
 	cputs("RAM test ok\r\n");
-	anyKey();
+	enableInterrupts();
+	return 1;
 }
 
-/*
-static void testFlash()
+static uint8_t testFlash()
 {
 	uint16_t i;
 	uint8_t j;
 	uint8_t* adr;
 	uint16_t id;
-	uint16_t firstBank = 0;
 	uint16_t lastBank = 0;
 	disableInterrupts();
 	id = flashReadId();
 	enableInterrupts();
 
-	while (1) {
-		showTitle("Flash test");
-		cprintf("flash id: 0x%04x\r\n", id);
-		if (id != 0xbfc8) {
-			cputs("wrong flash id\r\n");
-			anyKey();
-			return;
-		}
-		cputs("flash id ok\r\n");
-		
-		cputs("1: full test, all data will be erased\r\n");
-		cputs("2: quick test in unused area\r\n");
-		cputs("\r\n");
-		cputs("\x1f: Back\r\n");
-		cputs("\r\n");
-
-		while (!kbhit());
-		switch (cgetc()) {
-			case '1':
-				firstBank = 0;
-				lastBank = FLASH_BANKS;
-				break;
-			case '2':
-				firstBank = 5;
-				lastBank = 6;
-				break;
-			case LEFT_ARROW_KEY:
-				return;
-		}
-		if (lastBank) break;
+	cprintf("flash id: 0x%04x\r\n", id);
+	if (id != 0xbfc8) {
+		cputs("wrong flash id\r\n");
+		enableInterrupts();
+		return 0;
 	}
+	cputs("flash id ok\r\n");
+	cputs("\r\n");
+	lastBank = FLASH_BANKS;
 
 	disableInterrupts();
 	cputs("flash 0 test...\r\n");
 	memset(g_blockBuffer, 0, 256);
-	for (i = firstBank; i < lastBank; i++) {
+	for (i = 0; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
@@ -156,18 +131,16 @@ static void testFlash()
 			flashWrite256Block(adr);
 			adr += 0x100;
 		}
-		if (firstBank != 5) {
-			flashEraseSector(adr);
-			for (j = 0; j < 16; j++) {
-				flashWrite256Block(adr);
-				adr += 0x100;
-			}
+		flashEraseSector(adr);
+		for (j = 0; j < 16; j++) {
+			flashWrite256Block(adr);
+			adr += 0x100;
 		}
 	}
 
 	gotox(0);
 	cputs("flash 0 verify...\r\n");
-	for (i = firstBank; i < lastBank; i++) {
+	for (i = 0; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		FLASH_ADDRESS_EXTENSION = i;
@@ -176,18 +149,17 @@ static void testFlash()
 			if (fastCompare256(adr)) {
 				gotox(0);
 				cprintf("flash error, bank: %i\r\n", i);
-				anyKey();
-				return;
+				enableInterrupts();
+				return 0;
 			}
 			adr += 0x100;
-			if (firstBank == 5 && j == 15) break;
 		}
 	}
 
 	gotox(0);
 	cputs("flash random test...\r\n");
 	srand(1);
-	for (i = firstBank; i < lastBank; i++) {
+	for (i = 0; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
@@ -198,20 +170,18 @@ static void testFlash()
 			flashWrite256Block(adr);
 			adr += 0x100;
 		}
-		if (firstBank != 5) {
-			flashEraseSector(adr);
-			for (j = 0; j < 16; j++) {
-				rand256Block();
-				flashWrite256Block(adr);
-				adr += 0x100;
-			}
+		flashEraseSector(adr);
+		for (j = 0; j < 16; j++) {
+			rand256Block();
+			flashWrite256Block(adr);
+			adr += 0x100;
 		}
 	}
 
 	gotox(0);
 	cputs("flash random verify...\r\n");
 	srand(1);
-	for (i = firstBank; i < lastBank; i++) {
+	for (i = 0; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		FLASH_ADDRESS_EXTENSION = i;
@@ -222,30 +192,27 @@ static void testFlash()
 			if (fastCompare256(adr)) {
 				gotox(0);
 				cprintf("flash error, bank: %i\r\n", i);
-				anyKey();
-				return;
+				enableInterrupts();
+				return 0;
 			}
 			adr += 0x100;
-			if (firstBank == 5 && j == 15) break;
 		}
 	}
 
 	gotox(0);
 	cputs("flash erase test...\r\n");
-	for (i = firstBank; i < lastBank; i++) {
+	for (i = 0; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		flashSetBank(i);
 		flashEraseSector((uint8_t*) 0x8000);
-		if (firstBank != 5) {
-			flashEraseSector((uint8_t*) 0x9000);
-		}
+		flashEraseSector((uint8_t*) 0x9000);
 	}
 
 	gotox(0);
 	cputs("flash erase verify...\r\n");
 	memset(g_blockBuffer, 0xff, 256);
-	for (i = firstBank; i < lastBank; i++) {
+	for (i = 0; i < lastBank; i++) {
 		gotox(0);
 		cprintf("%i%%", i * 100 >> 8);
 		FLASH_ADDRESS_EXTENSION = i;
@@ -254,82 +221,16 @@ static void testFlash()
 			if (fastCompare256(adr)) {
 				gotox(0);
 				cprintf("flash error, bank: %i\r\n", i);
-				anyKey();
-				return;
+				enableInterrupts();
+				return 0;
 			}
 			adr += 0x100;
-			if (firstBank == 5 && j == 15) break;
 		}
 	}
 
 	gotox(0);
 	cputs("flash test ok\r\n");
-	anyKey();
-}
-*/
-
-static void testMidi()
-{
-	uint8_t midiThruOut = 0;
-	uint8_t midiThruIn = 0;
-	uint8_t config = 0;
-	showTitle("MIDI menu");
-	if (!midiIrqNmiTest()) {
-		cputs("MIDI IRQ not working\r\n");
-		anyKey();
-		return;
-	}
-	midiInit();
-	
-	cputs("n: Send note on\r\n");
-	cputs("f: Send note off\r\n");
-	cputs("i: MIDI thru in setting\r\n");
-	cputs("o: MIDI thru out setting\r\n");
-	cputs("\r\n");
-	cputs("\x1f: Back\r\n");
-	cputs("\r\n");
-
-	for (;;) {
-		config = MIDI_CONFIG_ENABLE_ON | MIDI_CONFIG_NMI_ON;
-		if (midiThruIn) config |= MIDI_CONFIG_THRU_IN_ON;
-		if (midiThruOut) config |= MIDI_CONFIG_THRU_OUT_ON;
-		MIDI_CONFIG = config;
-
-		if (kbhit()) {
-			switch (cgetc()) {
-				case 'n':
-					// note on, note 60, velocity 100
-					cputs("sending note on\r\n");
-					midiSendByte(0x90);
-					midiSendByte(60);
-					midiSendByte(100);
-					break;
-				
-				case 'f':
-					// note off
-					cputs("sending note off\r\n");
-					midiSendByte(0x80);
-					midiSendByte(60);
-					midiSendByte(0);
-					break;
-				
-				case 'i':
-					midiThruIn = !midiThruIn;
-					cprintf("MIDI thru in setting: %s\r\n", midiThruIn ? "on" : "off");
-					break;
-
-				case 'o':
-					midiThruOut = !midiThruOut;
-					cprintf("MIDI thru out setting: %s\r\n", midiThruOut ? "on" : "off");
-					break;
-
-				case LEFT_ARROW_KEY:  // left arrow
-					return;
-			}
-		} else if (midiByteReceived()) {
-			cprintf("MIDI-in: %02x\r\n", midiReadByte());
-		}
-	}
+	return 1;
 }
 
 static uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
@@ -345,18 +246,17 @@ static uint8_t testRomAsRamCompare(uint8_t bank, const char* test)
 		gotox(0);
 		cprintf("RAM error in bank 0x%04x\r\n", bank);
 		cprintf("test: %s\r\n", test);
-		anyKey();
+		enableInterrupts();
 		return 0;
 	}
 	return 1;
 }
 
-static void testRamAsRom()
+static uint8_t testRamAsRom()
 {
 	uint16_t i;
 
 	disableInterrupts();
-	showTitle("RAM as ROM tests");
 	cputs("write random data in RAM...\r\n");
 	
 	// fill external RAM for ROM hack test
@@ -394,8 +294,8 @@ static void testRamAsRom()
 		CART_CONTROL = CART_CONTROL_GAME_LOW | CART_CONTROL_EXROM_LOW;
 
 		// test normal cartridge areas
-		if (!testRomAsRamCompare(i + 0x80, "0x8000, cartridge mode")) return;
-		if (!testRomAsRamCompare(i + 0xa0, "0xa000, cartridge mode")) return;
+		if (!testRomAsRamCompare(i + 0x80, "0x8000, cartridge mode")) return 0;
+		if (!testRomAsRamCompare(i + 0xa0, "0xa000, cartridge mode")) return 0;
 
 		// standard mode
 		ramSetBank(0xa0);
@@ -406,13 +306,13 @@ static void testRamAsRom()
 		CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_BASIC_HACK_ON;
 	
 		// test BASIC
-		if (!testRomAsRamCompare(i + 0xa0, "0xa000, BASIC hack")) return;
+		if (!testRomAsRamCompare(i + 0xa0, "0xa000, BASIC hack")) return 0;
 
 		// enable special cartridge RAM as ROM mode and KERNAL hack
 		CART_CONFIG = CART_CONFIG_RAM_AS_ROM_ON | CART_CONFIG_KERNAL_HACK_ON;
 	
 		// test KERNAL
-		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return;
+		if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL hack")) return 0;
 
 		// C128 has no HIRAM hack
 		if (!g_isC128) {
@@ -423,7 +323,7 @@ static void testRamAsRom()
 			*((uint8_t*) 1) = 0x37;
 	
 			// test KERNAL
-			if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL/HIRAM hack, ROM")) return;
+			if (!testRomAsRamCompare(i + 0xe0, "0xe000, KERNAL/HIRAM hack, ROM")) return 0;
 	
 			// enable internal C64 RAM under KERNAL
 			*((uint8_t*) 1) = 0x35;
@@ -437,8 +337,8 @@ static void testRamAsRom()
 				gotox(0);
 				cprintf("KERNAL HIRAM hack RAM error\r\n");
 				cprintf("bank: %i\r\n", i);
-				anyKey();
-				return;
+				enableInterrupts();
+				return 0;
 			}
 	
 			// default value
@@ -452,48 +352,6 @@ static void testRamAsRom()
 
 	gotox(0);
 	cputs("RAM as ROM test ok\r\n");
-	anyKey();
-}
-
-void testMenu(void)
-{
-	for (;;) {
-		// disable MIDI
-		MIDI_CONFIG = 0;
-	
-		// standard mode
-		CART_CONFIG = 0;
-	
-		// /GAME high, /EXROM low
-		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
-		
-		showTitle("Test Menu");
-		cputs("R: RAM test\r\n");
-		//cputs("f: flash test\r\n");
-		cputs("M: MIDI test\r\n");
-		cputs("O: RAM as ROM tests\r\n");
-		//cputs("s: SID test\r\n");
-		cputs("\r\n");
-		cputs("\x1f: Back\r\n");
-		while (!kbhit());
-		switch (cgetc()) {
-			case 'r':
-				testRam();
-				break;
-		/*	case 'f':
-				testFlash();
-				break;*/
-			case 'm':
-				testMidi();
-				break;
-			case 'o':
-				testRamAsRom();
-				break;
-			/*case 's':
-				sidTest();
-				break;*/
-			case LEFT_ARROW_KEY:
-				return;
-		}
-	}
+	enableInterrupts();
+	return 1;
 }

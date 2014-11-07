@@ -8,7 +8,6 @@
 #include <QMessageBox>
 #include <vector>
 #include <map>
-#include <initializer_list>
 #include <QStandardItemModel>
 #include "mainwindow.h"
 #include "RtMidi.h"
@@ -27,6 +26,9 @@ using namespace std;
 MainWindow* g_mainWindow;
 
 bool g_midiTransferInProgress = false;
+bool g_testSequenceRunning = false;
+
+QString g_flashDumpFilename = "";
 
 class MidiTransferInProgress {
 public:
@@ -42,7 +44,7 @@ public:
 };
 
 bool isMidiTransferInProgress() {
-    if (g_midiTransferInProgress) {
+    if (g_midiTransferInProgress || g_testSequenceRunning) {
         QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Please wait, MIDI transfer in progress.");
         return true;
     } else {
@@ -63,7 +65,6 @@ void myMsleep(int milliseconds)
     Helper::msleep(milliseconds);
 }
 
-const char* g_filename = "filename";
 const char* g_midiInInterfaceName = "midiInInterfaceName";
 const char* g_midiOutInterfaceName = "midiOutInterfaceName";
 
@@ -277,24 +278,39 @@ static void midiSendCommand(uint8_t tag, ByteArray data)
     midiEndTransfer();
 }
 
-template <class T>
-static void midiSendCommand(uint8_t tag, initializer_list<T> list)
+static void midiSendCommand(uint8_t tag, uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)
 {
-    ByteArray array;
-    for (auto elem : list) {
-        array.push_back(elem);
-    }
-    midiSendCommand(tag, array);
+    ByteArray b;
+    b.push_back(b1);
+    b.push_back(b2);
+    b.push_back(b3);
+    b.push_back(b4);
+    midiSendCommand(tag, b);
+}
+
+static void midiSendByteCommand(uint8_t tag, uint8_t b1)
+{
+    ByteArray b;
+    b.push_back(b1);
+    midiSendCommand(tag, b);
+}
+
+static void midiSendCommand(uint8_t tag, uint8_t b1, uint8_t b2)
+{
+    ByteArray b;
+    b.push_back(b1);
+    b.push_back(b2);
+    midiSendCommand(tag, b);
 }
 
 static void midiSendWordCommand(uint8_t tag, uint16_t word)
 {
-    midiSendCommand(tag, { word & 0xff, word >> 8 });
+    midiSendCommand(tag, word & 0xff, word >> 8);
 }
 
 static void midiSendCommand(uint8_t tag)
 {
-    midiSendCommand(tag, { 0 });
+    midiSendCommand(tag, ByteArray());
 }
 
 void blockToTrackSector(uint16_t block, uint8_t* track, uint8_t* sector)
@@ -406,7 +422,7 @@ void midiDriveSaveBlock(int driveType, int driveNumber, int block, unsigned char
     uint8_t sector;
     blockToTrackSector(block, &track, &sector);
     showStatus(QString("").sprintf("saving track %i sector %i", track, sector));
-    midiSendCommand(MIDI_COMMAND_DRIVE_SAVE_BLOCK, { driveType, driveNumber, block & 0xff, block >> 8 });
+    midiSendCommand(MIDI_COMMAND_DRIVE_SAVE_BLOCK, driveType, driveNumber, block & 0xff, block >> 8);
     ByteArray bdata;
     for (int i = 0; i < 256; i++) bdata.push_back(blockData[i]);
     midiSendCommand(MIDI_COMMAND_DRIVE_BLOCK, bdata);
@@ -434,7 +450,7 @@ QByteArray midiDriveLoadBlock(int driveType, int driveNumber, int block)
     uint8_t sector;
     blockToTrackSector(block, &track, &sector);
     showStatus(QString("").sprintf("loading track %i sector %i", track, sector));
-    midiSendCommand(MIDI_COMMAND_DRIVE_LOAD_BLOCK, { driveType, driveNumber, block & 0xff, block >> 8 });
+    midiSendCommand(MIDI_COMMAND_DRIVE_LOAD_BLOCK, driveType, driveNumber, block & 0xff, block >> 8);
 
     int tag;
     QByteArray data = midiReceiveCommand(tag);
@@ -478,20 +494,31 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
     g_mainWindow = this;
-    m_testSequenceRunning = false;
+    g_testSequenceRunning = false;
     setupUi(this);
-    setWindowTitle(QCoreApplication::applicationName());
+    setWindowTitle(QCoreApplication::applicationName() + " V1.0");
     startTimer(100);
 
+    QSettings settings;
+    fileEdit->setText(settings.value("fileEdit", "").toString());
+    resetModeC64RadioButton->setChecked(settings.value("resetModeC64RadioButton", "1").toString() == "1");
+    resetModeC128RadioButton->setChecked(settings.value("resetModeC128RadioButton", "0").toString() == "1");
+    loadAddressEdit->setText(settings.value("loadAddressEdit", "0801").toString());
+    startAddressEdit->setText(settings.value("startAddressEdit", "0000").toString());
+    prgSlotSpinBox->setValue(settings.value("prgSlotSpinBox", "0").toString().toInt());
+    enableCartridgeDisksCheckBox->setChecked(settings.value("enableCartridgeDisksCheckBox", "0").toString() == "1");
+    expertSettingsGroupBox->setChecked(settings.value("expertSettingsGroupBox", "0").toString() == "1");
+    customBasicCheckBox->setChecked(settings.value("customBasicCheckBox", "0").toString() == "1");
+    customKernalCheckBox->setChecked(settings.value("customKernalCheckBox", "0").toString() == "1");
+    kernalHiramHackCheckBox->setChecked(settings.value("kernalHiramHackCheckBox", "0").toString() == "1");
+    customBasicFromRamCheckbox->setChecked(settings.value("customBasicFromRamCheckbox", "0").toString() == "1");
+    customKernalFromRamCheckbox->setChecked(settings.value("customKernalFromRamCheckbox", "0").toString() == "1");
+    flashBlockEdit->setText(settings.value("loadAddressEdit", "b000").toString());
+    g_flashDumpFilename = settings.value("flashDumpFilename", "").toString();
+
     connect(selectFileButton, SIGNAL(clicked()), this, SLOT(onSelectFile()));
-    connect(noteOnButton, SIGNAL(clicked()), this, SLOT(onNoteOn()));
-    connect(noteOffButton, SIGNAL(clicked()), this, SLOT(onNoteOff()));
-    connect(startTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStartTestSequence()));
-    connect(stopTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStopTestSequence()));
-    connect(midiInInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiInInterfaceName(QString)));
-    connect(midiOutInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiOutInterfaceName(QString)));
-    connect(clearButton, SIGNAL(clicked()), this, SLOT(onClear()));
     connect(flashPrgButton, SIGNAL(clicked()), this, SLOT(onFlashPrg()));
+    connect(deletePrgButton, SIGNAL(clicked()), this, SLOT(onDeletePrg()));
     connect(startPrgFromSlotButton, SIGNAL(clicked()), this, SLOT(onStartPrgFromSlot()));
     connect(flashEasyFlashCrtButton, SIGNAL(clicked()), this, SLOT(onFlashEasyFlashCrt()));
     connect(flashBasicBinButton, SIGNAL(clicked()), this, SLOT(onFlashBasicBin()));
@@ -507,12 +534,20 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(readDirectoryButton, SIGNAL(clicked()), this, SLOT(onReadDirectory()));
     connect(downloadD64Button, SIGNAL(clicked()), this, SLOT(onDownloadD64()));
     connect(uploadD64Button, SIGNAL(clicked()), this, SLOT(onUploadD64()));
+    connect(driveComboBox, SIGNAL(activated(QString)), this, SLOT(onDriveChange(QString)));
 
-    connect(saveSettingsButton, SIGNAL(clicked()), this, SLOT(onSaveSettings()));
-
+    connect(noteOnButton, SIGNAL(clicked()), this, SLOT(onNoteOn()));
+    connect(noteOffButton, SIGNAL(clicked()), this, SLOT(onNoteOff()));
+    connect(startTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStartTestSequence()));
+    connect(stopTestSequenceButton, SIGNAL(clicked()), this, SLOT(onStopTestSequence()));
+    connect(midiInInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiInInterfaceName(QString)));
+    connect(midiOutInterfacesComboBox, SIGNAL(activated(QString)), this, SLOT(onSelectMidiOutInterfaceName(QString)));
+    connect(clearButton, SIGNAL(clicked()), this, SLOT(onClear()));
     connect(readFlashBlockButton, SIGNAL(clicked()), this, SLOT(onReadFlashBlock()));
-
-    fileEdit->setText(getFilename());
+    connect(connectionTestButton, SIGNAL(clicked()), this, SLOT(onConnectionTest()));
+    connect(ramAndFlashTestsButton, SIGNAL(clicked()), this, SLOT(onRamAndFlashTests()));
+    connect(dumpFlashButton, SIGNAL(clicked()), this, SLOT(onDumpFlashButton()));
+    connect(uploadFlashButton, SIGNAL(clicked()), this, SLOT(onUploadFlashButton()));
 
     QString selectedName = getMidiInInterfaceName();
     int c = g_midiIn.getPortCount();
@@ -559,6 +594,22 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 MainWindow::~MainWindow() {
+    QSettings settings;
+    settings.setValue("fileEdit", fileEdit->text());
+    settings.setValue("resetModeC64RadioButton", resetModeC64RadioButton->isChecked() ? "1" : "0");
+    settings.setValue("resetModeC128RadioButton", resetModeC128RadioButton->isChecked() ? "1" : "0");
+    settings.setValue("loadAddressEdit", loadAddressEdit->text());
+    settings.setValue("startAddressEdit", startAddressEdit->text());
+    settings.setValue("prgSlotSpinBox", QString::number(prgSlotSpinBox->value()));
+    settings.setValue("enableCartridgeDisksCheckBox", enableCartridgeDisksCheckBox->isChecked() ? "1" : "0");
+    settings.setValue("expertSettingsGroupBox", expertSettingsGroupBox->isChecked() ? "1" : "0");
+    settings.setValue("customBasicCheckBox", customBasicCheckBox->isChecked() ? "1" : "0");
+    settings.setValue("customKernalCheckBox", customKernalCheckBox->isChecked() ? "1" : "0");
+    settings.setValue("kernalHiramHackCheckBox", kernalHiramHackCheckBox->isChecked() ? "1" : "0");
+    settings.setValue("customBasicFromRamCheckbox", customBasicFromRamCheckbox->isChecked() ? "1" : "0");
+    settings.setValue("customKernalFromRamCheckbox", customKernalFromRamCheckbox->isChecked() ? "1" : "0");
+    settings.setValue("flashBlockEdit", flashBlockEdit->text());
+    settings.setValue("flashDumpFilename", g_flashDumpFilename);
 }
 
 #define STATUS_NOTEOFF    0x80
@@ -588,8 +639,7 @@ static void midiSendNopCommand()
 
 void MainWindow::onNoteOn()
 {
-    if (!isMidiTransferInProgress()) {
-        MidiTransferInProgress lock;
+    if (!g_midiTransferInProgress) {
         try {
             ByteArray message;
             unsigned char chan = 0;
@@ -610,8 +660,7 @@ void MainWindow::onNoteOn()
 
 void MainWindow::onNoteOff()
 {
-    if (!isMidiTransferInProgress()) {
-        MidiTransferInProgress lock;
+    if (!g_midiTransferInProgress) {
         try {
             ByteArray message;
             unsigned char chan = 0;
@@ -633,17 +682,13 @@ void MainWindow::onNoteOff()
 void MainWindow::onStartTestSequence()
 {
     if (!isMidiTransferInProgress()) {
-        MidiTransferInProgress lock;
-        m_testSequenceRunning = true;
+        g_testSequenceRunning = true;
     }
 }
 
 void MainWindow::onStopTestSequence()
 {
-    if (!isMidiTransferInProgress()) {
-        MidiTransferInProgress lock;
-        m_testSequenceRunning = false;
-    }
+    g_testSequenceRunning = false;
 }
 
 static QString hexNumber2(int number)
@@ -667,10 +712,9 @@ static QString hexNumber8(uint32_t number)
 
 void MainWindow::onSelectFile()
 {
-    QString filename = QFileDialog::getOpenFileName(this, tr("Open PRG"), getFilename(), tr("C64 files (*.prg *.bin *.crt)"));
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open PRG"), fileEdit->text(), tr("C64 files (*.prg *.bin *.crt)"));
     if (filename.size() > 0) {
         fileEdit->setText(filename);
-        setFilename(filename);
 
         if (filename.toLower().endsWith(".prg")) {
             QString name;
@@ -729,7 +773,7 @@ static void flashFile(QString name, QByteArray data, int startAddress)
         int c64Address = (address & 0x1fff) | 0x8000;
         if ((c64Address & 0x0fff) == 0) {
             midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, c64Address);
-            midiSendCommand(MIDI_COMMAND_SET_FLASH_BANK, { address >> 13 });
+            midiSendByteCommand(MIDI_COMMAND_SET_FLASH_BANK, address >> 13);
             midiSendCommand(MIDI_COMMAND_ERASE_FLASH_SECTOR);
             midiSendNopCommand();
         }
@@ -740,7 +784,7 @@ static void flashFile(QString name, QByteArray data, int startAddress)
         int percent = transferred * 100 / full;
         if (percent > 100) percent = 100;
         if (percent != oldPercent && ((c64Address & 0x0fff) == 0)) {
-            midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+            midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
             QString message = QString("").sprintf("%i%%", percent);
             midiSendPrintCommand(message);
             oldPercent = percent;
@@ -748,7 +792,7 @@ static void flashFile(QString name, QByteArray data, int startAddress)
             showStatus("erasing " + message);
         }
     }
-    midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+    midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
     midiSendPrintCommand("100%");
 
     // then flash all blocks, which are not erased (all 0xff)
@@ -769,13 +813,13 @@ static void flashFile(QString name, QByteArray data, int startAddress)
         while (block.size() < 256) block.push_back(0xff);
         if (!isBlock255(block)) {
             midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, c64Address);
-            midiSendCommand(MIDI_COMMAND_SET_FLASH_BANK, { address >> 13 });
+            midiSendByteCommand(MIDI_COMMAND_SET_FLASH_BANK, address >> 13);
             midiSendCommand(MIDI_COMMAND_WRITE_FLASH, block);
             midiSendNopCommand();
             int percent = transferred * 100 / full;
             if (percent > 100) percent = 100;
             if (percent != oldPercent) {
-                midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+                midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
                 QString message = QString("").sprintf("%i%%", percent);
                 midiSendPrintCommand(message);
                 oldPercent = percent;
@@ -787,7 +831,7 @@ static void flashFile(QString name, QByteArray data, int startAddress)
         address += 0x100;
         transferred += size;
     }
-    midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+    midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
     midiSendPrintCommand("100%");
     showStatus("flash done");
 
@@ -820,7 +864,7 @@ static void sramUpload(QString name, QByteArray data, int startBank)
         transferred += size;
         int percent = transferred * 100 / full;
         if (percent != oldPercent) {
-            midiSendCommand(MIDI_COMMAND_GOTOX, { 0 });
+            midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
             QString message = QString("").sprintf("%i%%", percent);
             midiSendPrintCommand(message);
             oldPercent = percent;
@@ -829,18 +873,6 @@ static void sramUpload(QString name, QByteArray data, int startBank)
     }
     showStatus("upload done");
     midiSendPrintCommand(NEWLINE);
-}
-
-QString MainWindow::getFilename()
-{
-    QSettings settings;
-    return settings.value(g_filename, "").toString();
-}
-
-void MainWindow::setFilename(QString filename)
-{
-    QSettings settings;
-    settings.setValue(g_filename, filename);
 }
 
 QString MainWindow::getMidiOutInterfaceName()
@@ -902,7 +934,7 @@ void MainWindow::timerEvent(QTimerEvent*)
 {
     if (g_timeout) g_timeout--;
     static int state = 0;
-    if (m_testSequenceRunning) {
+    if (g_testSequenceRunning) {
         switch (state) {
         case 0:
             onNoteOn();
@@ -977,6 +1009,54 @@ void MainWindow::onFlashPrg()
     if (!isMidiTransferInProgress()) {
         MidiTransferInProgress lock;
         flashPrg();
+    }
+}
+
+void MainWindow::onDeletePrg()
+{
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        int slot = prgSlotSpinBox->value();
+        QString slotString = QString::number(slot);
+        if (QMessageBox::question(this, QCoreApplication::applicationName(), "Are you sure to delete the PRG in slot " + slotString + "?",
+                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+        {
+            midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
+            midiSendPrintCommand("erasing slot " + slotString + NEWLINE);
+            midiSendNopCommand();
+
+            // calculate flash start address
+            int startAddress = slot * 0x10000 + 0x60000;
+
+            // erase all sectors for one slot
+            int full = 0x10000;
+            int dataSize = full;
+            int transferred = 0;
+            int address = startAddress;
+            while (transferred < dataSize) {
+                int c64Address = (address & 0x1fff) | 0x8000;
+                if ((c64Address & 0x0fff) == 0) {
+                    midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, c64Address);
+                    midiSendByteCommand(MIDI_COMMAND_SET_FLASH_BANK, address >> 13);
+                    midiSendCommand(MIDI_COMMAND_ERASE_FLASH_SECTOR);
+                    midiSendNopCommand();
+                }
+                int size = dataSize;
+                if (size > 0x2000) size = 0x2000;
+                address += 0x2000;
+                transferred += size;
+                int percent = transferred * 100 / full;
+                if (percent > 100) percent = 100;
+                midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
+                QString message = QString("").sprintf("%i%%", percent);
+                midiSendPrintCommand(message);
+                midiSendNopCommand();
+                showStatus("erasing " + message);
+            }
+            midiSendByteCommand(MIDI_COMMAND_GOTOX, 0);
+            midiSendPrintCommand("100%");
+            midiSendPrintCommand(NEWLINE + "done");
+        }
     }
 }
 
@@ -1330,7 +1410,7 @@ void MainWindow::onFlashMenuBin()
         {
             sramUpload(name, data, 0x100);
             midiSendNopCommand();
-            midiSendCommand(MIDI_COMMAND_WRITE_FLASH_FROM_SRAM, { 0, (data.size() + 255) >> 8});
+            midiSendCommand(MIDI_COMMAND_WRITE_FLASH_FROM_SRAM, 0, (data.size() + 255) >> 8);
         }
     }
 }
@@ -1405,8 +1485,7 @@ QByteArray MainWindow::createHeader(QString name, bool ramOperation, int length)
     default:
         break;
     }
-    if (midiThruInCheckBox->isChecked()) midiConfig |= MIDI_CONFIG_THRU_IN_ON;
-    if (midiThruOutCheckBox->isChecked()) midiConfig |= MIDI_CONFIG_THRU_OUT_ON;
+    midiConfig |= MIDI_CONFIG_THRU_IN_ON;
     header[int(&MIDI_ADDRESS) - 0xde00] = midiAddress;
     header[int(&MIDI_CONFIG) - 0xde00] = midiConfig;
 
@@ -1541,7 +1620,7 @@ void MainWindow::onOpenD64File()
 {
     if (!isMidiTransferInProgress()) {
         MidiTransferInProgress lock;
-        QString filename = QFileDialog::getOpenFileName(this, tr("Open D64"), getFilename(), tr("D64 file (*.d64)"));
+        QString filename = QFileDialog::getOpenFileName(this, tr("Open D64"), d64FileEdit->text(), tr("D64 file (*.d64)"));
         if (filename.size() > 0) {
             openD64File(filename);
         }
@@ -1660,7 +1739,7 @@ void MainWindow::onDownloadD64()
     if (!isMidiTransferInProgress()) {
         MidiTransferInProgress lock;
         try {
-            QString filename = QFileDialog::getSaveFileName(this, tr("Save as D64"), getFilename(), tr("D64 file (*.d64)"));
+            QString filename = QFileDialog::getSaveFileName(this, tr("Save as D64"), "", tr("D64 file (*.d64)"));
             if (filename.size() > 0) {
                 // open file
                 QFile file(filename);
@@ -1734,43 +1813,24 @@ void MainWindow::onUploadD64()
                 midiDriveSaveBlock(type, drive, i, blockData);
             }
 
-            // show disk
-            onReadDirectory();
-
-            showStatus("upload done");
         } catch (RtError& err) {
             //qWarning() << QString::fromStdString(err.getMessage());
         }
     }
+
+    try {
+        // show disk
+        onReadDirectory();
+
+        showStatus("upload done");
+    } catch (RtError& err) {
+        //qWarning() << QString::fromStdString(err.getMessage());
+    }
 }
 
-void MainWindow::onSaveSettings()
+void MainWindow::onDriveChange(QString)
 {
-    if (!isMidiTransferInProgress()) {
-        MidiTransferInProgress lock;
-        ByteArray configs;
-
-        midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
-
-        configs.push_back(KERBEROS_CONFIG_MIDI_IN_THRU);
-        configs.push_back(midiThruInCheckBox->isChecked());
-
-        configs.push_back(KERBEROS_CONFIG_MIDI_OUT_THRU);
-        configs.push_back(midiThruOutCheckBox->isChecked());
-
-        configs.push_back(KERBEROS_CONFIG_AUTOSTART_SLOT);
-        configs.push_back(autostartSlotSpinBox->value());
-
-        configs.push_back(KERBEROS_CONFIG_DRIVE_1);
-        configs.push_back(disk1SpinBox->value());
-
-        configs.push_back(KERBEROS_CONFIG_DRIVE_2);
-        configs.push_back(disk2SpinBox->value());
-
-        midiSendCommand(MIDI_COMMAND_CHANGE_CONFIG, configs);
-
-        showStatus("settings saved");
-    }
+    onReadDirectory();
 }
 
 void MainWindow::onReadFlashBlock()
@@ -1786,7 +1846,7 @@ void MainWindow::onReadFlashBlock()
             int c64Address = (address & 0x1fff) | 0x8000;
             midiSendWordCommand(MIDI_COMMAND_SET_ADDRESS, c64Address);
             midiSendNopCommand();
-            midiSendCommand(MIDI_COMMAND_SET_FLASH_BANK, { address >> 13 });
+            midiSendByteCommand(MIDI_COMMAND_SET_FLASH_BANK, address >> 13);
             midiSendNopCommand();
             midiSendCommand(MIDI_COMMAND_READ_MEMORY_BLOCK);
             int tag;
@@ -1813,6 +1873,151 @@ void MainWindow::onReadFlashBlock()
     }
 }
 
+void MainWindow::onConnectionTest()
+{
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            QMessageBox::information(NULL, QCoreApplication::applicationName(), "Please connect MIDI-in and MIDI-out");
+
+            // MIDI-thru mirrors MIDI-in
+            ByteArray configs;
+            configs.push_back(KERBEROS_CONFIG_MIDI_IN_THRU);
+            configs.push_back(1);
+            configs.push_back(KERBEROS_CONFIG_MIDI_OUT_THRU);
+            configs.push_back(0);
+            midiSendCommand(MIDI_COMMAND_CHANGE_CONFIG, configs);
+
+            // test MIDI-in and MIDI-out
+            midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
+            midiSendNopCommand();
+            midiSendPrintCommand("ping/pong test 1..." + NEWLINE);
+            midiSendNopCommand();
+            midiSendCommand(MIDI_COMMAND_PING);
+            int tag;
+            QByteArray data = midiReceiveCommand(tag);
+            if (data.size() != 0 || tag != MIDI_COMMAND_PONG) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Wrong response received");
+                return;
+            }
+
+            // test MIDI-thru
+            midiSendNopCommand();
+            midiSendPrintCommand("ping/pong test 2..." + NEWLINE);
+            midiSendNopCommand();
+            QMessageBox::information(NULL, QCoreApplication::applicationName(), "Please move MIDI-out cable to MIDI-thru");
+            midiSendCommand(MIDI_COMMAND_PING);
+            data = midiReceiveCommand(tag);
+            if (data.size() != 0 || tag != MIDI_COMMAND_PING) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Wrong response received");
+                return;
+            }
+
+            // all ok
+            QMessageBox::information(NULL, QCoreApplication::applicationName(), "Connection tests passed");
+
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
+        }
+    }
+}
+
+void MainWindow::onRamAndFlashTests()
+{
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            if (QMessageBox::question(this, QCoreApplication::applicationName(), "Warning, all flash data will be erased! Continue?",
+                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::No)
+            {
+                return;
+            }
+
+            // test MIDI-in and MIDI-out
+            midiSendCommand(MIDI_COMMAND_RAM_AND_FLASH_TESTS);
+
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
+        }
+    }
+}
+
+void MainWindow::onDumpFlashButton()
+{
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            QString filename = QFileDialog::getSaveFileName(this, tr("Save flash dump file"), g_flashDumpFilename, tr("bin files (*.bin)"));
+            if (filename.size() > 0) {
+                QFile file(filename);
+                if (!file.open(QIODevice::WriteOnly)) {
+                    QMessageBox::warning(NULL, QCoreApplication::applicationName(), "can't write to file " + filename);
+                    return;
+                }
+
+                g_flashDumpFilename = filename;
+                QByteArray data;
+                midiSendCommand(MIDI_COMMAND_REDRAW_SCREEN);
+                midiSendCommand(MIDI_COMMAND_DUMP_FLASH);
+                for (int i = 0; i < 256*32; i++) {
+                    // read block
+                    int tag;
+                    QByteArray blockData = midiReceiveCommand(tag);
+                    if (tag != MIDI_COMMAND_MEMORY_BLOCK || blockData.size() != 256) {
+                        QMessageBox::warning(NULL, QCoreApplication::applicationName(), "wrong tag or data size");
+                        return;
+                    }
+
+                    // add to data
+                    data.append(blockData);
+
+                    showStatus(QString("").sprintf("saving block %i of 8192", i));
+                }
+                showStatus("read block done");
+
+                // save data
+                file.write(data);
+                file.close();
+            }
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
+        }
+    }
+}
+
+void MainWindow::onUploadFlashButton()
+{
+    if (!isMidiTransferInProgress()) {
+        MidiTransferInProgress lock;
+        try {
+            if (QMessageBox::question(this, QCoreApplication::applicationName(), "Warning, all flash data will be erased! Continue?",
+                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::No)
+            {
+                return;
+            }
+
+            QString filename = QFileDialog::getOpenFileName(this, tr("Open flash dump file"), g_flashDumpFilename, tr("bin files (*.bin)"));
+            if (filename.size() > 0) {
+                QFile file(filename);
+                if (!file.open(QIODevice::ReadOnly)) {
+                    QMessageBox::warning(NULL, QCoreApplication::applicationName(), "can't read from file " + filename);
+                    return;
+                }
+
+                // read file
+                g_flashDumpFilename = filename;
+                QByteArray data = file.readAll();
+                file.close();
+
+                // save to flash
+                flashFile("flash dump", data, 0);
+            }
+        } catch (RtError& err) {
+            //qWarning() << QString::fromStdString(err.getMessage());
+        }
+    }
+}
+
 void MainWindow::enableMidiTransferButtons(bool enable)
 {
     noteOnButton->setEnabled(enable);
@@ -1823,20 +2028,27 @@ void MainWindow::enableMidiTransferButtons(bool enable)
     midiOutInterfacesComboBox->setEnabled(enable);
     flashPrgButton->setEnabled(enable);
     startPrgFromSlotButton->setEnabled(enable);
+    deletePrgButton->setEnabled(enable);
     flashEasyFlashCrtButton->setEnabled(enable);
-    flashBasicBinButton->setEnabled(enable);
-    flashKernalBinButton->setEnabled(enable);
     flashMenuBinButton->setEnabled(enable);
     uploadAndRunPrgButton->setEnabled(enable);
     listSlotsButton->setEnabled(enable);
-    uploadBasicToRamButton->setEnabled(enable);
-    uploadKernalToRamButton->setEnabled(enable);
-    backToBasicButton->setEnabled(enable);
+    readFlashBlockButton->setEnabled(enable);
+    connectionTestButton->setEnabled(enable);
+    ramAndFlashTestsButton->setEnabled(enable);
+    dumpFlashButton->setEnabled(enable);
+    uploadFlashButton->setEnabled(enable);
+
+    if (expertSettingsGroupBox->isChecked()) {
+        uploadBasicToRamButton->setEnabled(enable);
+        uploadKernalToRamButton->setEnabled(enable);
+        backToBasicButton->setEnabled(enable);
+        flashBasicBinButton->setEnabled(enable);
+        flashKernalBinButton->setEnabled(enable);
+    }
 
     openD64FileButton->setEnabled(enable);
     readDirectoryButton->setEnabled(enable);
     downloadD64Button->setEnabled(enable);
     uploadD64Button->setEnabled(enable);
-
-    saveSettingsButton->setEnabled(enable);
 }

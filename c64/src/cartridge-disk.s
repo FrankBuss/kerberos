@@ -5,6 +5,7 @@
 .include "regs.inc"
 
 .export		loadCallback
+.export		saveCallback
 .export 	openCallback
 .export 	closeCallback
 .export 	chkinCallback
@@ -71,7 +72,8 @@ T_DIR = 6
 
 .segment "TRAMPOLINE"
 trampolineStart:
-
+		.byte "KERBEROSDISK ID", 1
+		
 openCallback:	jsr enableRom
 		jmp openImpl
 
@@ -92,6 +94,9 @@ chroutCallback:	jsr enableRom
 
 loadCallback:	jsr enableRom
 		jmp loadImpl
+
+saveCallback:	jsr enableRom
+		jmp saveImpl
 
 getinCallback:	jsr enableRom
 		jmp getinImpl
@@ -460,6 +465,8 @@ loadImpl4:	clc
 		jmp disableRom
 
 
+saveImpl:	; ignore, not implemented for cartridge disk
+		disableRomAndJump KERNAL_SAVE
 
 
 prolog:		pha

@@ -9,6 +9,8 @@
 .import         _rand
 .import         __BLOCK_BUFFER_LOAD__
 
+buffer = $c800
+
 .include "regs.inc"
 
 .segment "LOWCODE"
@@ -508,6 +510,4 @@ crc8Table:
 		.byte $2b, $75, $97, $c9, $4a, $14, $f6, $a8
 		.byte $74, $2a, $c8, $96, $15, $4b, $a9, $f7
 		.byte $b6, $e8, $0a, $54, $d7, $89, $6b, $35
-
-buffer:		.res $0800
 

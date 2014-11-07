@@ -40,7 +40,7 @@
 // no data. Reset, copy the program from SRAM and start. Header information in first SRAM block (256 bytes) is the same as in the first block of a slot.
 #define MIDI_COMMAND_START_SRAM_PROGRAM 0x0d
 
-// key/value pairs, 2 bytes each. Change config values.
+// key/value pairs, 2 bytes each. Change config values temporarly.
 #define MIDI_COMMAND_CHANGE_CONFIG 0x0e
 
 // no data. Show all slots on the C64.
@@ -71,5 +71,16 @@
 // data: 256 bytes in response to MIDI_COMMAND_READ_FLASH_BLOCK
 #define MIDI_COMMAND_MEMORY_BLOCK 0x16
 
+// no data. For testing the MIDI connection, sends a PONG message back
+#define MIDI_COMMAND_PING 0x17
+
+// no data. Response for a ping message
+#define MIDI_COMMAND_PONG 0x18
+
+// no data. Does RAM and flash tests
+#define MIDI_COMMAND_RAM_AND_FLASH_TESTS 0x19
+
+// no data. Dumps the flash with MIDI_COMMAND_MEMORY_BLOCK responses
+#define MIDI_COMMAND_DUMP_FLASH 0x1a
 
 #endif

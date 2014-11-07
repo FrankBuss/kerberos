@@ -6,12 +6,13 @@ menu_obj += obj/floppy.o
 menu_obj += obj/midi.o
 menu_obj += obj/flash.o
 menu_obj += obj/main_menu.o
-menu_obj += obj/test_menu.o
+menu_obj += obj/tests.o
 menu_obj += obj/configure_menu.o
 menu_obj += obj/about.o
 menu_obj += obj/about_asm.o
 menu_obj += obj/config.o
 menu_obj += obj/cartridge-disk.o
+menu_obj += obj/crc8.o
 
 synthesizer_obj :=
 synthesizer_obj += obj/util.o

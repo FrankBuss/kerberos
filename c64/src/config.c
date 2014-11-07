@@ -4,11 +4,23 @@
 #include "regs.h"
 #include "config.h"
 #include "util.h"
+#include "crc8.h"
 
 static uint8_t g_configs[256];
 
+static uint8_t calculateChecksum()
+{
+	uint8_t i;
+	crc8Init();
+	for (i = 0; i < 255; i++) crc8Update(g_configs[i]);
+	return crc8Get();
+}
+
 void loadConfigs(void)
 {
+	uint8_t checksum;
+	uint8_t i;
+	
 	// standard mode
 	CART_CONFIG = 0;
 	
@@ -18,11 +30,18 @@ void loadConfigs(void)
 	// settings start at 0xb000 in flash, flash bank 5 maps 0xa000-0xbfff to 0x8000-0x9fff
 	FLASH_ADDRESS_EXTENSION = 5;
 	memcpy(g_configs, (uint8_t*) 0x9000, 0x100);
+	
+	// if wrong checksum, use defaults
+	checksum = calculateChecksum();
+	if (checksum != g_configs[255]) {
+		for (i = 0; i < 255; i++) g_configs[i] = 255;
+	}
 }
 
 uint8_t saveConfigs(void)
 {
 	uint8_t* adr = (uint8_t*) 0x9000;
+	g_configs[255] = calculateChecksum();
 	flashSetBank(5);
 	flashEraseSector(adr);
 	memcpy(g_blockBuffer, g_configs, 0x100);
@@ -45,9 +64,9 @@ uint8_t getConfigValue(uint8_t key)
 				case KERBEROS_CONFIG_AUTOSTART_SLOT:
 					return 0;
 				case KERBEROS_CONFIG_DRIVE_1:
-					return 8;
-				case KERBEROS_CONFIG_DRIVE_2:
 					return 9;
+				case KERBEROS_CONFIG_DRIVE_2:
+					return 10;
 			}
 			return 0;
 		}
