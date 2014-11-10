@@ -1,13 +1,12 @@
-#include <windows.h>
 #include <QThread>
 #include <QApplication>
-#include <windows.h>
-#include <conio.h>
 #include <stdio.h>
 #include <cmath>
 #include <time.h>
 #include "mainwindow.h"
 #include "QDebug"
+
+bool g_debugging = false;
 
 int main(int argc, char** argv)
 {
@@ -16,7 +15,10 @@ int main(int argc, char** argv)
     QCoreApplication::setApplicationName("Kerberos App");
 
     QApplication a(argc, argv);
-	MainWindow w;
+    if (argc == 2) {
+        if (strcmp(argv[1], "debugging") == 0) g_debugging = true;
+    }
+    MainWindow w;
 	w.show();
 
 	return a.exec();

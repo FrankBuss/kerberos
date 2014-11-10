@@ -824,11 +824,11 @@ int main(void)
 		CART_CONTROL = CART_CONTROL_EXROM_LOW | CART_CONTROL_GAME_HIGH;
 
 		showTitle("Main Menu");
-		cputs("S: Start program\r\n");
+		cputs("S: Start from slot\r\n");
 		cputs("E: EasyFlash start\r\n");
-		cputs("C: Configure settings\r\n");
-		cputs("F: File transfer from PC/Mac\r\n");
-		cputs("H: Hardware reset without cartridge\r\n");
+		cputs("T: Transfer from PC/Mac\r\n");
+		cputs("C: Configuration\r\n");
+		cputs("H: Hardware reset / Kerberos off\r\n");
 		cputs("R: Reset to C64 BASIC prompt\r\n");
 		cputs("M: MIDI test\r\n");
 		cputs("A: About\r\n");
@@ -841,12 +841,12 @@ int main(void)
 			case 'e':
 				startEasyFlash();
 				break;
-			case 'c':
-				configureSettings();
-				break;
-			case 'f':
+			case 't':
 				receiveMidiCommands();
 				loadConfigs();
+				break;
+			case 'c':
+				configureSettings();
 				break;
 			case 'h':
 				hardwareReset();

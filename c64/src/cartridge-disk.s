@@ -4,6 +4,8 @@
 
 .include "regs.inc"
 
+.export		unlstnCallback
+.export		listenCallback
 .export		loadCallback
 .export		saveCallback
 .export 	openCallback
@@ -27,6 +29,8 @@ tmp3 = 12
 tmp4 = 13
 zpEnd = 13
 
+KERNAL_UNLSTN = $EDFE
+KERNAL_LISTEN = $ED0C
 KERNAL_OPEN = $F34A
 KERNAL_CLOSE = $F291
 KERNAL_CHKIN = $F20E
@@ -36,6 +40,8 @@ KERNAL_CHROUT = $F1CA
 KERNAL_LOAD = $F49E 
 KERNAL_SAVE = $F5DD  
 KERNAL_GETIN = $F13E
+
+ST_WORD = $90
 
 TRACKS = 35
 
@@ -74,6 +80,12 @@ T_DIR = 6
 trampolineStart:
 		.byte "KERBEROSDISK ID", 1
 		
+unlstnCallback:	jsr enableRom
+		jmp unlstnImpl
+
+listenCallback:	jsr enableRom
+		jmp listenImpl
+
 openCallback:	jsr enableRom
 		jmp openImpl
 
@@ -176,6 +188,8 @@ accuBackup:	.res 1
 statusBackup:	.res 1
 statusBackup2:	.res 1
 cpuPortBackup:	.res 1
+
+listenDrive:	.res 1
 
 imgfileBuffer: .res 2
 imgfileBufptr: .res 2
@@ -467,6 +481,33 @@ loadImpl4:	clc
 
 saveImpl:	; ignore, not implemented for cartridge disk
 		disableRomAndJump KERNAL_SAVE
+
+
+unlstnImpl:	; test if last listen drive is a cartridge disk
+		lda listenDrive
+		jsr selectFlashDisk
+		bcc unlstnImpl2
+		disableRomAndJump KERNAL_UNLSTN
+
+		; no error for cartridge disk
+unlstnImpl2:	lda #0
+		sta ST_WORD
+		clc
+		jmp disableRom
+
+
+listenImpl:	; save listen drive to ignore it for unlisten
+		sta listenDrive
+		; test for cartridge disk
+		jsr selectFlashDisk
+		bcc listenImpl2
+		disableRomAndJump KERNAL_LISTEN
+
+		; no error for cartridge disk
+listenImpl2:	lda #0
+		sta ST_WORD
+		clc
+		jmp disableRom
 
 
 prolog:		pha
@@ -786,7 +827,7 @@ convertSpace2:	rts
 ;
 di_open:	; reset KERNAL status
 		lda #0
-		sta $90
+		sta ST_WORD
 		; reset all variables
 		sta addBlocksFreeFlag
 		sta bytesleft
@@ -1400,7 +1441,7 @@ di_read_write_end:
 
 ; extern void __fastcall__ di_close(void);
 di_close:	lda #0
-		sta $90
+		sta ST_WORD
 		clc
 		rts
 	
@@ -1442,7 +1483,7 @@ di_load3:	; read file
 		jsr di_read
 		; no error
 		lda #0
-		sta $90
+		sta ST_WORD
 		rts
 	
 ;
@@ -1461,7 +1502,7 @@ di_chrin:	txa
 		lda #1
 		jsr di_read
 		lda #0
-		sta $90
+		sta ST_WORD
 		pla
 		tay
 		pla

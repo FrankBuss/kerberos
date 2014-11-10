@@ -18,6 +18,8 @@
 .import 	chroutCallback
 .import 	getinCallback
 .import		loadCallback
+.import		unlstnCallback
+.import		listenCallback
 
 .import		driveNumber1
 .import		driveNumber2
@@ -103,6 +105,8 @@ c4:		lda $8000,x
         .endmacro
         	lda #$ff
 		sta RAM_ADDRESS_EXTENSION
+        	patchKernal $ae, unlstnCallback
+        	patchKernal $b1, listenCallback
         	patchKernal $c0, openCallback
         	patchKernal $c3, closeCallback
         	patchKernal $c6, chkinCallback

@@ -1,7 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <windows.h>
 #include <QThread>
 #include <QMutex>
 #include <QMainWindow>

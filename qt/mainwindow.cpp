@@ -25,6 +25,8 @@ using namespace std;
 
 MainWindow* g_mainWindow;
 
+extern bool g_debugging;
+
 bool g_midiTransferInProgress = false;
 bool g_testSequenceRunning = false;
 
@@ -71,9 +73,14 @@ const char* g_midiOutInterfaceName = "midiOutInterfaceName";
 const char g_kerberosPrgSlotId[16] = KERBEROS_PRG_SLOT_ID;
 const char g_kerberosMenuId[16] = { 75, 69, 82, 66, 69, 82, 79, 83, 32, 77, 69, 78, 85, 32, 73, 68 };
 
-
+#if defined(__MACOSX_CORE__)
+RtMidiOutCoreMidi g_midiOut;
+RtMidiInCoreMidi g_midiIn;
+#else
 RtMidiOutWinMM g_midiOut;
 RtMidiInWinMM g_midiIn;
+#endif
+
 int g_lastByte;
 
 static int g_timeout = 0;
@@ -496,6 +503,9 @@ MainWindow::MainWindow(QWidget *parent) :
     g_mainWindow = this;
     g_testSequenceRunning = false;
     setupUi(this);
+    if (!g_debugging) {
+        debuggingGroupBox->setVisible(false);
+    }
     setWindowTitle(QCoreApplication::applicationName() + " V1.0");
     startTimer(100);
 
@@ -1486,11 +1496,11 @@ QByteArray MainWindow::createHeader(QString name, bool ramOperation, int length)
         break;
     }
     midiConfig |= MIDI_CONFIG_THRU_IN_ON;
-    header[int(&MIDI_ADDRESS) - 0xde00] = midiAddress;
-    header[int(&MIDI_CONFIG) - 0xde00] = midiConfig;
+    header[int(size_t(&MIDI_ADDRESS) - 0xde00)] = midiAddress;
+    header[int(size_t(&MIDI_CONFIG) - 0xde00)] = midiConfig;
 
     // cart control
-    header[int(&CART_CONTROL) - 0xde00] = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+    header[int(size_t(&CART_CONTROL) - 0xde00)] = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
 
     // cart config
     int cartConfig = 0;
@@ -1506,7 +1516,7 @@ QByteArray MainWindow::createHeader(QString name, bool ramOperation, int length)
             cartConfig |= CART_CONFIG_HIRAM_HACK_ON;
         }
     }
-    header[int(&CART_CONFIG) - 0xde00] = cartConfig;
+    header[int(size_t(&CART_CONFIG) - 0xde00)] = cartConfig;
 
     // load address, start address and length
     uint16_t loadAddress = loadAddressEdit->text().toInt(NULL, 16);
@@ -1990,12 +2000,6 @@ void MainWindow::onUploadFlashButton()
     if (!isMidiTransferInProgress()) {
         MidiTransferInProgress lock;
         try {
-            if (QMessageBox::question(this, QCoreApplication::applicationName(), "Warning, all flash data will be erased! Continue?",
-                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::No)
-            {
-                return;
-            }
-
             QString filename = QFileDialog::getOpenFileName(this, tr("Open flash dump file"), g_flashDumpFilename, tr("bin files (*.bin)"));
             if (filename.size() > 0) {
                 QFile file(filename);
@@ -2008,6 +2012,17 @@ void MainWindow::onUploadFlashButton()
                 g_flashDumpFilename = filename;
                 QByteArray data = file.readAll();
                 file.close();
+
+                if (data.size() != 2*1024*1024) {
+                    QMessageBox::warning(NULL, QCoreApplication::applicationName(), "wrong file size");
+                    return;
+                }
+
+                if (QMessageBox::question(this, QCoreApplication::applicationName(), "Warning, all flash data will be erased! Continue?",
+                                          QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::No)
+                {
+                    return;
+                }
 
                 // save to flash
                 flashFile("flash dump", data, 0);

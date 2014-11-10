@@ -294,7 +294,7 @@ QGroupBox::title {
         <rect>
          <x>20</x>
          <y>140</y>
-         <width>191</width>
+         <width>301</width>
          <height>17</height>
         </rect>
        </property>
@@ -304,7 +304,7 @@ QGroupBox::title {
         </font>
        </property>
        <property name="text">
-        <string>Enable cartridge disks</string>
+        <string>Enable cartridge disks (experimental)</string>
        </property>
       </widget>
      </widget>
@@ -1456,7 +1456,7 @@ QGroupBox::title {
        </property>
       </widget>
      </widget>
-     <widget class="QGroupBox" name="groupBox_8">
+     <widget class="QGroupBox" name="debuggingGroupBox">
       <property name="geometry">
        <rect>
         <x>530</x>

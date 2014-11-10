@@ -3,6 +3,9 @@ QT += core gui widgets
 TARGET = kerberos
 TEMPLATE = app
 
+macx: DEFINES += __MACOSX_CORE__
+macx: LIBS += -framework CoreAudio -framework CoreMIDI -framework CoreFoundation
+ICON = kerberos.icns
 
 SOURCES += main.cpp\
         mainwindow.cpp\
