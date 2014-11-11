@@ -76,6 +76,9 @@ const char g_kerberosMenuId[16] = { 75, 69, 82, 66, 69, 82, 79, 83, 32, 77, 69, 
 #if defined(__MACOSX_CORE__)
 RtMidiOutCoreMidi g_midiOut;
 RtMidiInCoreMidi g_midiIn;
+#elif defined(__LINUX_ALSASEQ__)
+RtMidiOutAlsa g_midiOut;
+RtMidiInAlsa g_midiIn;
 #else
 RtMidiOutWinMM g_midiOut;
 RtMidiInWinMM g_midiIn;
