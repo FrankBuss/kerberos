@@ -1,6 +1,6 @@
 QT += core gui widgets
 
-TARGET = kerberos.exe
+TARGET = kerberos
 TEMPLATE = app
 
 macx: DEFINES += __MACOSX_CORE__
@@ -28,7 +28,11 @@ win32:LIBS += -lwinmm
 win32:LIBS += -lws2_32
 
 unix:DEFINES += __LINUX_ALSASEQ__
-unix:LIBS += -lasound
+unix:LIBS += -lasound 
+unix:TARGET = kerberos.bin
+
+# unix:DEFINES += __LINUX_JACK__
+# unix:LIBS += -ljack
 
 RESOURCES = application.qrc
 RC_ICONS = kerberos.ico
