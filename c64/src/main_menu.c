@@ -801,6 +801,137 @@ static void testMidi()
 	}
 }
 
+static uint8_t flashIdTest()
+{
+	uint16_t id;
+	disableInterrupts();
+	id = flashReadId();
+	enableInterrupts();
+	return id == 0xbfc8;
+}
+
+static uint8_t midiIrqTest()
+{
+	return midiIrqNmiTest();
+}
+
+static uint8_t sramTest()
+{
+	g_ram[0] = 0xaa;
+	g_ram[1] = 0xbb;
+	return g_ram[0] == 0xaa && g_ram[1] == 0xbb;
+}
+
+static uint8_t sramBankingTest()
+{
+	uint8_t b0;
+	uint8_t b1;
+
+	// init with 0
+	ramSetBank(0);
+	g_ram[0] = 0;
+	ramSetBank(1);
+	g_ram[0] = 0;
+
+	// set test patterns in two banks
+	ramSetBank(0);
+	g_ram[0] = 0xaa;
+	ramSetBank(1);
+	g_ram[0] = 0xbb;
+
+	// read test patterns
+	ramSetBank(0);
+	b0 = g_ram[0];
+	ramSetBank(1);
+	b1 = g_ram[0];
+	
+	return b0 == 0xaa && b1 == 0xbb;
+}
+
+static uint8_t romTest()
+{
+	uint8_t* adr = (uint8_t*) 0x8000;
+	FLASH_ADDRESS_EXTENSION = 0;
+	return adr[4] == 0xc3 && adr[5] == 0xc2 && adr[6] == 0xcd;  // CBM
+}
+
+static uint8_t exromTest()
+{
+	uint8_t* adr = (uint8_t*) 0x8000;
+	uint8_t ram;
+	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_HIGH;
+	ram = *adr;
+	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW;
+	return ram != *adr;
+}
+
+static void testKerberosHardware()
+{
+	uint8_t i;
+	uint8_t flashIdSuccess;
+	uint8_t flashIdError = 0;
+	uint8_t midiIrqSuccess;
+	uint8_t midiIrqError = 0;
+	uint8_t sramSuccess;
+	uint8_t sramError = 0;
+	uint8_t sramBankingSuccess;
+	uint8_t sramBankingError = 0;
+	uint8_t romSuccess;
+	uint8_t romError = 0;
+	uint8_t exromSuccess;
+	uint8_t exromError = 0;
+
+	showTitle("Hardware test");
+
+	CART_CONTROL = CART_CONTROL_GAME_HIGH | CART_CONTROL_EXROM_LOW;
+	for (;;) {
+		flashIdSuccess = 0;
+		midiIrqSuccess = 0;
+		sramSuccess = 0;
+		sramBankingSuccess = 0;
+		romSuccess = 0;
+		exromSuccess = 0;
+		#define DO_TEST(name) \
+			if (name##Test()) { \
+				name##Success++; \
+			} else { \
+				if (name##Error < 255) name##Error++; \
+			}
+		for (i = 0; i < 100; i++) {
+			DO_TEST(flashId);
+			DO_TEST(midiIrq);
+			DO_TEST(sram);
+			DO_TEST(sramBanking);
+			DO_TEST(rom);
+			DO_TEST(exrom);
+		}
+		gotoxy(0, 2);
+		cprintf("last test success count\r\n");
+		cprintf("\r\n");
+		cprintf("flash ID: %i  \r\n", flashIdSuccess);
+		cprintf("MIDI IRQ: %i  \r\n", midiIrqSuccess);
+		cprintf("SRAM: %i  \r\n", sramSuccess);
+		cprintf("SRAM banking: %i  \r\n", sramBankingSuccess);
+		cprintf("ROM: %i  \r\n", romSuccess);
+		cprintf("EXROM: %i  \r\n", exromSuccess);
+		cprintf("\r\n");
+		cprintf("error sum count\r\n");
+		cprintf("\r\n");
+		cprintf("flash ID: %i  \r\n", flashIdError);
+		cprintf("MIDI IRQ: %i  \r\n", midiIrqError);
+		cprintf("SRAM: %i  \r\n", sramError);
+		cprintf("SRAM banking: %i  \r\n", sramBankingError);
+		cprintf("ROM: %i  \r\n", romError);
+		cprintf("EXROM: %i  \r\n", exromError);
+		cprintf("\r\n");
+		cprintf("press any key to stop\r\n");
+		if (kbhit()) {
+			cgetc();
+			return;
+		}
+	}
+}
+
 int main(void)
 {
 	uint8_t i;
@@ -809,7 +940,13 @@ int main(void)
 	loadConfigs();
 	testForAutostart();
 	FLASH_ADDRESS_EXTENSION = 0;
+
+	// disable run/stop-restore
+	*((uint8_t*)0x318) = 193;
 	
+	// disable Commodore-Shift for upper/lower case switch
+	*((uint8_t*)0x291) = 128;
+
 	for (;;) {
 		for (i = 0; i < 24; i++) g_sidBase[i] = 0;
 		g_vicBase[0x15] = 0;
@@ -831,6 +968,7 @@ int main(void)
 		cputs("H: Hardware reset / Kerberos off\r\n");
 		cputs("R: Reset to C64 BASIC prompt\r\n");
 		cputs("M: MIDI test\r\n");
+		cputs("K: Kerberos hardware test\r\n");
 		cputs("A: About\r\n");
 		cputs("\r\n");
 		while (!kbhit());
@@ -856,6 +994,9 @@ int main(void)
 				break;
 			case 'm':
 				testMidi();
+				break;
+			case 'k':
+				testKerberosHardware();
 				break;
 			case 'a':
 				about();
