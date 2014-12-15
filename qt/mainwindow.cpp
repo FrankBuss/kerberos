@@ -371,8 +371,8 @@ QByteArray midiReceiveCommand(int& tag)
 {
     g_timeout = MIDI_RECEIVE_TIMEOUT;
     int state = 0;
-    int b0;
-    int length;
+    int b0 = 0;
+    int length = 0;
     QByteArray msg;
     while (true) {
         QCoreApplication::processEvents();
