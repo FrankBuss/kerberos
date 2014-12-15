@@ -724,7 +724,7 @@ void showTitle(char* subtitle)
 	clrscr();
 	gotoxy(0, 0);
 	textcolor(CAPTION_COLOR);
-	cputs("Kerberos Menu V1.0 - ");
+	cputs("Kerberos Menu V1.1 - ");
 	cputs(subtitle);
 	textcolor(TEXT_COLOR);
 	cputs("\r\n\r\n");
