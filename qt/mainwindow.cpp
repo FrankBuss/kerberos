@@ -27,6 +27,7 @@ MainWindow* g_mainWindow;
 
 extern bool g_debugging;
 
+bool g_sendNoteOff = true;
 bool g_midiTransferInProgress = false;
 bool g_testSequenceRunning = false;
 
@@ -192,17 +193,33 @@ uint8_t ascii2petscii(uint8_t ascii)
 // second byte: length
 // last byte in the next data messages: CRC8 checksum
 
-static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
+static void sendNoteOnOff(uint8_t msg, uint8_t note, uint8_t velocity)
 {
     try {
         ByteArray message;
-        message.push_back(0x80 | channelBits);
+        message.push_back(msg);
         message.push_back(note);
         message.push_back(velocity);
         g_midiOut.sendMessage(&message);
+/*
+         printf("%02x\n", message[0]);
+        printf("%02x\n", message[1]);
+        printf("%02x\n", message[2]);
+        fflush(stdout);
+        */
     } catch (RtError& err) {
         //qWarning() << QString::fromStdString(err.getMessage());
     }
+}
+
+static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
+{
+    sendNoteOnOff(channelBits | 0x80, note, velocity);
+}
+
+static void sendNoteOn(uint8_t channelBits, uint8_t note, uint8_t velocity)
+{
+    sendNoteOnOff(channelBits | 0x90, note, velocity);
 }
 
 static void midiSendBytesWithFlags(int b1, int b2, int flags)
@@ -221,7 +238,14 @@ static void midiSendBytesWithFlags(int b1, int b2, int flags)
     } else {
         b2 = 0;
     }
-    sendNoteOff(channel | flags, b1, b2);
+
+    // alternate between note off and note on to avoid "running status" translation of some MIDI devices
+    if (g_sendNoteOff) {
+        sendNoteOff(channel | flags, b1, b2);
+    } else {
+        sendNoteOn(channel | flags, b1, b2);
+    }
+    g_sendNoteOff = !g_sendNoteOff;
 }
 
 static void midiStartTransfer(uint8_t tag, uint8_t length)
@@ -254,6 +278,9 @@ static void midiEndTransfer()
 
 static void midiSendCommand(uint8_t tag, ByteArray data)
 {
+    // init alternate note-on/off sending
+    g_sendNoteOff = true;
+
     // start file transfer
     size_t length = data.size();
     if (length <= 1) {
@@ -506,7 +533,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if (!g_debugging) {
         debuggingGroupBox->setVisible(false);
     }
-    setWindowTitle(QCoreApplication::applicationName() + " V1.0");
+    setWindowTitle(QCoreApplication::applicationName() + " V1.1");
     startTimer(100);
 
     QSettings settings;
