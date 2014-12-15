@@ -297,6 +297,54 @@ send2:		lda MIDI_6850_STATUS
 
 .segment "LOWCODE"
 
+; convert A to A/X screen code hex values
+toHex:		tay
+		and #$0f
+		tax
+		lda hDigits,x
+		tax
+		tya
+		lsr
+		lsr
+		lsr
+		lsr
+		tay
+		lda hDigits,y
+		rts
+hDigits: 	.byte "0123456789abcdef"
+
+; show current number of bytes in FIFO and max number
+fifoStatus:	lda midiWriteIndex
+		cmp midiReadIndex
+		bcs readLessEqualWrite
+		lda #$ff
+		sec
+		sbc midiReadIndex
+		sec
+		adc midiWriteIndex
+		jmp showStatus
+
+readLessEqualWrite:
+		sec
+		sbc midiReadIndex
+
+; number of bytes in FIFO is in accu
+showStatus:	pha
+		jsr toHex
+		sta $7e3
+		stx $7e4
+	
+		pla
+		cmp midiFifoMax
+		bcc skipMax
+		sta midiFifoMax
+		jsr toHex
+		sta $7e6
+		stx $7e7
+
+skipMax:	rts
+
+
 		; NMI handler
 midiNmi:	pha
 		txa
@@ -314,6 +362,7 @@ midiStore:	lda MIDI_6850_RX
 		ldx midiWriteIndex
 		sta midiRingbuffer,x
 		inc midiWriteIndex
+;		jsr fifoStatus
 
 midiNmiEnd:	pla
 		tay
