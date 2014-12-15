@@ -570,11 +570,19 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         if (selectedIndex >= 0) {
             midiInInterfacesComboBox->setCurrentIndex(selectedIndex);
-            g_midiIn.openPort(selectedIndex);
+            try {
+                g_midiIn.openPort(selectedIndex);
+            } catch (RtError& err) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-in device");
+            }
         } else {
             midiInInterfacesComboBox->setCurrentIndex(0);
             setMidiInInterfaceName(g_midiIn.getPortName(0).c_str());
-            g_midiIn.openPort(0);
+            try {
+                g_midiIn.openPort(0);
+            } catch (RtError& err) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-in device");
+            }
         }
         g_midiIn.setCallback(&midiCallback, this);
     } else {
@@ -592,11 +600,19 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         if (selectedIndex >= 0) {
             midiOutInterfacesComboBox->setCurrentIndex(selectedIndex);
-            g_midiOut.openPort(selectedIndex);
+            try {
+                g_midiOut.openPort(selectedIndex);
+            } catch (RtError& err) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-out device");
+            }
         } else {
             midiOutInterfacesComboBox->setCurrentIndex(0);
             setMidiOutInterfaceName(g_midiOut.getPortName(0).c_str());
-            g_midiOut.openPort(0);
+            try {
+                g_midiOut.openPort(0);
+            } catch (RtError& err) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-out device");
+            }
         }
     } else {
         midiOutInterfacesComboBox->addItem("No MIDI-out interfaces found!");
@@ -913,14 +929,22 @@ void MainWindow::onSelectMidiOutInterfaceName(QString name)
 {
     setMidiOutInterfaceName(name);
     g_midiOut.closePort();
-    g_midiOut.openPort(midiOutInterfacesComboBox->currentIndex());
+    try {
+        g_midiOut.openPort(midiOutInterfacesComboBox->currentIndex());
+    } catch (RtError& err) {
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-out device");
+    }
 }
 
 void MainWindow::onSelectMidiInInterfaceName(QString name)
 {
     setMidiInInterfaceName(name);
     g_midiIn.closePort();
-    g_midiIn.openPort(midiInInterfacesComboBox->currentIndex());
+    try {
+        g_midiIn.openPort(midiInInterfacesComboBox->currentIndex());
+    } catch (RtError& err) {
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-in device");
+    }
     g_midiIn.setCallback(&midiCallback, this);
 }
 
