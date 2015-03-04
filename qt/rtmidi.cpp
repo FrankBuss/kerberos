@@ -2130,7 +2130,7 @@ struct WinMidiData {
 //  Class Definitions: RtMidiIn
 //*********************************************************************//
 
-static void CALLBACK midiInputCallback( HMIDIIN hmin,
+static void CALLBACK midiInputCallback( HMIDIIN /* hmin */,
                                         UINT inputStatus,
                                         DWORD_PTR instancePtr,
                                         DWORD_PTR midiMessage,
@@ -2313,7 +2313,7 @@ void RtMidiInWinMM :: openPort( unsigned int portNumber, const std::string /*por
   connected_ = true;
 }
 
-void RtMidiInWinMM :: openVirtualPort( std::string portName )
+void RtMidiInWinMM :: openVirtualPort( std::string /* portName */ )
 {
   // This function cannot be implemented for the Windows MM MIDI API.
   errorString_ = "RtMidiIn::openVirtualPort: cannot be implemented in Windows MM MIDI API!";
@@ -2490,7 +2490,7 @@ void RtMidiOutWinMM :: closePort( void )
   }
 }
 
-void RtMidiOutWinMM :: openVirtualPort( std::string portName )
+void RtMidiOutWinMM :: openVirtualPort( std::string /* portName */ )
 {
   // This function cannot be implemented for the Windows MM MIDI API.
   errorString_ = "RtMidiOut::openVirtualPort: cannot be implemented in Windows MM MIDI API!";

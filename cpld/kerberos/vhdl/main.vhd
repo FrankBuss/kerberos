@@ -341,6 +341,13 @@ begin
 
                     -- 243-283 ns after rising edge of s02
                     when delay4 =>
+                        -- prepare RAM/flash access
+                        if io2_latched(0) = '0' and rw_latched = '0' and s02_latched = '1' then
+                            ram_write <= '1';
+                        end if;
+                        if (romL_latched(0) = '0' or romH_latched(0) = '0') and rw_latched = '0' and s02_latched = '1' then
+                            flash_write <= '1';
+                        end if;
                         state <= delay5;
 
                     -- 284-324 ns after rising edge of s02
@@ -348,10 +355,10 @@ begin
                         -- register write access
                         if s02_latched = '1' and rw_latched = '0' then
                             -- flash / RAM write
-                            if flash_write = '1' and (romL_filtered = '0' or romH_filtered = '0') then
+                            if flash_write = '1' and (romL_latched(0) = '0' or romH_latched(0) = '0') then
                                 we <= '0';
                                 flash_ce <= '0';
-                            elsif ram_write = '1' and io2_filtered = '0' then
+                            elsif ram_write = '1' and io2_latched(0) = '0' then
                                 we <= '0';
                                 ram_ce <= '0';
                             end if;
@@ -366,7 +373,7 @@ begin
                     when delay7 =>
                         -- register write access
                         if s02_latched = '1' and rw_latched = '0' then
-                            if io1_filtered = '0' then
+                            if io1_latched(0) = '0' then
                                 if adr(7 downto 0) = x"39" then
                                     midi_address <= dt;
                                 elsif adr(7 downto 0) = x"3a" then
@@ -424,14 +431,6 @@ begin
                 
                 -- memory access allowed from address_valid state until s02=0
                 if mem_access_allowed then
-                    -- prepare RAM/flash access
-                    if io2_filtered = '0' and rw_latched = '0' and s02_latched = '1' then
-                        ram_write <= '1';
-                    end if;
-                    if (romL_filtered = '0' or romH_filtered = '0') and rw_latched = '0' and s02_latched = '1' then
-                        flash_write <= '1';
-                    end if;
-
                     -- RAM/flash read
                     -- special case for C128: ignore rw=0 for s02=0, because it is wrong
                     if (s02_latched = '0') or (rw_latched = '1') then

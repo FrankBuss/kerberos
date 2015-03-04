@@ -27,6 +27,7 @@ MainWindow* g_mainWindow;
 
 extern bool g_debugging;
 
+bool g_sendNoteOff = true;
 bool g_midiTransferInProgress = false;
 bool g_testSequenceRunning = false;
 
@@ -216,17 +217,33 @@ uint8_t ascii2petscii(uint8_t ascii)
 // second byte: length
 // last byte in the next data messages: CRC8 checksum
 
-static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
+static void sendNoteOnOff(uint8_t msg, uint8_t note, uint8_t velocity)
 {
     try {
         ByteArray message;
-        message.push_back(0x80 | channelBits);
+        message.push_back(msg);
         message.push_back(note);
         message.push_back(velocity);
         g_midiOut.sendMessage(&message);
+/*
+         printf("%02x\n", message[0]);
+        printf("%02x\n", message[1]);
+        printf("%02x\n", message[2]);
+        fflush(stdout);
+        */
     } catch (RtError& err) {
       std::cout << err.getMessage();
     }
+}
+
+static void sendNoteOff(uint8_t channelBits, uint8_t note, uint8_t velocity)
+{
+    sendNoteOnOff(channelBits | 0x80, note, velocity);
+}
+
+static void sendNoteOn(uint8_t channelBits, uint8_t note, uint8_t velocity)
+{
+    sendNoteOnOff(channelBits | 0x90, note, velocity);
 }
 
 static void midiSendBytesWithFlags(int b1, int b2, int flags)
@@ -245,7 +262,14 @@ static void midiSendBytesWithFlags(int b1, int b2, int flags)
     } else {
         b2 = 0;
     }
-    sendNoteOff(channel | flags, b1, b2);
+
+    // alternate between note off and note on to avoid "running status" translation of some MIDI devices
+    if (g_sendNoteOff) {
+        sendNoteOff(channel | flags, b1, b2);
+    } else {
+        sendNoteOn(channel | flags, b1, b2);
+    }
+    g_sendNoteOff = !g_sendNoteOff;
 }
 
 static void midiStartTransfer(uint8_t tag, uint8_t length)
@@ -278,6 +302,9 @@ static void midiEndTransfer()
 
 static void midiSendCommand(uint8_t tag, ByteArray data)
 {
+    // init alternate note-on/off sending
+    g_sendNoteOff = true;
+
     // start file transfer
     size_t length = data.size();
     if (length <= 1) {
@@ -373,8 +400,8 @@ QByteArray midiReceiveCommand(int& tag)
 {
     g_timeout = MIDI_RECEIVE_TIMEOUT;
     int state = 0;
-    int b0;
-    int length;
+    int b0 = 0;
+    int length = 0;
     QByteArray msg;
     while (true) {
         QCoreApplication::processEvents();
@@ -535,7 +562,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if (!g_debugging) {
         debuggingGroupBox->setVisible(false);
     }
-    setWindowTitle(QCoreApplication::applicationName() + " V1.0");
+    setWindowTitle(QCoreApplication::applicationName() + " V1.1");
     startTimer(100);
 
     QSettings settings;
@@ -599,11 +626,19 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         if (selectedIndex >= 0) {
             midiInInterfacesComboBox->setCurrentIndex(selectedIndex);
-            g_midiIn.openPort(selectedIndex);
+            try {
+                g_midiIn.openPort(selectedIndex);
+            } catch (RtError& err) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-in device");
+            }
         } else {
             midiInInterfacesComboBox->setCurrentIndex(0);
             setMidiInInterfaceName(g_midiIn.getPortName(0).c_str());
-            g_midiIn.openPort(0);
+            try {
+                g_midiIn.openPort(0);
+            } catch (RtError& err) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-in device");
+            }
         }
         g_midiIn.setCallback(&midiCallback, this);
     } else {
@@ -621,11 +656,19 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         if (selectedIndex >= 0) {
             midiOutInterfacesComboBox->setCurrentIndex(selectedIndex);
-            g_midiOut.openPort(selectedIndex);
+            try {
+                g_midiOut.openPort(selectedIndex);
+            } catch (RtError& err) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-out device");
+            }
         } else {
             midiOutInterfacesComboBox->setCurrentIndex(0);
             setMidiOutInterfaceName(g_midiOut.getPortName(0).c_str());
-            g_midiOut.openPort(0);
+            try {
+                g_midiOut.openPort(0);
+            } catch (RtError& err) {
+                QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-out device");
+            }
         }
     } else {
         midiOutInterfacesComboBox->addItem("No MIDI-out interfaces found!");
@@ -942,14 +985,22 @@ void MainWindow::onSelectMidiOutInterfaceName(QString name)
 {
     setMidiOutInterfaceName(name);
     g_midiOut.closePort();
-    g_midiOut.openPort(midiOutInterfacesComboBox->currentIndex());
+    try {
+        g_midiOut.openPort(midiOutInterfacesComboBox->currentIndex());
+    } catch (RtError& err) {
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-out device");
+    }
 }
 
 void MainWindow::onSelectMidiInInterfaceName(QString name)
 {
     setMidiInInterfaceName(name);
     g_midiIn.closePort();
-    g_midiIn.openPort(midiInInterfacesComboBox->currentIndex());
+    try {
+        g_midiIn.openPort(midiInInterfacesComboBox->currentIndex());
+    } catch (RtError& err) {
+        QMessageBox::warning(NULL, QCoreApplication::applicationName(), "Can't open MIDI-in device");
+    }
     g_midiIn.setCallback(&midiCallback, this);
 }
 
