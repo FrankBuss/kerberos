@@ -28,7 +28,7 @@ then
 
     echo "[*] Copying files"
     echo "$BIN --> $RELDIR/bin"
-    cp kerberos.bin build/bin
+    cp kerberos.bin $RELDIR/bin
 
     LIBS=`ldd kerberos.bin | grep -e Qt -e icu -e gcc -e stdc++ -e pthread -e png | awk '{print $3}'`    
     for LIB in $LIBS; do
