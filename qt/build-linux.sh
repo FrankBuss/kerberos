@@ -16,6 +16,7 @@ then
 fi
 
 echo "[*] Building application"
+qmake
 make
 
 if [ $? -eq 0 ]
