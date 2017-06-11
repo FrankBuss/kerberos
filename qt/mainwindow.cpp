@@ -61,6 +61,11 @@ public:
         {
                 QThread::msleep(ms);
         }
+
+        static void usleep(int us)
+        {
+	        QThread::usleep(us);
+	}
 };
 
 void myMsleep(int milliseconds)
@@ -68,18 +73,37 @@ void myMsleep(int milliseconds)
     Helper::msleep(milliseconds);
 }
 
-const char* g_midiInInterfaceName = "midiInInterfaceName";
-const char* g_midiOutInterfaceName = "midiOutInterfaceName";
+void myUsleep(int microseconds)
+{
+    Helper::usleep(microseconds);
+}
+
+const char* g_midiInInterfaceName = "Kerberos MIDI In";
+const char* g_midiOutInterfaceName = "Kerberos MIDI Out";
 
 const char g_kerberosPrgSlotId[16] = KERBEROS_PRG_SLOT_ID;
 const char g_kerberosMenuId[16] = { 75, 69, 82, 66, 69, 82, 79, 83, 32, 77, 69, 78, 85, 32, 73, 68 };
 
 #if defined(__MACOSX_CORE__)
-RtMidiOutCoreMidi g_midiOut;
-RtMidiInCoreMidi g_midiIn;
+RtMidiOutCoreMidi g_midiOut( g_midiOutInterfaceName );;
+RtMidiInCoreMidi  g_midiIn( g_midiInInterfaceName );;
+#elif defined(__LINUX_ALSASEQ__)
+RtMidiOutAlsa g_midiOut( g_midiOutInterfaceName );
+RtMidiInAlsa  g_midiIn( g_midiInInterfaceName );
+
+// delay in microseconds after each send command.
+// This is used to fix ALSA buffer overflow when
+// large amounts of data are transferred.
+static int g_senddelay = 400; 
+
+#elif defined(__LINUX_JACK__)
+
+// Not tested yet
+RtMidiOutJack g_midiOut( g_midiOutInterfaceName );;
+RtMidiInJack  g_midiIn( g_midiInInterfaceName );;
 #else
-RtMidiOutWinMM g_midiOut;
-RtMidiInWinMM g_midiIn;
+RtMidiOutWinMM g_midiOut( g_midiOutInterfaceName );;
+RtMidiInWinMM  g_midiIn( g_midiInInterfaceName );;
 #endif
 
 int g_lastByte;
@@ -208,7 +232,7 @@ static void sendNoteOnOff(uint8_t msg, uint8_t note, uint8_t velocity)
         fflush(stdout);
         */
     } catch (RtError& err) {
-        //qWarning() << QString::fromStdString(err.getMessage());
+      std::cout << err.getMessage();
     }
 }
 
@@ -302,6 +326,11 @@ static void midiSendCommand(uint8_t tag, ByteArray data)
     // send data
     for (size_t i = 0; i < data.size(); i++) {
         midiSendByte(data[i]);
+#if defined(__LINUX_ALSASEQ__)
+
+	// send delay to fix ALSA message dropping
+	myUsleep(g_senddelay);
+#endif
         crc8Update(data[i]);
     }
 
