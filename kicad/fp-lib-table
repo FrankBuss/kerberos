@@ -1,0 +1,7 @@
+(fp_lib_table
+  (lib (name "rp2040")(type "KiCad")(uri "${KIPRJMOD}/rp2040")(options "")(descr ""))
+  (lib (name "cart-proto")(type "KiCad")(uri "${KIPRJMOD}/edge-connector/cart-proto.pretty")(options "")(descr ""))
+  (lib (name "usb-c")(type "KiCad")(uri "${KIPRJMOD}/usb-c")(options "")(descr ""))
+  (lib (name "midi")(type "KiCad")(uri "${KIPRJMOD}/midi")(options "")(descr ""))
+  (lib (name "reset-button")(type "KiCad")(uri "${KIPRJMOD}/reset-button")(options "")(descr ""))
+)

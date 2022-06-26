@@ -1,0 +1,8 @@
+(sym_lib_table
+  (lib (name "RP2040")(type "KiCad")(uri "${KIPRJMOD}/rp2040/RP2040.kicad_sym")(options "")(descr ""))
+  (lib (name "edge-connector")(type "KiCad")(uri "${KIPRJMOD}/edge-connector/edge-connector.kicad_sym")(options "")(descr ""))
+  (lib (name "T8Q144")(type "KiCad")(uri "${KIPRJMOD}/T8Q144.kicad_sym")(options "")(descr ""))
+  (lib (name "USB4125-GF-A_REVA2")(type "KiCad")(uri "${KIPRJMOD}/usb-c/USB4125-GF-A_REVA2.kicad_sym")(options "")(descr ""))
+  (lib (name "SD-50BV")(type "KiCad")(uri "${KIPRJMOD}/midi/SD-50BV.kicad_sym")(options "")(descr ""))
+  (lib (name "TL1105JAF160Q")(type "KiCad")(uri "${KIPRJMOD}/reset-button/TL1105JAF160Q.kicad_sym")(options "")(descr ""))
+)
