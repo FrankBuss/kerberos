@@ -19,5 +19,10 @@ https://www.digikey.de/de/products/detail/gct/USB4125-GF-A/13547388
 
 
 # credits
-T8 symbol by Byron Lathi:
-https://git.byronlathi.com/bslathi19/kicad_library/-/blob/master/symbols/IC.kicad_sym
+Gowin Kicad library:
+https://github.com/devbisme/KiCad-Schematic-Symbol-Libraries
+
+USB-C connector: EasyEDA library for this product:
+https://lcsc.com/product-detail/USB-Connectors_XUNPU-TYPEC-304J-BCP16_C2835315.html
+Converted to KiCad with this tool:
+https://github.com/RigoLigoRLC/LC2KiCad
