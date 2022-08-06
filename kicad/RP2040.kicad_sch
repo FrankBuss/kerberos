@@ -4,6 +4,10 @@
 
   (paper "A4")
 
+  (title_block
+    (title "RP2040 microcontroller")
+  )
+
   (lib_symbols
     (symbol "503398-1892:503398-1892" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "J" (id 0) (at -12.7254 15.2654 0)
@@ -1415,6 +1419,11 @@
   (wire (pts (xy 140.97 46.99) (xy 140.97 52.07))
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid feba2e4a-bb9a-4aa6-8420-bf841ef59c03)
+  )
+
+  (text "micro SD-card" (at 205.74 152.4 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid c97eb09a-52b9-44d8-902b-1c111c53f144)
   )
 
   (label "1.1V" (at 190.5 59.69 0)

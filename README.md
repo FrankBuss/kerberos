@@ -1,21 +1,55 @@
 project webpage: https://frank-buss.de/kerberos/
 
+# New Kerberos 2 design
+
+See the kicad directory for the current schematic and board. [Here](kicad/kerberos2.pdf) is a PDF export of the current schematic.
+
+
+# planned new features
+
+- Mirror MIDI-in to thru and out
+
+- USB MIDI device implementation
+
+- USB host implementation for connecting USB keyboards, if possible
+
+- SD-card for storing more programs and data
+
+
 # Kerberos 2 parts
 
-FPGA:
-https://www.digikey.de/de/products/detail/efinix-inc/T8Q144C4/11591363
+FPGA with 8 MB integrated RAM:
+https://eu.mouser.com/ProductDetail/GOWIN-Semiconductor/GW1NR-LV4QN88C6-I5?qs=wnTfsH77Xs4Nd00MqWDpJw%3D%3D
 
-16 Mbyte DRAM:
-https://www.digikey.de/de/products/detail/winbond-electronics/W9812G6KH-6/4800163
-
-32 MB flash:
-https://www.digikey.de/de/products/detail/macronix/MX25L25645GM2I-08G/7914972
+8 MB flash:
+https://lcsc.com/product-detail/NOR-span-style-background-color-ff0-FLASH-span_Zetta-ZD25Q64BSIGT_C2687407.html
 
 Microcontroller for FPGA powerup sequencing, updating the flash, and booting the FPGA:
-https://www.digikey.de/de/products/detail/raspberry-pi/SC0914-7/14306009
+RP2040
 
 USB-C connector:
-https://www.digikey.de/de/products/detail/gct/USB4125-GF-A/13547388
+https://lcsc.com/product-detail/USB-Connectors_XUNPU-TYPEC-304J-BCP16_C2835315.html
+
+12 MHz oscillator:
+https://lcsc.com/product-detail/Oscillators_Shenzhen-SCTF-Elec-SX3M12-000M20F30TNN_C2901561.html
+
+Schottky Diode:
+https://lcsc.com/product-detail/span-style-background-color-ff0-Schottky-span-Barrier-Diodes-SBD_MDD-Microdiode-Electronics-SS34_C8678.html
+
+16 Bit Level Shifter:
+https://lcsc.com/product-detail/Translators-Level-Shifters_Nexperia-74ALVC164245DGG-11_C5531.html
+
+8 x 33 ohm resistor network:
+https://lcsc.com/product-detail/Resistor-Networks-Arrays_UNI-ROYAL-Uniroyal-Elec-16P8WGF330JT4E_C422182.html
+
+SD-card:
+https://lcsc.com/product-detail/span-style-background-color-ff0-SD-span-span-style-background-color-ff0-Card-span-Connectors_MOLEX-5033981892_C428492.html
+
+internal reset button:
+https://lcsc.com/product-detail/Tactile-Switches_ALPSALPINE-SKRPADE010_C127488.html
+
+optoisolator:
+https://www.digikey.com/en/products/detail/liteon/6N138S/1969181?s=N4IgTCBcDaIIwDYAMBaOB2AnOlA5AIiALoC%2BQA
 
 
 # credits

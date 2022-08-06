@@ -4,6 +4,10 @@
 
   (paper "A4")
 
+  (title_block
+    (title "MIDI in/out/thru")
+  )
+
   (lib_symbols
     (symbol "74xx:74LS14" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "U" (id 0) (at 0 1.27 0)

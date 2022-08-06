@@ -4,6 +4,10 @@
 
   (paper "A4")
 
+  (title_block
+    (title "pulldown circuit")
+  )
+
   (lib_symbols
     (symbol "Device:Q_NMOS_GSD" (pin_names (offset 0) hide) (in_bom yes) (on_board yes)
       (property "Reference" "Q" (id 0) (at 5.08 1.27 0)
@@ -283,7 +287,7 @@
   (symbol (lib_id "Device:R") (at 120.65 90.17 180) (unit 1)
     (in_bom yes) (on_board yes)
     (uuid 6ca3f21f-a26f-4e69-8160-c3eb74f40f05)
-    (property "Reference" "R54" (id 0) (at 118.11 90.17 90))
+    (property "Reference" "R62" (id 0) (at 118.11 90.17 90))
     (property "Value" "10k" (id 1) (at 120.65 90.17 90))
     (property "Footprint" "Resistor_SMD:R_0402_1005Metric" (id 2) (at 122.428 90.17 90)
       (effects (font (size 1.27 1.27)) hide)
@@ -298,7 +302,7 @@
   (symbol (lib_id "Device:Q_NMOS_GSD") (at 129.54 83.82 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid d00f4b8f-f5ab-4670-a1d7-8d4c71a71fe6)
-    (property "Reference" "Q2" (id 0) (at 135.89 82.5499 0)
+    (property "Reference" "Q10" (id 0) (at 135.89 82.5499 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "Q_NMOS_GSD" (id 1) (at 135.89 85.0899 0)
@@ -318,7 +322,7 @@
   (symbol (lib_id "power:GND") (at 132.08 96.52 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid e1276f0a-c82b-4364-a97b-542509e92a55)
-    (property "Reference" "#PWR094" (id 0) (at 132.08 102.87 0)
+    (property "Reference" "#PWR0102" (id 0) (at 132.08 102.87 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (id 1) (at 132.08 101.6 0))

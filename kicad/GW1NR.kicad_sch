@@ -4,6 +4,10 @@
 
   (paper "A4")
 
+  (title_block
+    (title "GW1NR-4 FPGA and level shifter")
+  )
+
   (lib_symbols
     (symbol "74ALVC164245DGG_51:74ALVC164245DGG,51" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "U" (id 0) (at -5.5372 38.3286 0)
