@@ -1,4 +1,4 @@
-20346200096162160
+20397325032834586
 6N138S
 6N138S
 
@@ -62615,8 +62615,8 @@ LFCSP-WD NoLead
 24
 11
 Package_CSP
-Maxim_WLCSP-32_3.0x2.17mm_Layout7x5_P0.4mm_Ball0.27mm_Pad0.25mm
-WLCSP-32, 2.168x2.998mm, 35 Ball, 7x5 Layout, 0.4mm Pitch, https://pdfserv.maximintegrated.com/package_dwgs/21-100489.PDF
+Maxim_WLCSP-35_3.0x2.17mm_Layout7x5_P0.4mm_Ball0.27mm_Pad0.25mm
+WLCSP-35, 2.168x2.998mm, 35 Ball, 7x5 Layout, 0.4mm Pitch, https://pdfserv.maximintegrated.com/package_dwgs/21-100489.PDF
 CSP 35 0.4
 0
 35
@@ -71484,6 +71484,13 @@ SSOP 0.65 exposed pad
 18
 15
 Package_SO
+TSSOP-14_4.4x3.6mm_P0.4mm
+TSSOP, 14 Pin (JEDEC MO-194 Var AA https://www.jedec.org/document_search?search_api_views_fulltext=MO-194), generated with kicad-footprint-generator ipc_gullwing_generator.py
+TSSOP SO
+0
+14
+14
+Package_SO
 TSSOP-14_4.4x5mm_P0.65mm
 TSSOP, 14 Pin (JEDEC MO-153 Var AB-1 https://www.jedec.org/document_search?search_api_views_fulltext=MO-153), generated with kicad-footprint-generator ipc_gullwing_generator.py
 TSSOP SO
@@ -71512,12 +71519,26 @@ TSSOP SO
 26
 17
 Package_SO
+TSSOP-16_4.4x3.6mm_P0.4mm
+TSSOP, 16 Pin (JEDEC MO-194 Var AB https://www.jedec.org/document_search?search_api_views_fulltext=MO-194), generated with kicad-footprint-generator ipc_gullwing_generator.py
+TSSOP SO
+0
+16
+16
+Package_SO
 TSSOP-16_4.4x5mm_P0.65mm
 TSSOP, 16 Pin (JEDEC MO-153 Var AB https://www.jedec.org/document_search?search_api_views_fulltext=MO-153), generated with kicad-footprint-generator ipc_gullwing_generator.py
 TSSOP SO
 0
 16
 16
+Package_SO
+TSSOP-20_4.4x5mm_P0.4mm
+TSSOP, 20 Pin (JEDEC MO-194 Var AC https://www.jedec.org/document_search?search_api_views_fulltext=MO-194), generated with kicad-footprint-generator ipc_gullwing_generator.py
+TSSOP SO
+0
+20
+20
 Package_SO
 TSSOP-20_4.4x5mm_P0.5mm
 TSSOP, 20 Pin (JEDEC MO-153 Var BA https://www.jedec.org/document_search?search_api_views_fulltext=MO-153), generated with kicad-footprint-generator ipc_gullwing_generator.py
@@ -71820,6 +71841,13 @@ TSSOP SO
 52
 52
 Package_SO
+TSSOP-56_4.4x11.3mm_P0.4mm
+TSSOP, 56 Pin (JEDEC MO-194 Var AF https://www.jedec.org/document_search?search_api_views_fulltext=MO-194), generated with kicad-footprint-generator ipc_gullwing_generator.py
+TSSOP SO
+0
+56
+56
+Package_SO
 TSSOP-56_6.1x12.5mm_P0.4mm
 TSSOP, 56 Pin (JEDEC MO-153 Var FD https://www.jedec.org/document_search?search_api_views_fulltext=MO-153), generated with kicad-footprint-generator ipc_gullwing_generator.py
 TSSOP SO
@@ -71889,6 +71917,13 @@ TSSOP SO
 0
 80
 80
+Package_SO
+TSSOP-100_6.1x20.8mm_P0.4mm
+TSSOP, 100 Pin (JEDEC MO-194 Var BB https://www.jedec.org/document_search?search_api_views_fulltext=MO-194), generated with kicad-footprint-generator ipc_gullwing_generator.py
+TSSOP SO
+0
+100
+100
 Package_SO
 Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm
 Texas Instruments HSOP 9, 1.27mm pitch, 3.9x4.9mm body, exposed pad, DDA0008J (http://www.ti.com/lit/ds/symlink/tps5430.pdf)
@@ -78946,6 +78981,13 @@ co2 gas sensor pwm modbus
 9
 9
 Sensor
+Sensirion_SCD4x-1EP_10.1x10.1mm_P1.25mm_EP4.8x4.8mm
+Sensirion SCD4x QFN, 20 Pin (https://sensirion.com/media/documents/C4B87CE6/627C2DCD/CD_DS_SCD40_SCD41_Datasheet_D1.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+Sensirion QFN NoLead
+0
+25
+21
+Sensor
 Winson_GM-402B_5x5mm_P1.27mm
 Winson GM-402B, 8 Pin (https://www.winsen-sensor.com/d/files/me2/mems--gm-402b--manual-v1_1.pdf)
 Winson
@@ -84650,6 +84692,13 @@ Ethernet Transformer
 0
 16
 16
+Transformer_SMD
+Transformer_Ethernet_YDS_30F-51NL_SO-24_7.1x15.1mm
+YDS 30F-51NL SO, 24 Pin (https://datasheet.lcsc.com/lcsc/1811051610_Shanghai-YDS-Tech-30F-51NL_C123168.pdf), generated with kicad-footprint-generator ipc_gullwing_generator.py
+YDS SO Transformer_SMD
+0
+24
+24
 Transformer_SMD
 Transformer_MACOM_SM-22
 https://cdn.macom.com/datasheets/ETC1-1-13.pdf

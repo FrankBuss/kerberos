@@ -21,8 +21,8 @@ See the kicad directory for the current schematic and board. [Here](kicad/kerber
 FPGA with 8 MB integrated RAM:
 https://eu.mouser.com/ProductDetail/GOWIN-Semiconductor/GW1NR-LV4QN88C6-I5?qs=wnTfsH77Xs4Nd00MqWDpJw%3D%3D
 
-8 MB flash:
-https://lcsc.com/product-detail/NOR-span-style-background-color-ff0-FLASH-span_Zetta-ZD25Q64BSIGT_C2687407.html
+16 MB flash:
+https://lcsc.com/product-detail/NOR-FLASH_Winbond-Elec-W25Q128JVSIQ_C113767.html
 
 Microcontroller for FPGA powerup sequencing, updating the flash, and booting the FPGA:
 RP2040

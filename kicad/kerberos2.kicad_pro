@@ -478,6 +478,18 @@
     [
       "8691e88f-58e1-4106-906b-b8b357c2f0b2",
       "pulldown FET9"
+    ],
+    [
+      "240b0469-b421-4ba8-a663-8917bcb631d7",
+      "IEC pin1"
+    ],
+    [
+      "b5257fb5-559f-43d2-8659-fc0a4b0dd550",
+      "IEC pin"
+    ],
+    [
+      "2d0c3e30-eed1-4b75-999f-98776dd2c0cc",
+      "IEC pin2"
     ]
   ],
   "text_variables": {}
