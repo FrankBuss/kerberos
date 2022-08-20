@@ -9,4 +9,6 @@
   (lib (name "74ALVC164245DGG_51")(type "KiCad")(uri "${KIPRJMOD}/74ALVC164245DGG_51.kicad_sym")(options "")(descr ""))
   (lib (name "503398-1892")(type "KiCad")(uri "${KIPRJMOD}/sd-card/503398-1892.kicad_sym")(options "")(descr ""))
   (lib (name "button")(type "KiCad")(uri "${KIPRJMOD}/button/button.kicad_sym")(options "")(descr ""))
+  (lib (name "side-switch")(type "KiCad")(uri "/home/frank/data/projects/upwork/hall-board/nuvoton/kicad/side-switch.kicad_sym")(options "")(descr ""))
+  (lib (name "logo")(type "KiCad")(uri "/home/frank/data/projects/upwork/hall-board/nuvoton/kicad/logo.kicad_sym")(options "")(descr ""))
 )

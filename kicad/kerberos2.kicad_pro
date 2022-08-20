@@ -428,10 +428,6 @@
       "current sense"
     ],
     [
-      "7cedb413-b3c4-41ce-bdc0-ac4f7632639e",
-      "pulldown FET1"
-    ],
-    [
       "ac53318d-1259-40bd-8eb0-cd524f55ed0e",
       "3.3V power supply"
     ],
@@ -442,54 +438,6 @@
     [
       "1d2b066e-0896-4e61-876d-5067d9f3ba57",
       "MIDI"
-    ],
-    [
-      "1bb3ed6f-7908-48e3-8db5-0787db496a25",
-      "pulldown FET"
-    ],
-    [
-      "789c1aa2-d783-45d9-8c7c-2cc142913f43",
-      "pulldown FET2"
-    ],
-    [
-      "8d86cfd6-7fcc-438e-aab4-f18412af98be",
-      "pulldown FET3"
-    ],
-    [
-      "b30025ca-2610-4ca9-9aef-732abcb09a79",
-      "pulldown FET4"
-    ],
-    [
-      "00461669-995d-4266-badd-d65f7da5dec3",
-      "pulldown FET5"
-    ],
-    [
-      "e659834f-ab1e-4c29-aff0-ffa274b3fd40",
-      "pulldown FET6"
-    ],
-    [
-      "79eac859-b134-4722-af0d-5b7bf62b2c51",
-      "pulldown FET7"
-    ],
-    [
-      "65281eed-bba2-43dd-825b-a20c484e739e",
-      "pulldown FET8"
-    ],
-    [
-      "8691e88f-58e1-4106-906b-b8b357c2f0b2",
-      "pulldown FET9"
-    ],
-    [
-      "240b0469-b421-4ba8-a663-8917bcb631d7",
-      "IEC pin1"
-    ],
-    [
-      "b5257fb5-559f-43d2-8659-fc0a4b0dd550",
-      "IEC pin"
-    ],
-    [
-      "2d0c3e30-eed1-4b75-999f-98776dd2c0cc",
-      "IEC pin2"
     ]
   ],
   "text_variables": {}

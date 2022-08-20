@@ -11,4 +11,5 @@
   (lib (name "sd-card")(type "KiCad")(uri "${KIPRJMOD}/sd-card")(options "")(descr ""))
   (lib (name "button")(type "KiCad")(uri "${KIPRJMOD}/button/button.pretty")(options "")(descr ""))
   (lib (name "6N138S")(type "KiCad")(uri "${KIPRJMOD}/6N138S.pretty")(options "")(descr ""))
+  (lib (name "SOP50")(type "KiCad")(uri "${KIPRJMOD}/SOP50")(options "")(descr ""))
 )

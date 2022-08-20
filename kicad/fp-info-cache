@@ -1,4 +1,4 @@
-20397325032834586
+20398987312640289
 6N138S
 6N138S
 
@@ -78931,6 +78931,13 @@ rotary encoder
 0
 5
 4
+SOP50
+SOP50P810X120-48N
+
+
+0
+48
+48
 Sensor
 Aosong_DHT11_5.5x12.0_P2.54mm
 Temperature and humidity module, http://akizukidenshi.com/download/ds/aosong/DHT11.pdf
