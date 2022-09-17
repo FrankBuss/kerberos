@@ -5215,7 +5215,7 @@
       (reference "R47") (unit 1) (value "10k") (footprint "Resistor_SMD:R_0805_2012Metric")
     )
     (path "/ac53318d-1259-40bd-8eb0-cd524f55ed0e/0401e5a0-fe22-4b50-94be-bfb52fd070e6"
-      (reference "R48") (unit 1) (value "45k") (footprint "Resistor_SMD:R_0805_2012Metric")
+      (reference "R48") (unit 1) (value "45300") (footprint "Resistor_SMD:R_0805_2012Metric")
     )
     (path "/ac53318d-1259-40bd-8eb0-cd524f55ed0e/c9b152b3-8402-4614-909f-8d4c86c8a676"
       (reference "R49") (unit 1) (value "10k") (footprint "Resistor_SMD:R_0805_2012Metric")

@@ -55,15 +55,7 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [
-        "courtyards_overlap|104923999|102086001|2f521811-937b-4f08-a260-d1d8aaad7e78|50801d6d-46af-4ed4-add5-9a3f0ba7e736",
-        "courtyards_overlap|104923999|104626001|2f521811-937b-4f08-a260-d1d8aaad7e78|fa169815-b7f4-438b-9a2d-952b830c103a",
-        "courtyards_overlap|104923999|107166001|6ba594d0-d0ee-4487-a378-1ed37935cf80|fa169815-b7f4-438b-9a2d-952b830c103a",
-        "courtyards_overlap|104923999|99546001|50801d6d-46af-4ed4-add5-9a3f0ba7e736|9ad569be-994f-4ade-9de9-82a1b4b9ce69",
-        "courtyards_overlap|84560001|39602001|773a726f-fa02-4a33-9294-9294927710d9|88ba29df-a9c5-44a0-a2b6-12385a62c8eb",
-        "courtyards_overlap|84560001|76940001|0c1f1eeb-781f-4563-86a6-75b2b8568982|79479e7c-0a90-48d2-aa3c-63d4212e1a2b",
-        "courtyards_overlap|87100001|39602001|3ecaeaa7-b58b-40b2-9c3d-64b2ab6e49ee|773a726f-fa02-4a33-9294-9294927710d9"
-      ],
+      "drc_exclusions": [],
       "meta": {
         "version": 2
       },
@@ -111,7 +103,7 @@
         "allow_blind_buried_vias": false,
         "allow_microvias": false,
         "max_error": 0.005,
-        "min_clearance": 0.127,
+        "min_clearance": 0.1016,
         "min_copper_edge_clearance": 0.0,
         "min_hole_clearance": 0.25,
         "min_hole_to_hole": 0.25,
@@ -127,7 +119,8 @@
         "use_height_for_length_calcs": true
       },
       "track_widths": [
-        0.0
+        0.0,
+        0.254
       ],
       "via_dimensions": [
         {
@@ -361,7 +354,7 @@
     "classes": [
       {
         "bus_width": 12.0,
-        "clearance": 0.127,
+        "clearance": 0.1016,
         "diff_pair_gap": 0.25,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,

@@ -381,7 +381,7 @@
     (property "Reference" "R48" (id 0) (at 135.89 66.0399 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "45k" (id 1) (at 135.89 68.5799 0)
+    (property "Value" "45300" (id 1) (at 135.89 68.5799 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Resistor_SMD:R_0805_2012Metric" (id 2) (at 131.572 67.31 90)
