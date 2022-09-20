@@ -5281,10 +5281,10 @@
       (reference "U3") (unit 1) (value "RP2040") (footprint "rp2040:QFN40P700X700X90-57N")
     )
     (path "/0ad9629d-6adf-485d-abdb-6538656c1622/1ee9eba4-fa50-457e-869c-622ce969a642"
-      (reference "U4") (unit 1) (value "74LCX16245") (footprint "SOP50:SOP50P810X120-48N")
+      (reference "U4") (unit 1) (value "74LCX16245") (footprint "Package_SO:SSOP-48_5.3x12.8mm_P0.5mm")
     )
     (path "/0ad9629d-6adf-485d-abdb-6538656c1622/993f88a7-a739-4163-9205-8de042f340ea"
-      (reference "U5") (unit 1) (value "74LCX16245") (footprint "SOP50:SOP50P810X120-48N")
+      (reference "U5") (unit 1) (value "74LCX16245") (footprint "Package_SO:SSOP-48_5.3x12.8mm_P0.5mm")
     )
     (path "/0ad9629d-6adf-485d-abdb-6538656c1622/82c6b966-f7bb-4014-96a1-f2f78f1ab7cd"
       (reference "U6") (unit 1) (value "GW1NR-4&4B_QN881") (footprint "qn88:QFN-88_EP_10x10_Pitch0.4mm")
@@ -5302,7 +5302,7 @@
       (reference "U6") (unit 5) (value "GW1NR-4&4B_QN881") (footprint "qn88:QFN-88_EP_10x10_Pitch0.4mm")
     )
     (path "/0ad9629d-6adf-485d-abdb-6538656c1622/ceb7a039-1ecf-43ac-9e8f-7ec629014f49"
-      (reference "U7") (unit 1) (value "74LCX16245") (footprint "SOP50:SOP50P810X120-48N")
+      (reference "U7") (unit 1) (value "74LCX16245") (footprint "Package_SO:SSOP-48_5.3x12.8mm_P0.5mm")
     )
     (path "/0ad9629d-6adf-485d-abdb-6538656c1622/c7357f48-7ba0-4e56-909f-d52a03fe90da"
       (reference "U8") (unit 1) (value "74LS06") (footprint "Package_SO:SO-14_3.9x8.65mm_P1.27mm")
