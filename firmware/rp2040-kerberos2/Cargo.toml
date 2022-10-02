@@ -1,22 +1,44 @@
 [package]
-edition = "2021"
-name = "rp2040-kerberos2"
+authors = ["Dario Nieuwenhuis <dirbaio@dirbaio.net>"]
+edition = "2018"
+readme = "README.md"
+name = "rp-test"
 version = "0.1.0"
 
 [dependencies]
-cortex-m = "0.7"
-cortex-m-rt = "0.7"
-embedded-hal = { version = "0.2.5", features = ["unproven"] }
+cortex-m = { version = "0.7.1", features = ["inline-asm"] }
+cortex-m-rt = "0.6.10"
 
-defmt = "0.3"
-defmt-rtt = "0.3"
-panic-probe = { version = "0.3", features = ["print-defmt"] }
+defmt = "0.1.3"
+defmt-rtt = "0.1.0"
+panic-probe = "0.1.0"
 
-# If you're not going to use a Board Support Package you'll need these:
-rp2040-hal = { version="0.6", features=["rt"] }
-rp2040-boot2 = "0.2"
+rp2040-pac = { git = "https://github.com/rp-rs/rp2040-pac", branch="main" }
+rp2040-boot2 = { git = "https://github.com/rp-rs/rp2040-boot2-rs", branch="main" }
+#rp2040-pac = { path = "../rp2040-pac" }
+#rp2040-boot2 = { path = "../rp2040-boot2-rs" }
 
-# cargo build/run
+[patch.crates-io]
+cortex-m = { git = "https://github.com/rust-embedded/cortex-m" }
+
+[features]
+default = [
+    "defmt-default",
+]
+defmt-default = []
+defmt-trace = []
+defmt-debug = []
+defmt-info = []
+defmt-warn = []
+defmt-error = []
+
+
+# this lets you use `cargo fix`!
+[[bin]]
+name = "rp-test"
+test = false
+bench = false
+
 [profile.dev]
 codegen-units = 1
 debug = 2
@@ -25,14 +47,13 @@ incremental = false
 opt-level = 3
 overflow-checks = true
 
-# cargo build/run --release
 [profile.release]
 codegen-units = 1
 debug = 2
 debug-assertions = false
 incremental = false
-lto = 'fat'
-opt-level = 3
+lto = "fat"
+opt-level = 's'
 overflow-checks = false
 
 # do not optimize proc-macro crates = faster builds from scratch
@@ -49,21 +70,3 @@ debug = false
 debug-assertions = false
 opt-level = 0
 overflow-checks = false
-
-# cargo test
-[profile.test]
-codegen-units = 1
-debug = 2
-debug-assertions = true
-incremental = false
-opt-level = 3
-overflow-checks = true
-
-# cargo test --release
-[profile.bench]
-codegen-units = 1
-debug = 2
-debug-assertions = false
-incremental = false
-lto = 'fat'
-opt-level = 3
