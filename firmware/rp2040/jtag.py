@@ -77,7 +77,7 @@ def transmit():
 def read_tdo():
     global last
     transmit()
-    return (last & 8) > 0
+    return 1 if (last & 8) > 0 else 0
 
 # https://vlsitutorialscom.files.wordpress.com/2020/01/jtag-operation-example.png
 
@@ -224,8 +224,8 @@ def read_sram(address_size, address_count):
 jtag_reset()
 jtag_send_instruction(0x11)
 id = jtag_read_id()
-print("%08x" % id)
-if id != 0x1100381:
+print("Gowin FPGA ID: 0x%08x" % id)
+if id != 0x1100381b:
     print("wrong ID")
     sys.exit()
 
