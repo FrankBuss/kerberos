@@ -60,7 +60,7 @@ def set_reconfig(state):
         b &= ~0x40
     bytes_to_write.append(b)
 
-
+# send data in bytes_to_write to FPGA and store last read byte in "last"
 def transmit():
     # write output in chunks of 64 bytes
     global b, last, bytes_to_write
@@ -73,24 +73,22 @@ def transmit():
         bytes_from_serial = ser.read(len(to_write))
         last = bytes_from_serial[-1]
 
-
+# get current state of TDO
 def read_tdo():
     global last
     transmit()
     return 1 if (last & 8) > 0 else 0
 
-# https://vlsitutorialscom.files.wordpress.com/2020/01/jtag-operation-example.png
-
-
+# clock out TMS with a clock high/low pulse
 def strobe(tms_value):
     set_tms(tms_value)
     set_tck(1)
     set_tck(0)
 
-
+# enable JTAG
 set_jtagsel(0)
 
-
+# reset JTAG tap
 def jtag_reset():
     # Send a JTAG TAP reset
     for i in range(5):
@@ -99,17 +97,16 @@ def jtag_reset():
     # Enter the Idle state
     strobe(0)
 
-
+# send an 8 bit JTAG instruction
 def jtag_send_instruction(instruction):
-    # Send 8 bit instruction
-    # From idle, we want to go to the Shift-IR state
-    # The sequence is: Select-DR-Scan -> Select-IR-Scan -> Capture-IR -> Shift-IR
+    # from idle, go to Shift-IR state
+    # the sequence is: Select-DR-Scan -> Select-IR-Scan -> Capture-IR -> Shift-IR
     strobe(1)
     strobe(1)
     strobe(0)
     strobe(0)
 
-    # Now we can shift in the instruction (with TMS=0)
+    # now shift in the instruction (with TMS=0)
     # last bit with TMS=1 to move to Exit1-IR
     instruction = 0x11
     for i in range(8):
@@ -120,54 +117,50 @@ def jtag_send_instruction(instruction):
     strobe(1)
     strobe(0)
 
-
+# send a byte array in MSB format as data
 def jtag_send_msb_array(bytes):
-    # Send byte array in MSB format
-    # From idle, we want to go to the Shift-DR state
-    # The sequence is: Select-DR-Scan -> Capture-DR
+    # from idle, go to the Shift-DR state
+    # the sequence is: Select-DR-Scan -> Capture-DR
     strobe(1)
     strobe(0)
 
-    # Now we can shift in the data (with TMS=0), first step transitions to Shift-DR state
-    # Last bit with TMS=1 to move to Exit1-DR
+    # now shift in the data (with TMS=0), first step transitions to Shift-DR state
+    # last bit with TMS=1 to move to Exit1-DR
     for i in range(len(bytes)):
         for j in range(8):
             set_tdi((bytes[i] >> (7 - i)) & 1)
             strobe(1 if j == 7 and i == len(bytes) - 1 else 0)
 
-    # Update-DR and then go back to idle
+    # update-DR and then go back to idle
     strobe(1)
     strobe(0)
 
-
+# read 32 bit data for the ID
 def jtag_read_id():
-    # Run 3 cycles in idle
+    # run 3 cycles in idle
     strobe(0)
     strobe(0)
     strobe(0)
 
-    # Read 32 bit data
-    # From idle, we want to go to the Shift-DR state
-    # The sequence is: Select-DR-Scan -> Capture-DR
+    # read 32 bit data
+    # from idle, go to the Shift-DR state
+    # the sequence is: Select-DR-Scan -> Capture-DR
     strobe(1)
     strobe(0)
 
-    # Now we can shift in the data (with TMS=0), first step transitions to Shift-DR state
+    # now shift in the data (with TMS=0), first step transitions to Shift-DR state
     data = 0
-    for i in range(31):
-        strobe(0)
+    for i in range(32):
+        # last bit with TMS=1 to move to Exit1-DR
+        strobe(1 if i == 31 else 0)
         data |= (read_tdo() << i)
 
-    # Last bit with TMS=1 to move to Exit1-DR
-    strobe(1)
-    data |= (read_tdo() << 31)
-
-    # Update-DR and then go back to idle
+    # update-DR and then go back to idle
     strobe(1)
     strobe(0)
     return data
 
-
+# erase SRAM on FPGA
 def erase_sram():
     jtag_reset()
 
@@ -195,7 +188,7 @@ def erase_sram():
     # wait a second (not needed?)
     time.sleep(1)
 
-
+# program FPGA SRAM
 def program_sram(bytes):
     # ConfigEnable
     jtag_send_instruction(0x15)
@@ -215,7 +208,7 @@ def program_sram(bytes):
     # Noop
     jtag_send_instruction(0x02)
 
-
+# read SRAM data back from FPGA
 def read_sram(address_size, address_count):
     byte = bytearray(address_size * address_count)
 
@@ -242,5 +235,10 @@ program_sram(program)
 # verify
 address_size = 2296 / 8
 address_count = 494
+sram_read = read_sram(address_size, address_count)
+if sram_read == program:
+    print("verify ok")
+else:
+    print("verify failed")
 
 ser.close()
