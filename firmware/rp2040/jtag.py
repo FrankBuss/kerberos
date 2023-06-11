@@ -67,6 +67,7 @@ def transmit():
     b ^= 8
     bytes_to_write.append(b)
     while len(bytes_to_write) > 0:
+        print(len(bytes_to_write))
         to_write = bytes_to_write[:64]
         ser.write(bytes(to_write))
         bytes_to_write = bytes_to_write[64:]
@@ -78,6 +79,8 @@ def read_tdo():
     global last
     transmit()
     return 1 if (last & 8) > 0 else 0
+
+
 
 # clock out TMS with a clock high/low pulse
 def strobe(tms_value):
@@ -119,16 +122,17 @@ def jtag_send_instruction(instruction):
 
 # send a byte array in MSB format as data
 def jtag_send_msb_array(bytes):
-    # from idle, go to the Shift-DR state
-    # the sequence is: Select-DR-Scan -> Capture-DR
+    # from idle, go to the  -> Shift-DR state
+    # the sequence is: Select-DR-Scan -> Capture-DR -> Shift-DR
     strobe(1)
+    strobe(0)
     strobe(0)
 
     # now shift in the data (with TMS=0), first step transitions to Shift-DR state
     # last bit with TMS=1 to move to Exit1-DR
     for i in range(len(bytes)):
         for j in range(8):
-            set_tdi((bytes[i] >> (7 - i)) & 1)
+            set_tdi((bytes[i] >> (7 - j)) & 1)
             strobe(1 if j == 7 and i == len(bytes) - 1 else 0)
 
     # update-DR and then go back to idle
@@ -190,6 +194,8 @@ def erase_sram():
 
 # program FPGA SRAM
 def program_sram(bytes):
+    jtag_reset()
+
     # ConfigEnable
     jtag_send_instruction(0x15)
 
@@ -210,7 +216,47 @@ def program_sram(bytes):
 
 # read SRAM data back from FPGA
 def read_sram(address_size, address_count):
-    byte = bytearray(address_size * address_count)
+    jtag_reset()
+
+    bytes = bytearray(address_size * address_count)
+    
+    # ConfigEnable
+    jtag_send_instruction(0x15)
+
+    # Address Initialize
+    jtag_send_instruction(0x12)
+
+    # SRAM Read
+    jtag_send_instruction(0x03)
+
+    pos = 0
+    for i in range(address_count):
+        # the sequence is: Select-DR-Scan -> Capture-DR
+        strobe(1)
+        strobe(0)
+
+        data = 0
+        for j in range(address_size):
+            print(j)
+            # last bit with TMS=1 to move to Exit1-DR
+            strobe(1 if j == address_size - 1 else 0)
+            data |= (read_tdo() << (j & 7))
+            if (j & 7) == 7:
+               bytes[pos] = data
+               data = 0
+               pos += 1
+
+        # update-DR and then go back to idle
+        strobe(1)
+        strobe(0)
+
+    # Config Disable
+    jtag_send_instruction(0x3a)
+
+    # Noop
+    jtag_send_instruction(0x02)
+    
+    return bytes
 
 
 # verify ID
@@ -222,20 +268,22 @@ if id != 0x1100381b:
     print("wrong ID")
     sys.exit()
 
-sys.exit()
+#sys.exit()
 
 # load program
-with open('program.bin', 'rb') as f:
+with open('/home/frank/data/tmp/fpga_project.bin', 'rb') as f:
     program = bytearray(f.read())
 
 # program SRAM
-erase_sram()
-program_sram(program)
+#erase_sram()
+#program_sram(program)
 
 # verify
-address_size = 2296 / 8
+address_size = 2296 // 8
 address_count = 494
+address_count = 1
 sram_read = read_sram(address_size, address_count)
+print(sram_read)
 if sram_read == program:
     print("verify ok")
 else:
